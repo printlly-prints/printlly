@@ -1,0 +1,106 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;600;700;800&family=Inter:wght@400;500;600&display=swap">
+  <style>
+    * { box-sizing: border-box; }
+    body { margin: 0; background: #E9EEEF; color: #102A2E; font-family: Inter, system-ui, sans-serif; -webkit-font-smoothing: antialiased; }
+    h1, h2, h3 { margin: 0; font-family: 'Plus Jakarta Sans', Inter, system-ui, sans-serif; letter-spacing: -0.03em; }
+    p { margin: 0; text-wrap: pretty; }
+    a { color: #087F8C; text-decoration: none; }
+    a:hover { color: #066A73; }
+    .phone { width: 390px; height: 844px; background: #FAFCFC; border-radius: 30px; overflow: hidden; display: flex; flex-direction: column; box-shadow: 0 24px 60px -30px rgba(16,42,46,.34); }
+    .cap { font-family: 'Plus Jakarta Sans'; font-size: 12px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; color: #829497; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .spinner { width: 30px; height: 30px; border-radius: 999px; border: 3px solid #D8E7E8; border-top-color: #087F8C; animation: spin 900ms linear infinite; }
+  </style>
+</helmet>
+
+<div style="padding: 40px; display: flex; gap: 40px; background: #E9EEEF;">
+
+  <!-- ===== Splash ===== -->
+  <div style="display: flex; flex-direction: column; gap: 14px;">
+    <span class="cap">Splash</span>
+    <div class="phone" style="align-items: center; justify-content: center; gap: 0; position: relative; background: #F7FAFA;">
+      <div style="display: flex; flex-direction: column; align-items: center; gap: 22px;">
+        <svg width="88" height="88" viewBox="0 0 44 44" fill="none">
+          <rect width="44" height="44" rx="13" fill="#087F8C"/>
+          <path d="M15 10h8.5L29 15.5V26H15z" fill="#FFFFFF"/>
+          <path d="M23.5 10v5.5H29z" fill="#087F8C" opacity=".38"/>
+          <rect x="10" y="26" width="24" height="9" rx="3.5" fill="#FFFFFF" opacity=".62"/>
+          <rect x="14" y="29.5" width="9" height="2.2" rx="1.1" fill="#087F8C"/>
+        </svg>
+        <div style="display: flex; flex-direction: column; align-items: center; gap: 10px;">
+          <span style="font-family: 'Plus Jakarta Sans'; font-size: 40px; font-weight: 800; letter-spacing: -0.04em;">Printlly</span>
+          <span style="font-size: 15px; color: #52666A;">Print Smarter. Skip the Wait.</span>
+        </div>
+      </div>
+      <div class="spinner" style="position: absolute; bottom: 92px;"></div>
+    </div>
+  </div>
+
+  <!-- ===== Welcome / sign in ===== -->
+  <div style="display: flex; flex-direction: column; gap: 14px;">
+    <span class="cap">Welcome &amp; sign in</span>
+    <div class="phone">
+      <div style="flex-grow: 1; padding: 72px 24px 0; display: flex; flex-direction: column;">
+
+        <svg width="52" height="52" viewBox="0 0 44 44" fill="none">
+          <rect width="44" height="44" rx="13" fill="#087F8C"/>
+          <path d="M15 10h8.5L29 15.5V26H15z" fill="#FFFFFF"/>
+          <path d="M23.5 10v5.5H29z" fill="#087F8C" opacity=".38"/>
+          <rect x="10" y="26" width="24" height="9" rx="3.5" fill="#FFFFFF" opacity=".62"/>
+          <rect x="14" y="29.5" width="9" height="2.2" rx="1.1" fill="#087F8C"/>
+        </svg>
+
+        <h1 style="font-size: 32px; line-height: 39px; font-weight: 800; margin-top: 28px;">Print smarter with Printlly.</h1>
+        <p style="font-size: 15.5px; line-height: 25px; color: #52666A; margin-top: 12px;">Upload from anywhere, collect when it's ready.</p>
+
+        <div style="display: flex; flex-direction: column; gap: 10px; margin-top: 40px;">
+          <span style="font-size: 13.5px; font-weight: 500; color: #52666A;">Mobile number</span>
+          <div style="display: flex; align-items: center; height: 56px; border: 1.5px solid #087F8C; border-radius: 14px; background: #fff; box-shadow: 0 0 0 3px rgba(8,127,140,.10); overflow: hidden;">
+            <div style="display: flex; align-items: center; gap: 7px; padding: 0 14px; height: 100%; border-right: 1px solid #D8E7E8;">
+              <span style="font-size: 15.5px; font-weight: 600;">+91</span>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#829497" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>
+            </div>
+            <span style="padding: 0 14px; font-size: 16.5px; letter-spacing: .04em; font-variant-numeric: tabular-nums;">98765 43210</span>
+          </div>
+        </div>
+
+        <div style="display: flex; align-items: center; justify-content: center; height: 54px; border-radius: 14px; background: #087F8C; color: #fff; font-family: 'Plus Jakarta Sans'; font-weight: 700; font-size: 15.5px; margin-top: 20px;">Continue</div>
+
+        <div style="display: flex; align-items: center; gap: 14px; margin: 28px 0;">
+          <div style="flex-grow: 1; height: 1px; background: #D8E7E8;"></div>
+          <span style="font-size: 12.5px; color: #829497;">or continue with</span>
+          <div style="flex-grow: 1; height: 1px; background: #D8E7E8;"></div>
+        </div>
+
+        <div style="display: flex; flex-direction: column; gap: 12px;">
+          <div style="display: flex; align-items: center; justify-content: center; gap: 11px; height: 54px; border-radius: 14px; background: #fff; border: 1.5px solid #D8E7E8;">
+            <svg width="19" height="19" viewBox="0 0 24 24"><path fill="#4285F4" d="M21.6 12.2c0-.7-.1-1.4-.2-2H12v3.8h5.4a4.6 4.6 0 0 1-2 3v2.5h3.2c1.9-1.7 3-4.3 3-7.3z"/><path fill="#34A853" d="M12 22c2.7 0 5-.9 6.6-2.5l-3.2-2.5c-.9.6-2 1-3.4 1-2.6 0-4.8-1.8-5.6-4.2H3.1v2.6A10 10 0 0 0 12 22z"/><path fill="#FBBC05" d="M6.4 13.8a6 6 0 0 1 0-3.6V7.6H3.1a10 10 0 0 0 0 8.8z"/><path fill="#EA4335" d="M12 5.9c1.5 0 2.8.5 3.8 1.5l2.8-2.8A10 10 0 0 0 3.1 7.6l3.3 2.6C7.2 7.7 9.4 5.9 12 5.9z"/></svg>
+            <span style="font-size: 15px; font-weight: 600;">Google</span>
+          </div>
+          <div style="display: flex; align-items: center; justify-content: center; gap: 11px; height: 54px; border-radius: 14px; background: #fff; border: 1.5px solid #D8E7E8;">
+            <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="#102A2E" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="2.5"/><path d="m3.5 7 8.5 6 8.5-6"/></svg>
+            <span style="font-size: 15px; font-weight: 600;">Email</span>
+          </div>
+        </div>
+
+      </div>
+
+      <div style="padding: 0 24px 34px;">
+        <p style="font-size: 12.5px; line-height: 19px; color: #829497; text-align: center;">By continuing you agree to Printlly's <span style="color: #087F8C; font-weight: 500;">Terms</span> and <span style="color: #087F8C; font-weight: 500;">Privacy Policy</span>.</p>
+      </div>
+    </div>
+  </div>
+
+</div>
+</x-dc>
+</body>
+</html>

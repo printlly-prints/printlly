@@ -1,0 +1,196 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;600;700;800&family=Inter:wght@400;500;600&display=swap">
+  <style>
+    * { box-sizing: border-box; }
+    body { margin: 0; background: #E9EEEF; color: #102A2E; font-family: Inter, system-ui, sans-serif; -webkit-font-smoothing: antialiased; }
+    h1, h2, h3 { margin: 0; font-family: 'Plus Jakarta Sans', Inter, system-ui, sans-serif; letter-spacing: -0.03em; }
+    p { margin: 0; text-wrap: pretty; }
+    a { color: #087F8C; text-decoration: none; }
+    a:hover { color: #066A73; }
+    .phone { width: 390px; background: #FAFCFC; border-radius: 30px; overflow: hidden; display: flex; flex-direction: column; box-shadow: 0 24px 60px -30px rgba(16,42,46,.34); }
+    .cap { font-family: 'Plus Jakarta Sans'; font-size: 12px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; color: #829497; }
+    .card { background: #fff; border: 1px solid #D8E7E8; border-radius: 18px; }
+  </style>
+</helmet>
+
+<div style="padding: 40px; display: flex; gap: 40px; align-items: flex-start; background: #E9EEEF;">
+
+  <!-- ===== Order confirmation ===== -->
+  <div style="display: flex; flex-direction: column; gap: 14px;">
+    <span class="cap">Order confirmation</span>
+    <div class="phone" style="height: 800px; align-items: center; justify-content: center; padding: 0 24px; background: #fff;">
+      <div style="display: flex; flex-direction: column; align-items: center; gap: 26px; width: 100%;">
+
+        <div style="width: 96px; height: 96px; border-radius: 999px; background: #DFF5EF; display: flex; align-items: center; justify-content: center;">
+          <div style="width: 68px; height: 68px; border-radius: 999px; background: #159A8A; display: flex; align-items: center; justify-content: center;">
+            <svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>
+          </div>
+        </div>
+
+        <div style="display: flex; flex-direction: column; align-items: center; gap: 10px;">
+          <h1 style="font-size: 30px; font-weight: 800;">Order Placed!</h1>
+          <p style="font-size: 15px; line-height: 24px; color: #52666A; text-align: center; max-width: 280px;">Your order has been sent to CopyHub. We'll let you know the moment it's ready.</p>
+        </div>
+
+        <div class="card" style="width: 100%; padding: 20px; display: flex; flex-direction: column; gap: 16px;">
+          <div style="display: flex; align-items: center; justify-content: space-between;">
+            <span style="font-size: 13.5px; color: #52666A;">Order ID</span>
+            <span style="font-size: 14px; font-weight: 600; font-variant-numeric: tabular-nums;">#PR-48213</span>
+          </div>
+          <div style="height: 1px; background: #D8E7E8;"></div>
+          <div style="display: flex; align-items: center; justify-content: space-between;">
+            <span style="font-size: 13.5px; color: #52666A;">Estimated ready</span>
+            <span style="font-size: 14px; font-weight: 600;">4:35 PM · in ~10 min</span>
+          </div>
+          <div style="height: 1px; background: #D8E7E8;"></div>
+          <div style="display: flex; align-items: center; justify-content: space-between;">
+            <span style="font-size: 13.5px; color: #52666A;">Paid</span>
+            <span style="font-family: 'Plus Jakarta Sans'; font-size: 17px; font-weight: 800; color: #087F8C;">₹46</span>
+          </div>
+        </div>
+
+        <div style="width: 100%; display: flex; flex-direction: column; gap: 11px;">
+          <div style="display: flex; align-items: center; justify-content: center; height: 54px; border-radius: 14px; background: #087F8C; color: #fff; font-family: 'Plus Jakarta Sans'; font-weight: 700; font-size: 15.5px;">Track Order</div>
+          <div style="display: flex; align-items: center; justify-content: center; height: 54px; border-radius: 14px; background: #fff; border: 1.5px solid #D8E7E8; font-family: 'Plus Jakarta Sans'; font-weight: 700; font-size: 15.5px;">Back to Home</div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== Live tracking ===== -->
+  <div style="display: flex; flex-direction: column; gap: 14px;">
+    <span class="cap">Live order tracking</span>
+    <div class="phone">
+
+      <div style="height: 62px; display: flex; align-items: center; gap: 14px; padding: 0 20px; background: #fff; border-bottom: 1px solid #D8E7E8;">
+        <div style="width: 40px; height: 40px; margin-left: -8px; display: flex; align-items: center; justify-content: center;">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#102A2E" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><path d="m15 6-6 6 6 6"/></svg>
+        </div>
+        <span style="font-family: 'Plus Jakarta Sans'; font-size: 18px; font-weight: 700;">Order #PR-48213</span>
+      </div>
+
+      <div style="padding: 22px 20px 28px; display: flex; flex-direction: column; gap: 22px;">
+
+        <!-- Status header -->
+        <div style="background: #E8F7F7; border-radius: 20px; padding: 20px; display: flex; align-items: center; justify-content: space-between; gap: 14px;">
+          <div style="display: flex; flex-direction: column; gap: 6px;">
+            <span style="font-size: 12.5px; color: #066A73; font-weight: 600;">Currently</span>
+            <span style="font-family: 'Plus Jakarta Sans'; font-size: 22px; font-weight: 800;">Printing</span>
+            <span style="font-size: 13px; color: #52666A;">Ready by 4:35 PM</span>
+          </div>
+          <svg width="70" height="70" viewBox="0 0 120 120" fill="none">
+            <rect x="34" y="12" width="52" height="44" rx="6" fill="#fff"/>
+            <rect x="44" y="26" width="32" height="4" rx="2" fill="#087F8C"/>
+            <rect x="44" y="36" width="32" height="3" rx="1.5" fill="#C4E0E2"/>
+            <rect x="20" y="54" width="80" height="36" rx="12" fill="#087F8C"/>
+            <rect x="38" y="70" width="26" height="5" rx="2.5" fill="#fff" opacity=".4"/>
+            <circle cx="84" cy="73" r="5" fill="#0EA5A8"/>
+          </svg>
+        </div>
+
+        <!-- Timeline -->
+        <div style="display: flex; flex-direction: column;">
+
+          <div style="display: flex; gap: 15px;">
+            <div style="display: flex; flex-direction: column; align-items: center; width: 26px;">
+              <div style="width: 26px; height: 26px; border-radius: 999px; background: #159A8A; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>
+              </div>
+              <div style="width: 2px; flex-grow: 1; background: #159A8A; min-height: 30px;"></div>
+            </div>
+            <div style="display: flex; flex-direction: column; gap: 3px; padding-bottom: 22px;">
+              <span style="font-size: 15.5px; font-weight: 600;">Order Placed</span>
+              <span style="font-size: 12.5px; color: #829497;">4:21 PM</span>
+            </div>
+          </div>
+
+          <div style="display: flex; gap: 15px;">
+            <div style="display: flex; flex-direction: column; align-items: center; width: 26px;">
+              <div style="width: 26px; height: 26px; border-radius: 999px; background: #159A8A; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>
+              </div>
+              <div style="width: 2px; flex-grow: 1; background: #159A8A; min-height: 30px;"></div>
+            </div>
+            <div style="display: flex; flex-direction: column; gap: 3px; padding-bottom: 22px;">
+              <span style="font-size: 15.5px; font-weight: 600;">Accepted by Shop</span>
+              <span style="font-size: 12.5px; color: #829497;">4:23 PM · CopyHub</span>
+            </div>
+          </div>
+
+          <div style="display: flex; gap: 15px;">
+            <div style="display: flex; flex-direction: column; align-items: center; width: 26px;">
+              <div style="width: 26px; height: 26px; border-radius: 999px; background: #087F8C; border: 4px solid #C4E0E2; flex-shrink: 0;"></div>
+              <div style="width: 2px; flex-grow: 1; background: #D8E7E8; min-height: 30px;"></div>
+            </div>
+            <div style="display: flex; flex-direction: column; gap: 3px; padding-bottom: 22px;">
+              <span style="font-size: 15.5px; font-weight: 700; color: #087F8C;">Printing</span>
+              <span style="font-size: 12.5px; color: #52666A;">In progress now</span>
+            </div>
+          </div>
+
+          <div style="display: flex; gap: 15px;">
+            <div style="display: flex; flex-direction: column; align-items: center; width: 26px;">
+              <div style="width: 26px; height: 26px; border-radius: 999px; border: 2px solid #D8E7E8; background: #fff; flex-shrink: 0;"></div>
+              <div style="width: 2px; flex-grow: 1; background: #D8E7E8; min-height: 30px;"></div>
+            </div>
+            <div style="display: flex; flex-direction: column; gap: 3px; padding-bottom: 22px;">
+              <span style="font-size: 15.5px; color: #829497;">Ready for Pickup</span>
+              <span style="font-size: 12.5px; color: #829497;">Expected 4:35 PM</span>
+            </div>
+          </div>
+
+          <div style="display: flex; gap: 15px;">
+            <div style="width: 26px; height: 26px; border-radius: 999px; border: 2px solid #D8E7E8; background: #fff; flex-shrink: 0;"></div>
+            <div style="display: flex; flex-direction: column; gap: 3px;">
+              <span style="font-size: 15.5px; color: #829497;">Collected</span>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- Shop -->
+        <div class="card" style="padding: 16px; display: flex; align-items: center; gap: 13px;">
+          <div style="width: 48px; height: 48px; border-radius: 13px; background: linear-gradient(140deg, #DCF0F1, #C7E6E8); flex-shrink: 0;"></div>
+          <div style="flex-grow: 1; display: flex; flex-direction: column; gap: 3px;">
+            <span style="font-family: 'Plus Jakarta Sans'; font-size: 15.5px; font-weight: 700;">CopyHub</span>
+            <span style="font-size: 12.5px; color: #52666A;">Sector 14 Market · 1.2 km</span>
+          </div>
+          <div style="width: 42px; height: 42px; border-radius: 999px; border: 1px solid #D8E7E8; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#087F8C" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s7-6.4 7-11.4A7 7 0 0 0 5 9.6C5 14.6 12 21 12 21z"/><circle cx="12" cy="9.5" r="2.4"/></svg>
+          </div>
+        </div>
+
+        <!-- Details -->
+        <div class="card" style="padding: 18px; display: flex; flex-direction: column; gap: 13px;">
+          <div style="display: flex; justify-content: space-between;">
+            <span style="font-size: 13.5px; color: #52666A;">Document</span>
+            <span style="font-size: 13.5px; font-weight: 500;">Assignment.pdf</span>
+          </div>
+          <div style="display: flex; justify-content: space-between;">
+            <span style="font-size: 13.5px; color: #52666A;">Options</span>
+            <span style="font-size: 13.5px; font-weight: 500;">B&amp;W · 2 copies · Spiral</span>
+          </div>
+          <div style="height: 1px; background: #D8E7E8;"></div>
+          <div style="display: flex; justify-content: space-between; align-items: baseline;">
+            <span style="font-size: 14px; font-weight: 600;">Paid</span>
+            <span style="font-family: 'Plus Jakarta Sans'; font-size: 19px; font-weight: 800; color: #087F8C;">₹46</span>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+</div>
+</x-dc>
+</body>
+</html>

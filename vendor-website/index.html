@@ -1,0 +1,34 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="icon" type="image/png" href="/favicon.png" />
+    <link rel="apple-touch-icon" href="/printlly-mark.png" />
+    <title>Printlly for Shops</title>
+
+    <!-- Plus Jakarta Sans (headings) + Inter (body) - see src/styles/tokens.md -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Caveat:wght@600;700&family=Inter:wght@400;500;600&family=Plus+Jakarta+Sans:wght@600;700;800&display=swap"
+      rel="stylesheet"
+    />
+    <!-- The scroll-reveal utility starts elements at opacity 0 and lets
+         JS flip them in. Without JS nothing would ever flip, so force
+         them visible in that case rather than shipping a blank page. -->
+    <noscript>
+      <style>
+        .reveal,
+        .draw-line {
+          opacity: 1 !important;
+          transform: none !important;
+        }
+      </style>
+    </noscript>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.jsx"></script>
+  </body>
+</html>

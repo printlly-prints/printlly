@@ -1,0 +1,57 @@
+{
+  "pages": [
+    { "id": "page-1", "name": "Brand & System" },
+    { "id": "page-2", "name": "Website" },
+    { "id": "page-3", "name": "Customer App" },
+    { "id": "page-4", "name": "Vendor Dashboard" }
+  ],
+  "artboards": [
+    { "file": "Main.dc.html", "page": "page-1", "x": 0, "y": 0, "w": 1280, "h": 2500, "title": "Brand & Design System", "print": "flow" },
+
+    { "file": "WebLanding.dc.html", "page": "page-2", "x": 0, "y": 0, "w": 1440, "h": 5400, "title": "Landing Page", "print": "flow" },
+    { "file": "WebShopDetail.dc.html", "page": "page-2", "x": 1560, "y": 0, "w": 1440, "h": 1850, "title": "Shop Detail", "print": "flow" },
+    { "file": "WebResponsive.dc.html", "page": "page-2", "x": 3120, "y": 0, "w": 390, "h": 3050, "title": "Landing — phone width", "print": "flow" },
+
+    { "file": "AppOnboarding.dc.html", "page": "page-3", "x": 0, "y": 0, "w": 900, "h": 980, "title": "Splash & Sign in" },
+    { "file": "AppHome.dc.html", "page": "page-3", "x": 1020, "y": 0, "w": 390, "h": 1480, "title": "Home" },
+    { "file": "AppUpload.dc.html", "page": "page-3", "x": 1510, "y": 0, "w": 390, "h": 844, "title": "Upload Document" },
+    { "file": "AppPreferences.dc.html", "page": "page-3", "x": 2000, "y": 0, "w": 390, "h": 1180, "title": "Print Preferences" },
+    { "file": "AppShopSelect.dc.html", "page": "page-3", "x": 2490, "y": 0, "w": 390, "h": 970, "title": "Choose a Shop" },
+    { "file": "AppCheckout.dc.html", "page": "page-3", "x": 2980, "y": 0, "w": 390, "h": 1180, "title": "Checkout" },
+
+    { "file": "AppTracking.dc.html", "page": "page-3", "x": 0, "y": 1620, "w": 900, "h": 1060, "title": "Confirmation & Tracking" },
+    { "file": "AppPickup.dc.html", "page": "page-3", "x": 1020, "y": 1620, "w": 390, "h": 844, "title": "Ready for Pickup" },
+    { "file": "AppOrdersProfile.dc.html", "page": "page-3", "x": 1510, "y": 1620, "w": 900, "h": 1160, "title": "Orders & Profile" },
+    { "file": "AppStates.dc.html", "page": "page-3", "x": 2510, "y": 1620, "w": 1780, "h": 930, "title": "Notifications, Empty, Loading & Error" },
+
+    { "file": "VendorDashboard.dc.html", "page": "page-4", "x": 0, "y": 0, "w": 1440, "h": 1020, "title": "Vendor Dashboard" },
+    { "file": "VendorOrders.dc.html", "page": "page-4", "x": 1560, "y": 0, "w": 1440, "h": 1020, "title": "Vendor Orders & OTP" }
+  ],
+  "annotations": [
+    {
+      "id": "token-delta",
+      "page": "page-1",
+      "x": 1400,
+      "y": 0,
+      "w": 330,
+      "text": "These tokens now ship in the real code — this sheet and the app are in sync.\n\nSource of truth:\napp/src/theme/{colors,typography,spacing}.js\nweb/tailwind.config.js\n\nBoth carry identical values, so a brand change is an edit to those two files and nothing else. There are zero hardcoded hex values in userapp/src and zero stock Tailwind palette classes in vendor-website/src.\n\nOne judgement call worth knowing: text-secondary #52666A carries body copy, and muted #829497 is reserved for timestamps and placeholders — muted is ~3:1 on white, below AA for anything you actually have to read."
+    },
+    {
+      "id": "sample-data",
+      "page": "page-3",
+      "x": 4390,
+      "y": 1620,
+      "w": 330,
+      "text": "Sample data, not real records.\n\nShop names, ratings, review counts, distances, prep times, order IDs and OTPs are placeholders chosen to make the layouts legible.\n\nWorth knowing: ratings, reviews, distance, shop photos, prep time, saved addresses and payment-method selection have NO backend behind them today. The API returns none of these, so these screens are ahead of what's built."
+    },
+    {
+      "id": "vendor-lifecycle",
+      "page": "page-4",
+      "x": 3120,
+      "y": 0,
+      "w": 320,
+      "text": "The vendor actions here follow the real order lifecycle: Accept → Start Printing → Mark Ready → Verify OTP → Complete.\n\nOne difference: 'Start Printing' is a step the backend doesn't have. Today an order goes accepted → ready_for_pickup with no separate printing status, so the customer's tracking screen infers 'Printing' from 'accepted'.\n\nBoth codebases are now READY for it: a 'printing' status is defined in userapp/src/theme/colors.js and web StatusBadge, with a comment saying nothing emits it yet. When the backend adds the enum value the badge renders correctly with no UI change — no fake API call was added to fill the gap."
+    }
+  ],
+  "launch": { "view": "canvas", "page": "page-1" }
+}

@@ -1,0 +1,167 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;600;700;800&family=Inter:wght@400;500;600&display=swap">
+  <style>
+    * { box-sizing: border-box; }
+    body { margin: 0; background: #FAFCFC; color: #102A2E; font-family: Inter, system-ui, sans-serif; -webkit-font-smoothing: antialiased; }
+    h1, h2, h3 { margin: 0; font-family: 'Plus Jakarta Sans', Inter, system-ui, sans-serif; letter-spacing: -0.03em; }
+    p { margin: 0; text-wrap: pretty; }
+    a { color: #087F8C; text-decoration: none; }
+    a:hover { color: #066A73; }
+    .sect { font-size: 13px; font-weight: 600; color: #829497; }
+    .card { background: #fff; border: 1px solid #D8E7E8; border-radius: 18px; }
+  </style>
+</helmet>
+
+<div style="width: 390px; background: #FAFCFC; display: flex; flex-direction: column;">
+
+  <div style="height: 62px; display: flex; align-items: center; gap: 14px; padding: 0 20px; background: #fff; border-bottom: 1px solid #D8E7E8;">
+    <div style="width: 40px; height: 40px; margin-left: -8px; display: flex; align-items: center; justify-content: center;">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#102A2E" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><path d="m15 6-6 6 6 6"/></svg>
+    </div>
+    <span style="font-family: 'Plus Jakarta Sans'; font-size: 18px; font-weight: 700;">Checkout</span>
+  </div>
+
+  <div style="padding: 22px 20px 24px; display: flex; flex-direction: column; gap: 22px;">
+
+    <div style="display: flex; align-items: center; gap: 8px;">
+      <div style="flex-grow: 1; height: 4px; border-radius: 2px; background: #087F8C;"></div>
+      <div style="flex-grow: 1; height: 4px; border-radius: 2px; background: #087F8C;"></div>
+      <div style="flex-grow: 1; height: 4px; border-radius: 2px; background: #087F8C;"></div>
+      <div style="flex-grow: 1; height: 4px; border-radius: 2px; background: #087F8C;"></div>
+      <span style="font-size: 12px; font-weight: 600; color: #829497; margin-left: 6px;">4 of 4</span>
+    </div>
+
+    <!-- Order -->
+    <div style="display: flex; flex-direction: column; gap: 11px;">
+      <span class="sect">Your order</span>
+      <div class="card" style="padding: 16px; display: flex; flex-direction: column; gap: 14px;">
+        <div style="display: flex; align-items: center; gap: 13px;">
+          <div style="width: 44px; height: 54px; border-radius: 9px; background: #E8F7F7; border: 1px solid #C4E0E2; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#087F8C" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3v5h5"/><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/></svg>
+          </div>
+          <div style="display: flex; flex-direction: column; gap: 4px;">
+            <span style="font-family: 'Plus Jakarta Sans'; font-size: 16px; font-weight: 700;">Assignment.pdf</span>
+            <span style="font-size: 13px; color: #52666A;">12 pages · detected automatically</span>
+          </div>
+        </div>
+        <div style="height: 1px; background: #D8E7E8;"></div>
+        <div style="display: flex; flex-wrap: wrap; gap: 7px;">
+          <span style="padding: 6px 11px; border-radius: 9px; background: #F7FAFA; border: 1px solid #D8E7E8; font-size: 12.5px; color: #52666A;">Black &amp; White</span>
+          <span style="padding: 6px 11px; border-radius: 9px; background: #F7FAFA; border: 1px solid #D8E7E8; font-size: 12.5px; color: #52666A;">2 copies</span>
+          <span style="padding: 6px 11px; border-radius: 9px; background: #F7FAFA; border: 1px solid #D8E7E8; font-size: 12.5px; color: #52666A;">A4</span>
+          <span style="padding: 6px 11px; border-radius: 9px; background: #F7FAFA; border: 1px solid #D8E7E8; font-size: 12.5px; color: #52666A;">Single-sided</span>
+          <span style="padding: 6px 11px; border-radius: 9px; background: #E8F7F7; border: 1px solid #C4E0E2; font-size: 12.5px; color: #066A73; font-weight: 500;">Spiral Binding</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Shop -->
+    <div style="display: flex; flex-direction: column; gap: 11px;">
+      <span class="sect">Printing at</span>
+      <div class="card" style="padding: 16px; display: flex; align-items: center; gap: 13px;">
+        <div style="width: 50px; height: 50px; border-radius: 13px; background: linear-gradient(140deg, #DCF0F1, #C7E6E8); flex-shrink: 0;"></div>
+        <div style="flex-grow: 1; display: flex; flex-direction: column; gap: 4px;">
+          <span style="font-family: 'Plus Jakarta Sans'; font-size: 16px; font-weight: 700;">CopyHub</span>
+          <span style="font-size: 12.5px; color: #52666A;">Sector 14 Market · 1.2 km</span>
+        </div>
+        <div style="display: flex; flex-direction: column; align-items: flex-end; gap: 3px;">
+          <span style="font-size: 11.5px; color: #829497;">Ready by</span>
+          <span style="font-size: 13.5px; font-weight: 600;">4:35 PM</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Cost -->
+    <div style="display: flex; flex-direction: column; gap: 11px;">
+      <span class="sect">Cost breakdown</span>
+      <div class="card" style="padding: 18px; display: flex; flex-direction: column; gap: 13px;">
+        <div style="display: flex; justify-content: space-between;">
+          <span style="font-size: 14.5px; color: #52666A;">Printing · 12 × 2 × ₹1</span>
+          <span style="font-size: 14.5px; font-variant-numeric: tabular-nums;">₹24</span>
+        </div>
+        <div style="display: flex; justify-content: space-between;">
+          <span style="font-size: 14.5px; color: #52666A;">Spiral Binding</span>
+          <span style="font-size: 14.5px; font-variant-numeric: tabular-nums;">₹20</span>
+        </div>
+        <div style="display: flex; justify-content: space-between;">
+          <span style="font-size: 14.5px; color: #52666A;">Platform fee</span>
+          <span style="font-size: 14.5px; font-variant-numeric: tabular-nums;">₹2</span>
+        </div>
+        <div style="height: 1px; background: #D8E7E8;"></div>
+        <div style="display: flex; justify-content: space-between; align-items: baseline;">
+          <span style="font-family: 'Plus Jakarta Sans'; font-size: 16px; font-weight: 700;">Total</span>
+          <span style="font-family: 'Plus Jakarta Sans'; font-size: 26px; font-weight: 800; color: #087F8C; font-variant-numeric: tabular-nums;">₹46</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Payment -->
+    <div style="display: flex; flex-direction: column; gap: 11px;">
+      <span class="sect">Payment method</span>
+      <div class="card" style="overflow: hidden;">
+
+        <div style="display: flex; align-items: center; gap: 13px; padding: 16px; background: #E8F7F7; min-height: 64px;">
+          <div style="width: 38px; height: 38px; border-radius: 11px; background: #fff; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+            <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="#087F8C" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3 5 12l7 9 7-9z"/></svg>
+          </div>
+          <div style="flex-grow: 1; display: flex; flex-direction: column; gap: 2px;">
+            <span style="font-size: 15px; font-weight: 600;">UPI</span>
+            <span style="font-size: 12.5px; color: #52666A;">GPay, PhonePe, Paytm &amp; more</span>
+          </div>
+          <div style="width: 22px; height: 22px; border-radius: 999px; background: #087F8C; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>
+          </div>
+        </div>
+
+        <div style="height: 1px; background: #D8E7E8;"></div>
+
+        <div style="display: flex; align-items: center; gap: 13px; padding: 16px; min-height: 64px;">
+          <div style="width: 38px; height: 38px; border-radius: 11px; background: #F7FAFA; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+            <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="#829497" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="2.5"/><path d="M3 10h18"/></svg>
+          </div>
+          <div style="flex-grow: 1; display: flex; flex-direction: column; gap: 2px;">
+            <span style="font-size: 15px; font-weight: 600;">Card</span>
+            <span style="font-size: 12.5px; color: #52666A;">Credit or debit</span>
+          </div>
+          <div style="width: 22px; height: 22px; border-radius: 999px; border: 2px solid #D8E7E8; flex-shrink: 0;"></div>
+        </div>
+
+        <div style="height: 1px; background: #D8E7E8;"></div>
+
+        <div style="display: flex; align-items: center; gap: 13px; padding: 16px; min-height: 64px;">
+          <div style="width: 38px; height: 38px; border-radius: 11px; background: #F7FAFA; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+            <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="#829497" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="6" width="18" height="13" rx="2.5"/><path d="M16 12h.01"/></svg>
+          </div>
+          <div style="flex-grow: 1; display: flex; flex-direction: column; gap: 2px;">
+            <span style="font-size: 15px; font-weight: 600;">Netbanking &amp; wallets</span>
+            <span style="font-size: 12.5px; color: #52666A;">All major banks</span>
+          </div>
+          <div style="width: 22px; height: 22px; border-radius: 999px; border: 2px solid #D8E7E8; flex-shrink: 0;"></div>
+        </div>
+
+      </div>
+    </div>
+
+    <div style="display: flex; align-items: flex-start; gap: 10px; padding: 14px 16px; background: #E8F7F7; border-radius: 14px;">
+      <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#087F8C" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink: 0; margin-top: 1px;"><rect x="4" y="10" width="16" height="11" rx="2.5"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg>
+      <p style="font-size: 12.5px; line-height: 19px; color: #066A73;">Your document reaches CopyHub only after payment, and is deleted once you collect it.</p>
+    </div>
+
+  </div>
+
+  <div style="padding: 16px 20px 28px; background: #fff; border-top: 1px solid #D8E7E8; box-shadow: 0 -6px 20px -14px rgba(16,42,46,.3);">
+    <div style="display: flex; align-items: center; justify-content: center; height: 56px; border-radius: 14px; background: #087F8C; color: #fff; font-family: 'Plus Jakarta Sans'; font-weight: 700; font-size: 16.5px;">Pay ₹46</div>
+  </div>
+
+</div>
+</x-dc>
+</body>
+</html>

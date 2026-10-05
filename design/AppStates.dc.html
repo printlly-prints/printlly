@@ -1,0 +1,258 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;600;700;800&family=Inter:wght@400;500;600&display=swap">
+  <style>
+    * { box-sizing: border-box; }
+    body { margin: 0; background: #E9EEEF; color: #102A2E; font-family: Inter, system-ui, sans-serif; -webkit-font-smoothing: antialiased; }
+    h1, h2, h3 { margin: 0; font-family: 'Plus Jakarta Sans', Inter, system-ui, sans-serif; letter-spacing: -0.03em; }
+    p { margin: 0; text-wrap: pretty; }
+    a { color: #087F8C; text-decoration: none; }
+    a:hover { color: #066A73; }
+    .phone { width: 390px; height: 780px; background: #FAFCFC; border-radius: 30px; overflow: hidden; display: flex; flex-direction: column; box-shadow: 0 24px 60px -30px rgba(16,42,46,.34); }
+    .cap { font-family: 'Plus Jakarta Sans'; font-size: 12px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; color: #829497; }
+    .card { background: #fff; border: 1px solid #D8E7E8; border-radius: 18px; }
+    .hd { height: 62px; display: flex; align-items: center; gap: 14px; padding: 0 20px; background: #fff; border-bottom: 1px solid #D8E7E8; }
+    .hdt { font-family: 'Plus Jakarta Sans'; font-size: 18px; font-weight: 700; }
+    @keyframes shimmer { 0% { background-position: -340px 0; } 100% { background-position: 340px 0; } }
+    .sk { background: linear-gradient(90deg, #EBF2F2 22%, #F8FBFB 50%, #EBF2F2 78%); background-size: 680px 100%; animation: shimmer 1.5s infinite linear; border-radius: 7px; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .spinner { width: 34px; height: 34px; border-radius: 999px; border: 3.5px solid #D8E7E8; border-top-color: #087F8C; animation: spin 900ms linear infinite; }
+  </style>
+</helmet>
+
+<div style="padding: 40px; display: flex; gap: 36px; align-items: flex-start; background: #E9EEEF;">
+
+  <!-- ===== Notifications ===== -->
+  <div style="display: flex; flex-direction: column; gap: 14px;">
+    <span class="cap">Notifications</span>
+    <div class="phone">
+      <div class="hd">
+        <div style="width: 40px; height: 40px; margin-left: -8px; display: flex; align-items: center; justify-content: center;">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#102A2E" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><path d="m15 6-6 6 6 6"/></svg>
+        </div>
+        <span class="hdt" style="flex-grow: 1;">Notifications</span>
+        <span style="font-size: 13px; font-weight: 600; color: #087F8C;">Mark all read</span>
+      </div>
+
+      <div style="padding: 18px 20px; display: flex; flex-direction: column; gap: 11px;">
+
+        <div style="border: 1px solid #087F8C; background: #E8F7F7; border-radius: 16px; padding: 16px; display: flex; gap: 13px;">
+          <div style="width: 38px; height: 38px; border-radius: 11px; background: #fff; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#159A8A" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9h16v10a1.5 1.5 0 0 1-1.5 1.5h-13A1.5 1.5 0 0 1 4 19z"/><path d="M4 9 5.5 4h13L20 9"/></svg>
+          </div>
+          <div style="flex-grow: 1; display: flex; flex-direction: column; gap: 4px;">
+            <div style="display: flex; align-items: center; gap: 7px;">
+              <span style="width: 7px; height: 7px; border-radius: 999px; background: #087F8C; flex-shrink: 0;"></span>
+              <span style="font-family: 'Plus Jakarta Sans'; font-size: 15px; font-weight: 700;">Ready for pickup</span>
+            </div>
+            <p style="font-size: 13.5px; line-height: 20px; color: #52666A;">Your print is ready for pickup at CopyHub.</p>
+            <span style="font-size: 12px; color: #829497;">2 minutes ago</span>
+          </div>
+        </div>
+
+        <div class="card" style="padding: 16px; display: flex; gap: 13px;">
+          <div style="width: 38px; height: 38px; border-radius: 11px; background: #E3F0FF; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#1D4E89" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="6" y="4" width="12" height="6" rx="1.5"/><rect x="4" y="10" width="16" height="7" rx="2"/><rect x="7" y="15" width="10" height="5" rx="1.5"/></svg>
+          </div>
+          <div style="flex-grow: 1; display: flex; flex-direction: column; gap: 4px;">
+            <span style="font-family: 'Plus Jakarta Sans'; font-size: 15px; font-weight: 700;">Now printing</span>
+            <p style="font-size: 13.5px; line-height: 20px; color: #52666A;">Your document is now being printed.</p>
+            <span style="font-size: 12px; color: #829497;">12 minutes ago</span>
+          </div>
+        </div>
+
+        <div class="card" style="padding: 16px; display: flex; gap: 13px;">
+          <div style="width: 38px; height: 38px; border-radius: 11px; background: #DFF5EF; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#0E7A67" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>
+          </div>
+          <div style="flex-grow: 1; display: flex; flex-direction: column; gap: 4px;">
+            <span style="font-family: 'Plus Jakarta Sans'; font-size: 15px; font-weight: 700;">Order accepted</span>
+            <p style="font-size: 13.5px; line-height: 20px; color: #52666A;">CopyHub accepted your order.</p>
+            <span style="font-size: 12px; color: #829497;">18 minutes ago</span>
+          </div>
+        </div>
+
+        <div class="card" style="padding: 16px; display: flex; gap: 13px;">
+          <div style="width: 38px; height: 38px; border-radius: 11px; background: #F0F4F4; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#52666A" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="2.5"/><path d="M3 10h18"/></svg>
+          </div>
+          <div style="flex-grow: 1; display: flex; flex-direction: column; gap: 4px;">
+            <span style="font-family: 'Plus Jakarta Sans'; font-size: 15px; font-weight: 700;">Payment successful</span>
+            <p style="font-size: 13.5px; line-height: 20px; color: #52666A;">₹46 paid for order #PR-48213.</p>
+            <span style="font-size: 12px; color: #829497;">19 minutes ago</span>
+          </div>
+        </div>
+
+        <div class="card" style="padding: 16px; display: flex; gap: 13px;">
+          <div style="width: 38px; height: 38px; border-radius: 11px; background: #F0F4F4; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#52666A" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 7h14"/><path d="M10 11v6M14 11v6"/><path d="M7 7l1 12.5A1.5 1.5 0 0 0 9.5 21h5a1.5 1.5 0 0 0 1.5-1.5L17 7"/></svg>
+          </div>
+          <div style="flex-grow: 1; display: flex; flex-direction: column; gap: 4px;">
+            <span style="font-family: 'Plus Jakarta Sans'; font-size: 15px; font-weight: 700;">Document deleted</span>
+            <p style="font-size: 13.5px; line-height: 20px; color: #52666A;">Lab_Record.pdf was removed after collection.</p>
+            <span style="font-size: 12px; color: #829497;">Yesterday</span>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== Empty state ===== -->
+  <div style="display: flex; flex-direction: column; gap: 14px;">
+    <span class="cap">Empty state</span>
+    <div class="phone">
+      <div style="padding: 26px 20px 0;">
+        <h1 style="font-size: 26px; font-weight: 800;">My Orders</h1>
+      </div>
+      <div style="padding: 18px 20px 0;">
+        <div style="display: flex; gap: 8px; padding: 5px; background: #EFF5F5; border-radius: 15px;">
+          <div style="flex-grow: 1; height: 44px; border-radius: 11px; background: #fff; box-shadow: 0 1px 3px rgba(16,42,46,.10); display: flex; align-items: center; justify-content: center; font-family: 'Plus Jakarta Sans'; font-size: 14.5px; font-weight: 700;">Active</div>
+          <div style="flex-grow: 1; height: 44px; border-radius: 11px; display: flex; align-items: center; justify-content: center; font-size: 14.5px; font-weight: 500; color: #52666A;">Completed</div>
+        </div>
+      </div>
+
+      <div style="flex-grow: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 0 32px; gap: 22px;">
+        <svg width="130" height="120" viewBox="0 0 130 120" fill="none">
+          <rect x="34" y="8" width="62" height="52" rx="8" fill="#fff" stroke="#D8E7E8" stroke-width="2"/>
+          <rect x="46" y="24" width="38" height="5" rx="2.5" fill="#E1EDED"/>
+          <rect x="46" y="36" width="26" height="5" rx="2.5" fill="#E1EDED"/>
+          <rect x="18" y="58" width="94" height="40" rx="14" fill="#E8F7F7"/>
+          <rect x="40" y="74" width="30" height="6" rx="3" fill="#C4E0E2"/>
+          <circle cx="90" cy="77" r="6" fill="#C4E0E2"/>
+          <circle cx="102" cy="26" r="16" fill="#F7FAFA" stroke="#D8E7E8" stroke-width="2"/>
+          <path d="M96 26h12" stroke="#C4D3D4" stroke-width="2.6" stroke-linecap="round"/>
+        </svg>
+        <div style="display: flex; flex-direction: column; align-items: center; gap: 9px;">
+          <h2 style="font-size: 21px; font-weight: 800; text-align: center;">No prints yet</h2>
+          <p style="font-size: 14.5px; line-height: 22px; color: #52666A; text-align: center;">Your first one is just a tap away.</p>
+        </div>
+        <div style="display: inline-flex; align-items: center; justify-content: center; gap: 9px; height: 52px; padding: 0 26px; border-radius: 14px; background: #087F8C; color: #fff; font-family: 'Plus Jakarta Sans'; font-weight: 700; font-size: 15px;">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 16V6"/><path d="m8 10 4-4 4 4"/><path d="M5 18h14"/></svg>
+          Upload Document
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== Loading ===== -->
+  <div style="display: flex; flex-direction: column; gap: 14px;">
+    <span class="cap">Loading &amp; processing</span>
+    <div class="phone">
+      <div class="hd"><span class="hdt">Nearby shops</span></div>
+
+      <div style="padding: 18px 20px; display: flex; flex-direction: column; gap: 12px;">
+        <div class="card" style="padding: 16px; display: flex; gap: 14px;">
+          <div class="sk" style="width: 60px; height: 60px; border-radius: 14px; flex-shrink: 0;"></div>
+          <div style="flex-grow: 1; display: flex; flex-direction: column; gap: 9px; padding-top: 3px;">
+            <div class="sk" style="width: 60%; height: 15px;"></div>
+            <div class="sk" style="width: 85%; height: 12px;"></div>
+            <div class="sk" style="width: 45%; height: 12px;"></div>
+          </div>
+        </div>
+        <div class="card" style="padding: 16px; display: flex; gap: 14px;">
+          <div class="sk" style="width: 60px; height: 60px; border-radius: 14px; flex-shrink: 0;"></div>
+          <div style="flex-grow: 1; display: flex; flex-direction: column; gap: 9px; padding-top: 3px;">
+            <div class="sk" style="width: 70%; height: 15px;"></div>
+            <div class="sk" style="width: 55%; height: 12px;"></div>
+            <div class="sk" style="width: 40%; height: 12px;"></div>
+          </div>
+        </div>
+        <div class="card" style="padding: 16px; display: flex; gap: 14px;">
+          <div class="sk" style="width: 60px; height: 60px; border-radius: 14px; flex-shrink: 0;"></div>
+          <div style="flex-grow: 1; display: flex; flex-direction: column; gap: 9px; padding-top: 3px;">
+            <div class="sk" style="width: 50%; height: 15px;"></div>
+            <div class="sk" style="width: 78%; height: 12px;"></div>
+            <div class="sk" style="width: 38%; height: 12px;"></div>
+          </div>
+        </div>
+      </div>
+
+      <div style="flex-grow: 1;"></div>
+
+      <!-- Document processing sheet -->
+      <div style="margin: 0 14px 20px; background: #fff; border: 1px solid #D8E7E8; border-radius: 20px; padding: 26px 24px; display: flex; flex-direction: column; align-items: center; gap: 16px; box-shadow: 0 -4px 30px -18px rgba(16,42,46,.4);">
+        <div class="spinner"></div>
+        <div style="display: flex; flex-direction: column; align-items: center; gap: 6px;">
+          <span style="font-family: 'Plus Jakarta Sans'; font-size: 16.5px; font-weight: 700;">Analysing your document...</span>
+          <span style="font-size: 13.5px; color: #52666A;">Detecting pages automatically</span>
+        </div>
+        <div style="width: 100%; height: 6px; border-radius: 3px; background: #EFF5F5; overflow: hidden;">
+          <div style="width: 62%; height: 100%; border-radius: 3px; background: #087F8C;"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== Error ===== -->
+  <div style="display: flex; flex-direction: column; gap: 14px;">
+    <span class="cap">Error states</span>
+    <div class="phone">
+      <div class="hd">
+        <div style="width: 40px; height: 40px; margin-left: -8px; display: flex; align-items: center; justify-content: center;">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#102A2E" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><path d="m15 6-6 6 6 6"/></svg>
+        </div>
+        <span class="hdt">Upload Document</span>
+      </div>
+
+      <div style="padding: 20px; display: flex; flex-direction: column; gap: 14px;">
+
+        <!-- Inline error -->
+        <div style="border: 1px solid #EFC9C7; background: #FBEAEA; border-radius: 16px; padding: 16px; display: flex; gap: 12px;">
+          <div style="width: 36px; height: 36px; border-radius: 11px; background: #fff; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#D9534F" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 8v5"/><path d="M12 16.4h.01"/></svg>
+          </div>
+          <div style="flex-grow: 1; display: flex; flex-direction: column; gap: 5px;">
+            <span style="font-family: 'Plus Jakarta Sans'; font-size: 14.5px; font-weight: 700; color: #B23F3B;">Your document couldn't be uploaded</span>
+            <p style="font-size: 13px; line-height: 20px; color: #8A4A47;">The file may be password-protected. Try removing the password, or pick another file.</p>
+            <span style="font-size: 13px; font-weight: 600; color: #B23F3B; margin-top: 2px;">Try again</span>
+          </div>
+        </div>
+
+        <!-- Warning -->
+        <div style="border: 1px solid #F0DFB6; background: #FFF4DB; border-radius: 16px; padding: 16px; display: flex; gap: 12px;">
+          <div style="width: 36px; height: 36px; border-radius: 11px; background: #fff; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#8A6410" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><path d="M10.3 4.3 2.8 17a2 2 0 0 0 1.7 3h15a2 2 0 0 0 1.7-3L13.7 4.3a2 2 0 0 0-3.4 0z"/><path d="M12 9.5v4"/><path d="M12 17h.01"/></svg>
+          </div>
+          <div style="flex-grow: 1; display: flex; flex-direction: column; gap: 5px;">
+            <span style="font-family: 'Plus Jakarta Sans'; font-size: 14.5px; font-weight: 700; color: #7A5A0E;">CopyHub is currently unavailable</span>
+            <p style="font-size: 13px; line-height: 20px; color: #7A5A0E;">They've stopped taking orders for today. Three other shops nearby can print this.</p>
+            <span style="font-size: 13px; font-weight: 600; color: #7A5A0E; margin-top: 2px;">See other shops</span>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Full-screen error -->
+      <div style="flex-grow: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 0 32px; gap: 20px; border-top: 1px solid #D8E7E8; margin-top: 6px;">
+        <div style="width: 72px; height: 72px; border-radius: 999px; background: #F0F4F4; display: flex; align-items: center; justify-content: center;">
+          <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#829497" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3 21 21"/><path d="M5.7 5.7A9 9 0 0 0 12 21a9 9 0 0 0 6.3-15.3"/></svg>
+        </div>
+        <div style="display: flex; flex-direction: column; align-items: center; gap: 8px;">
+          <h2 style="font-size: 20px; font-weight: 800; text-align: center;">Something went wrong</h2>
+          <p style="font-size: 14px; line-height: 22px; color: #52666A; text-align: center;">We couldn't reach Printlly just now. Check your connection and give it another go.</p>
+        </div>
+        <div style="display: inline-flex; align-items: center; justify-content: center; height: 50px; padding: 0 26px; border-radius: 14px; background: #fff; border: 1.5px solid #087F8C; color: #087F8C; font-family: 'Plus Jakarta Sans'; font-weight: 700; font-size: 15px;">Retry</div>
+      </div>
+
+      <!-- Toast -->
+      <div style="margin: 0 16px 20px; padding: 15px 18px; background: #102A2E; border-radius: 16px; display: flex; align-items: center; gap: 12px;">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#0EA5A8" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink: 0;"><path d="M20 6 9 17l-5-5"/></svg>
+        <span style="flex-grow: 1; font-size: 14px; color: #fff;">Shop saved to your list</span>
+        <span style="font-size: 13px; font-weight: 600; color: #0EA5A8;">Undo</span>
+      </div>
+
+    </div>
+  </div>
+
+</div>
+</x-dc>
+</body>
+</html>

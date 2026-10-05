@@ -1,0 +1,102 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;600;700;800&family=Inter:wght@400;500;600&display=swap">
+  <style>
+    * { box-sizing: border-box; }
+    body { margin: 0; background: #FAFCFC; color: #102A2E; font-family: Inter, system-ui, sans-serif; -webkit-font-smoothing: antialiased; }
+    h1, h2, h3 { margin: 0; font-family: 'Plus Jakarta Sans', Inter, system-ui, sans-serif; letter-spacing: -0.03em; }
+    p { margin: 0; text-wrap: pretty; }
+    a { color: #087F8C; text-decoration: none; }
+    a:hover { color: #066A73; }
+  </style>
+</helmet>
+
+<div style="width: 390px; height: 844px; background: #FAFCFC; display: flex; flex-direction: column;">
+
+  <!-- Header -->
+  <div style="height: 62px; display: flex; align-items: center; gap: 14px; padding: 0 20px; background: #fff; border-bottom: 1px solid #D8E7E8;">
+    <div style="width: 40px; height: 40px; margin-left: -8px; display: flex; align-items: center; justify-content: center;">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#102A2E" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><path d="m15 6-6 6 6 6"/></svg>
+    </div>
+    <span style="font-family: 'Plus Jakarta Sans'; font-size: 18px; font-weight: 700;">Upload Document</span>
+  </div>
+
+  <div style="flex-grow: 1; padding: 24px 20px; display: flex; flex-direction: column; gap: 20px;">
+
+    <!-- Step indicator -->
+    <div style="display: flex; align-items: center; gap: 8px;">
+      <div style="flex-grow: 1; height: 4px; border-radius: 2px; background: #087F8C;"></div>
+      <div style="flex-grow: 1; height: 4px; border-radius: 2px; background: #D8E7E8;"></div>
+      <div style="flex-grow: 1; height: 4px; border-radius: 2px; background: #D8E7E8;"></div>
+      <div style="flex-grow: 1; height: 4px; border-radius: 2px; background: #D8E7E8;"></div>
+      <span style="font-size: 12px; font-weight: 600; color: #829497; margin-left: 6px;">1 of 4</span>
+    </div>
+
+    <!-- Dropzone -->
+    <div style="border: 1.5px dashed #A9D2D6; border-radius: 20px; background: #F7FAFA; padding: 34px 24px; display: flex; flex-direction: column; align-items: center; gap: 12px; text-align: center;">
+      <div style="width: 60px; height: 60px; border-radius: 18px; background: #E8F7F7; display: flex; align-items: center; justify-content: center;">
+        <svg width="27" height="27" viewBox="0 0 24 24" fill="none" stroke="#087F8C" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M12 16V6"/><path d="m8 10 4-4 4 4"/><path d="M5 18h14"/></svg>
+      </div>
+      <div style="display: flex; flex-direction: column; gap: 5px;">
+        <span style="font-family: 'Plus Jakarta Sans'; font-size: 17px; font-weight: 700;">Upload your document</span>
+        <span style="font-size: 13.5px; color: #829497;">PDF, DOC, JPG, PNG · up to 25 MB</span>
+      </div>
+      <div style="display: inline-flex; align-items: center; justify-content: center; height: 46px; padding: 0 24px; border-radius: 13px; background: #fff; border: 1.5px solid #087F8C; color: #087F8C; font-family: 'Plus Jakarta Sans'; font-size: 14.5px; font-weight: 700; margin-top: 4px;">Choose File</div>
+    </div>
+
+    <!-- Uploaded file -->
+    <div style="display: flex; flex-direction: column; gap: 12px;">
+      <span style="font-size: 13px; font-weight: 600; color: #829497;">1 document added</span>
+
+      <div style="background: #fff; border: 1px solid #D8E7E8; border-radius: 18px; padding: 16px; display: flex; align-items: center; gap: 14px;">
+        <div style="width: 46px; height: 56px; border-radius: 9px; background: #E8F7F7; border: 1px solid #C4E0E2; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+          <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="#087F8C" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3v5h5"/><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/></svg>
+        </div>
+        <div style="flex-grow: 1; display: flex; flex-direction: column; gap: 7px;">
+          <span style="font-family: 'Plus Jakarta Sans'; font-size: 16px; font-weight: 700;">Assignment.pdf</span>
+          <div style="display: flex; align-items: center; gap: 8px;">
+            <span style="font-family: 'Plus Jakarta Sans'; font-size: 14px; font-weight: 700; color: #087F8C;">12 Pages</span>
+            <span style="display: inline-flex; align-items: center; gap: 4px; padding: 4px 9px; border-radius: 999px; background: #DFF5EF; color: #0E7A67; font-size: 11px; font-weight: 600;">
+              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#0E7A67" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>
+              Detected
+            </span>
+          </div>
+        </div>
+        <div style="width: 40px; height: 40px; border-radius: 999px; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+          <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="#829497" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 7h14"/><path d="M10 11v6M14 11v6"/><path d="M7 7l1 12.5A1.5 1.5 0 0 0 9.5 21h5a1.5 1.5 0 0 0 1.5-1.5L17 7"/><path d="M9.5 7V4.5h5V7"/></svg>
+        </div>
+      </div>
+
+      <div style="display: flex; align-items: flex-start; gap: 10px; padding: 14px 16px; background: #E8F7F7; border-radius: 14px;">
+        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#087F8C" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink: 0; margin-top: 1px;"><circle cx="12" cy="12" r="9"/><path d="M12 11v5"/><path d="M12 7.6h.01"/></svg>
+        <p style="font-size: 12.5px; line-height: 19px; color: #066A73;">The page count is read from your file and can't be edited — it's what your price is calculated from.</p>
+      </div>
+    </div>
+
+    <div style="display: flex; align-items: center; justify-content: center; gap: 9px; height: 50px; border-radius: 14px; border: 1.5px dashed #C4E0E2; color: #087F8C; font-family: 'Plus Jakarta Sans'; font-size: 14.5px; font-weight: 700;">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#087F8C" stroke-width="2.2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
+      Add another document
+    </div>
+
+  </div>
+
+  <!-- Sticky footer -->
+  <div style="padding: 16px 20px 28px; background: #fff; border-top: 1px solid #D8E7E8; display: flex; flex-direction: column; gap: 12px;">
+    <div style="display: flex; align-items: center; justify-content: space-between;">
+      <span style="font-size: 13.5px; color: #52666A;">1 document · 12 pages total</span>
+      <span style="font-size: 13.5px; color: #829497;">Price set next</span>
+    </div>
+    <div style="display: flex; align-items: center; justify-content: center; height: 54px; border-radius: 14px; background: #087F8C; color: #fff; font-family: 'Plus Jakarta Sans'; font-weight: 700; font-size: 15.5px;">Continue</div>
+  </div>
+
+</div>
+</x-dc>
+</body>
+</html>

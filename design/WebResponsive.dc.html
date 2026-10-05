@@ -1,0 +1,266 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;600;700;800&family=Inter:wght@400;500;600&display=swap">
+  <style>
+    * { box-sizing: border-box; }
+    body { margin: 0; background: #FAFCFC; color: #102A2E; font-family: Inter, system-ui, sans-serif; -webkit-font-smoothing: antialiased; }
+    h1, h2, h3 { margin: 0; font-family: 'Plus Jakarta Sans', Inter, system-ui, sans-serif; letter-spacing: -0.03em; }
+    p { margin: 0; text-wrap: pretty; }
+    a { color: #087F8C; text-decoration: none; }
+    a:hover { color: #066A73; }
+    .card { background: #FFFFFF; border: 1px solid #D8E7E8; border-radius: 18px; box-shadow: 0 1px 2px rgba(16,42,46,.04), 0 10px 26px -18px rgba(16,42,46,.16); }
+    .eyebrow { font-family: 'Plus Jakarta Sans', sans-serif; font-size: 10.5px; font-weight: 700; letter-spacing: .16em; text-transform: uppercase; color: #087F8C; }
+    .sec { padding-left: 20px; padding-right: 20px; }
+  </style>
+</helmet>
+
+<div style="width: 390px; background: #FAFCFC; display: flex; flex-direction: column;">
+
+  <!-- Nav -->
+  <div style="height: 62px; background: #fff; border-bottom: 1px solid #D8E7E8; display: flex; align-items: center; justify-content: space-between; padding: 0 20px;">
+    <div style="display: flex; align-items: center; gap: 9px;">
+      <svg width="30" height="30" viewBox="0 0 44 44" fill="none">
+        <rect width="44" height="44" rx="13" fill="#087F8C"/>
+        <path d="M15 10h8.5L29 15.5V26H15z" fill="#FFFFFF"/>
+        <path d="M23.5 10v5.5H29z" fill="#087F8C" opacity=".38"/>
+        <rect x="10" y="26" width="24" height="9" rx="3.5" fill="#FFFFFF" opacity=".62"/>
+        <rect x="14" y="29.5" width="9" height="2.2" rx="1.1" fill="#087F8C"/>
+      </svg>
+      <span style="font-family: 'Plus Jakarta Sans'; font-size: 19px; font-weight: 800; letter-spacing: -0.03em;">Printlly</span>
+    </div>
+    <div style="display: flex; align-items: center; gap: 10px;">
+      <span style="font-size: 14px; font-weight: 600; color: #087F8C;">Login</span>
+      <div style="width: 44px; height: 44px; border-radius: 12px; border: 1px solid #D8E7E8; display: flex; align-items: center; justify-content: center;">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#102A2E" stroke-width="2" stroke-linecap="round"><path d="M4 7h16M4 12h16M4 17h16"/></svg>
+      </div>
+    </div>
+  </div>
+
+  <!-- Hero -->
+  <div class="sec" style="padding-top: 36px; padding-bottom: 36px; display: flex; flex-direction: column; gap: 20px;">
+    <div style="display: inline-flex; align-self: flex-start; align-items: center; gap: 7px; padding: 7px 13px; border-radius: 999px; background: #E8F7F7;">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#087F8C" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2 4 14h7l-1 8 9-12h-7z"/></svg>
+      <span style="font-size: 11.5px; font-weight: 600; color: #066A73;">40+ shops nearby</span>
+    </div>
+
+    <h1 style="font-size: 38px; line-height: 43px; font-weight: 800;">Print without the wait. <span style="color: #087F8C;">Print on your time.</span></h1>
+
+    <p style="font-size: 15.5px; line-height: 25px; color: #52666A;">Upload your documents, choose your preferences, pay online, and pick them up from a nearby print shop when they're ready.</p>
+
+    <div style="display: flex; flex-direction: column; gap: 10px; margin-top: 2px;">
+      <div style="display: flex; align-items: center; justify-content: center; height: 52px; border-radius: 14px; background: #087F8C; color: #fff; font-family: 'Plus Jakarta Sans'; font-weight: 700; font-size: 15px;">Upload &amp; Print</div>
+      <div style="display: flex; align-items: center; justify-content: center; height: 52px; border-radius: 14px; background: #fff; border: 1.5px solid #D8E7E8; font-family: 'Plus Jakarta Sans'; font-weight: 700; font-size: 15px;">Find Print Shops</div>
+    </div>
+
+    <!-- Hero visual, stacked -->
+    <div style="height: 260px; border-radius: 22px; background: linear-gradient(158deg, #E8F7F7 0%, #F2FAFA 60%, #FFFFFF 100%); border: 1px solid #D8E7E8; position: relative; display: flex; align-items: center; justify-content: center; margin-top: 8px;">
+      <svg width="190" height="190" viewBox="0 0 330 330" fill="none">
+        <ellipse cx="165" cy="272" rx="120" ry="15" fill="#087F8C" opacity=".07"/>
+        <rect x="104" y="52" width="124" height="152" rx="9" fill="#fff" stroke="#D8E7E8" stroke-width="2"/>
+        <rect x="120" y="74" width="76" height="7" rx="3.5" fill="#087F8C" opacity=".82"/>
+        <rect x="120" y="92" width="92" height="6" rx="3" fill="#D8E7E8"/>
+        <rect x="120" y="107" width="92" height="6" rx="3" fill="#D8E7E8"/>
+        <rect x="120" y="122" width="60" height="6" rx="3" fill="#D8E7E8"/>
+        <rect x="60" y="182" width="210" height="86" rx="22" fill="#087F8C"/>
+        <rect x="60" y="182" width="210" height="30" rx="15" fill="#066A73"/>
+        <rect x="104" y="192" width="122" height="8" rx="4" fill="#0EA5A8" opacity=".55"/>
+        <circle cx="243" cy="234" r="9" fill="#0EA5A8"/>
+      </svg>
+      <div style="position: absolute; top: 20px; left: 16px; display: flex; align-items: center; gap: 8px; padding: 9px 13px; background: #fff; border: 1px solid #D8E7E8; border-radius: 12px; box-shadow: 0 10px 24px -14px rgba(16,42,46,.3);">
+        <div style="width: 20px; height: 20px; border-radius: 6px; background: #DFF5EF; display: flex; align-items: center; justify-content: center;">
+          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#159A8A" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>
+        </div>
+        <span style="font-size: 11.5px; font-weight: 600;">12 Pages Detected</span>
+      </div>
+      <div style="position: absolute; bottom: 18px; right: 16px; display: flex; flex-direction: column; gap: 2px; padding: 10px 15px; background: #102A2E; border-radius: 12px;">
+        <span style="font-size: 9px; font-weight: 600; letter-spacing: .12em; text-transform: uppercase; color: rgba(255,255,255,.6);">Pickup OTP</span>
+        <span style="font-family: 'Plus Jakarta Sans'; font-size: 19px; font-weight: 800; letter-spacing: .12em; color: #fff;">4827</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Value props stacked -->
+  <div class="sec" style="padding-top: 40px; padding-bottom: 40px; background: #F7FAFA; border-top: 1px solid #D8E7E8; border-bottom: 1px solid #D8E7E8; display: flex; flex-direction: column; gap: 24px;">
+    <div style="display: flex; flex-direction: column; gap: 10px;">
+      <span class="eyebrow">Why Printlly</span>
+      <h2 style="font-size: 27px; line-height: 33px; font-weight: 800;">Everything the shop counter does — before you leave home.</h2>
+    </div>
+    <div style="display: flex; flex-direction: column; gap: 12px;">
+
+      <div class="card" style="padding: 22px; display: flex; gap: 15px;">
+        <div style="width: 44px; height: 44px; border-radius: 999px; background: #E8F7F7; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#087F8C" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3v5h5"/><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M12 18v-6"/><path d="m9.5 14.5 2.5-2.5 2.5 2.5"/></svg>
+        </div>
+        <div style="display: flex; flex-direction: column; gap: 6px;">
+          <h3 style="font-size: 16.5px; font-weight: 700;">Upload documents</h3>
+          <p style="font-size: 13.5px; line-height: 21px; color: #52666A;">PDF, DOC, JPG, PNG — straight from your phone.</p>
+        </div>
+      </div>
+
+      <div class="card" style="padding: 22px; display: flex; gap: 15px;">
+        <div style="width: 44px; height: 44px; border-radius: 999px; background: #E8F7F7; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#087F8C" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M9 3H5a2 2 0 0 0-2 2v4"/><path d="M15 3h4a2 2 0 0 1 2 2v4"/><path d="M9 21H5a2 2 0 0 1-2-2v-4"/><path d="M15 21h4a2 2 0 0 0 2-2v-4"/><path d="M8 12h8"/></svg>
+        </div>
+        <div style="display: flex; flex-direction: column; gap: 6px;">
+          <h3 style="font-size: 16.5px; font-weight: 700;">Automatic page count</h3>
+          <p style="font-size: 13.5px; line-height: 21px; color: #52666A;">Read from the file itself, so it can't be entered wrong.</p>
+        </div>
+      </div>
+
+      <div class="card" style="padding: 22px; display: flex; gap: 15px;">
+        <div style="width: 44px; height: 44px; border-radius: 999px; background: #E8F7F7; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#087F8C" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="10" width="16" height="11" rx="2.5"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg>
+        </div>
+        <div style="display: flex; flex-direction: column; gap: 6px;">
+          <h3 style="font-size: 16.5px; font-weight: 700;">Secure &amp; private</h3>
+          <p style="font-size: 13.5px; line-height: 21px; color: #52666A;">Files are deleted automatically after the print job.</p>
+        </div>
+      </div>
+
+      <div class="card" style="padding: 22px; display: flex; gap: 15px;">
+        <div style="width: 44px; height: 44px; border-radius: 999px; background: #E8F7F7; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#087F8C" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s7-6.4 7-11.4A7 7 0 0 0 5 9.6C5 14.6 12 21 12 21z"/><circle cx="12" cy="9.5" r="2.6"/></svg>
+        </div>
+        <div style="display: flex; flex-direction: column; gap: 6px;">
+          <h3 style="font-size: 16.5px; font-weight: 700;">Nearby print shops</h3>
+          <p style="font-size: 13.5px; line-height: 21px; color: #52666A;">Compare price, rating, distance and prep time.</p>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- How it works -->
+  <div class="sec" style="padding-top: 40px; padding-bottom: 40px; display: flex; flex-direction: column; gap: 24px;">
+    <div style="display: flex; flex-direction: column; gap: 10px;">
+      <span class="eyebrow">How it works</span>
+      <h2 style="font-size: 27px; line-height: 33px; font-weight: 800;">Four steps. About ninety seconds.</h2>
+    </div>
+    <div style="display: flex; flex-direction: column; gap: 0;">
+
+      <div style="display: flex; gap: 16px;">
+        <div style="display: flex; flex-direction: column; align-items: center; width: 44px;">
+          <div style="width: 44px; height: 44px; border-radius: 999px; background: #087F8C; color: #fff; display: flex; align-items: center; justify-content: center; font-family: 'Plus Jakarta Sans'; font-size: 14px; font-weight: 800; flex-shrink: 0;">01</div>
+          <div style="width: 2px; flex-grow: 1; background: repeating-linear-gradient(#C4E0E2 0 6px, transparent 6px 12px); min-height: 26px;"></div>
+        </div>
+        <div style="display: flex; flex-direction: column; gap: 5px; padding-bottom: 22px;">
+          <h3 style="font-size: 17px; font-weight: 700;">Upload</h3>
+          <p style="font-size: 13.5px; line-height: 21px; color: #52666A;">Add your document. Page count is detected automatically.</p>
+        </div>
+      </div>
+
+      <div style="display: flex; gap: 16px;">
+        <div style="display: flex; flex-direction: column; align-items: center; width: 44px;">
+          <div style="width: 44px; height: 44px; border-radius: 999px; background: #087F8C; color: #fff; display: flex; align-items: center; justify-content: center; font-family: 'Plus Jakarta Sans'; font-size: 14px; font-weight: 800; flex-shrink: 0;">02</div>
+          <div style="width: 2px; flex-grow: 1; background: repeating-linear-gradient(#C4E0E2 0 6px, transparent 6px 12px); min-height: 26px;"></div>
+        </div>
+        <div style="display: flex; flex-direction: column; gap: 5px; padding-bottom: 22px;">
+          <h3 style="font-size: 17px; font-weight: 700;">Customise</h3>
+          <p style="font-size: 13.5px; line-height: 21px; color: #52666A;">B&amp;W or colour, copies, paper size, sides, binding.</p>
+        </div>
+      </div>
+
+      <div style="display: flex; gap: 16px;">
+        <div style="display: flex; flex-direction: column; align-items: center; width: 44px;">
+          <div style="width: 44px; height: 44px; border-radius: 999px; background: #087F8C; color: #fff; display: flex; align-items: center; justify-content: center; font-family: 'Plus Jakarta Sans'; font-size: 14px; font-weight: 800; flex-shrink: 0;">03</div>
+          <div style="width: 2px; flex-grow: 1; background: repeating-linear-gradient(#C4E0E2 0 6px, transparent 6px 12px); min-height: 26px;"></div>
+        </div>
+        <div style="display: flex; flex-direction: column; gap: 5px; padding-bottom: 22px;">
+          <h3 style="font-size: 17px; font-weight: 700;">Pay</h3>
+          <p style="font-size: 13.5px; line-height: 21px; color: #52666A;">Pick a shop and pay securely online.</p>
+        </div>
+      </div>
+
+      <div style="display: flex; gap: 16px;">
+        <div style="width: 44px; height: 44px; border-radius: 999px; background: #159A8A; color: #fff; display: flex; align-items: center; justify-content: center; font-family: 'Plus Jakarta Sans'; font-size: 14px; font-weight: 800; flex-shrink: 0;">04</div>
+        <div style="display: flex; flex-direction: column; gap: 5px;">
+          <h3 style="font-size: 17px; font-weight: 700;">Pick up</h3>
+          <p style="font-size: 13.5px; line-height: 21px; color: #52666A;">Get notified, show your OTP, collect and go.</p>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- One shop card -->
+  <div class="sec" style="padding-top: 36px; padding-bottom: 36px; background: #F7FAFA; border-top: 1px solid #D8E7E8; border-bottom: 1px solid #D8E7E8; display: flex; flex-direction: column; gap: 18px;">
+    <div style="display: flex; align-items: baseline; justify-content: space-between;">
+      <h2 style="font-size: 22px; font-weight: 800;">Shops near you</h2>
+      <span style="font-size: 13.5px; font-weight: 600; color: #087F8C;">See all</span>
+    </div>
+    <div class="card" style="overflow: hidden;">
+      <div style="height: 116px; background: linear-gradient(140deg, #DCF0F1, #C7E6E8); position: relative;">
+        <span style="position: absolute; top: 12px; left: 12px; display: inline-flex; align-items: center; gap: 6px; padding: 6px 12px; border-radius: 999px; background: rgba(255,255,255,.95); font-size: 11.5px; font-weight: 600; color: #0E7A67;">
+          <span style="width: 6px; height: 6px; border-radius: 999px; background: #159A8A;"></span>Open now
+        </span>
+        <span style="position: absolute; top: 12px; right: 12px; padding: 6px 12px; border-radius: 999px; background: #087F8C; color: #fff; font-size: 11.5px; font-weight: 700;">Best Match</span>
+      </div>
+      <div style="padding: 18px; display: flex; flex-direction: column; gap: 12px;">
+        <div style="display: flex; align-items: baseline; justify-content: space-between;">
+          <h3 style="font-size: 19px; font-weight: 700;">CopyHub</h3>
+          <div style="display: flex; align-items: center; gap: 4px;">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="#087F8C"><path d="m12 3 2.6 5.6 6.1.8-4.5 4.2 1.2 6-5.4-3-5.4 3 1.2-6L3.3 9.4l6.1-.8z"/></svg>
+            <span style="font-size: 13.5px; font-weight: 600;">4.8</span>
+          </div>
+        </div>
+        <span style="font-size: 13px; color: #52666A;">1.2 km · Sector 14 Market · Ready in ~10 min</span>
+        <div style="display: flex; gap: 20px; padding: 12px 14px; background: #F7FAFA; border-radius: 12px;">
+          <div style="display: flex; flex-direction: column; gap: 2px;">
+            <span style="font-size: 11.5px; color: #829497;">B&amp;W from</span>
+            <span style="font-family: 'Plus Jakarta Sans'; font-size: 15px; font-weight: 700;">₹1/page</span>
+          </div>
+          <div style="width: 1px; background: #D8E7E8;"></div>
+          <div style="display: flex; flex-direction: column; gap: 2px;">
+            <span style="font-size: 11.5px; color: #829497;">Colour from</span>
+            <span style="font-family: 'Plus Jakarta Sans'; font-size: 15px; font-weight: 700;">₹5/page</span>
+          </div>
+        </div>
+        <div style="display: flex; align-items: center; justify-content: center; height: 46px; border-radius: 12px; background: #087F8C; color: #fff; font-family: 'Plus Jakarta Sans'; font-size: 14.5px; font-weight: 700;">View Shop</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- CTA -->
+  <div class="sec" style="padding-top: 36px; padding-bottom: 36px;">
+    <div style="border-radius: 22px; background: linear-gradient(148deg, #087F8C 0%, #066A73 100%); padding: 34px 26px; display: flex; flex-direction: column; gap: 20px;">
+      <h2 style="font-size: 27px; line-height: 33px; font-weight: 800; color: #fff;">Your next print is just a few taps away.</h2>
+      <p style="font-size: 14.5px; line-height: 23px; color: rgba(255,255,255,.78);">Upload your document today and skip the printing queue.</p>
+      <div style="display: flex; flex-direction: column; gap: 10px;">
+        <div style="display: flex; align-items: center; justify-content: center; height: 50px; border-radius: 14px; background: #fff; color: #066A73; font-family: 'Plus Jakarta Sans'; font-weight: 700; font-size: 15px;">Upload Document</div>
+        <div style="display: flex; align-items: center; justify-content: center; height: 50px; border-radius: 14px; border: 1.5px solid rgba(255,255,255,.4); color: #fff; font-family: 'Plus Jakarta Sans'; font-weight: 700; font-size: 15px;">Find a Shop</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Footer -->
+  <div class="sec" style="padding-top: 28px; padding-bottom: 28px; border-top: 1px solid #D8E7E8; display: flex; flex-direction: column; gap: 16px;">
+    <div style="display: flex; align-items: center; gap: 9px;">
+      <svg width="28" height="28" viewBox="0 0 44 44" fill="none">
+        <rect width="44" height="44" rx="13" fill="#087F8C"/>
+        <path d="M15 10h8.5L29 15.5V26H15z" fill="#FFFFFF"/>
+        <rect x="10" y="26" width="24" height="9" rx="3.5" fill="#FFFFFF" opacity=".62"/>
+        <rect x="14" y="29.5" width="9" height="2.2" rx="1.1" fill="#087F8C"/>
+      </svg>
+      <span style="font-family: 'Plus Jakarta Sans'; font-size: 17px; font-weight: 800; letter-spacing: -0.03em;">Printlly</span>
+    </div>
+    <div style="display: flex; gap: 20px; flex-wrap: wrap;">
+      <span style="font-size: 13px; color: #52666A;">How it works</span>
+      <span style="font-size: 13px; color: #52666A;">Find shops</span>
+      <span style="font-size: 13px; color: #52666A;">Pricing</span>
+      <span style="font-size: 13px; color: #52666A;">List your shop</span>
+      <span style="font-size: 13px; color: #52666A;">Privacy</span>
+    </div>
+    <p style="font-size: 12.5px; color: #829497;">Print Smarter. Skip the Wait.</p>
+  </div>
+
+</div>
+</x-dc>
+</body>
+</html>

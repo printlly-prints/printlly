@@ -1,0 +1,471 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;600;700;800&family=Inter:wght@400;500;600&display=swap">
+  <style>
+    * { box-sizing: border-box; }
+    body { margin: 0; background: #FAFCFC; color: #102A2E; font-family: Inter, system-ui, sans-serif; -webkit-font-smoothing: antialiased; }
+    h1, h2, h3, h4 { margin: 0; font-family: 'Plus Jakarta Sans', Inter, system-ui, sans-serif; letter-spacing: -0.022em; }
+    p { margin: 0; }
+    a { color: #087F8C; text-decoration: none; }
+    a:hover { color: #066A73; }
+    .eyebrow { font-family: 'Plus Jakarta Sans', sans-serif; font-size: 11px; font-weight: 700; letter-spacing: .16em; text-transform: uppercase; color: #829497; }
+    .card { background: #FFFFFF; border: 1px solid #D8E7E8; border-radius: 18px; box-shadow: 0 1px 2px rgba(16,42,46,.04), 0 10px 28px -16px rgba(16,42,46,.14); }
+    .rule { height: 1px; background: #D8E7E8; }
+  </style>
+</helmet>
+
+<div style="width: 1280px; padding: 56px 56px 72px; display: flex; flex-direction: column; gap: 52px; background: #FAFCFC;">
+
+  <!-- ===== Header ===== -->
+  <div style="display: flex; align-items: flex-end; justify-content: space-between;">
+    <div style="display: flex; flex-direction: column; gap: 14px;">
+      <div style="display: flex; align-items: center; gap: 12px;">
+        <svg width="44" height="44" viewBox="0 0 44 44" fill="none">
+          <rect width="44" height="44" rx="13" fill="#087F8C"/>
+          <path d="M15 10h8.5L29 15.5V26H15z" fill="#FFFFFF"/>
+          <path d="M23.5 10v5.5H29z" fill="#087F8C" opacity=".38"/>
+          <rect x="10" y="26" width="24" height="9" rx="3.5" fill="#FFFFFF" opacity=".62"/>
+          <rect x="14" y="29.5" width="9" height="2.2" rx="1.1" fill="#087F8C"/>
+        </svg>
+        <span style="font-family: 'Plus Jakarta Sans'; font-size: 30px; font-weight: 800; letter-spacing: -0.03em;">Printlly</span>
+      </div>
+      <p style="font-size: 15px; color: #52666A;">Print Smarter. Skip the Wait. &nbsp;·&nbsp; Design system for web, customer app &amp; vendor dashboard.</p>
+    </div>
+    <div style="display: flex; flex-direction: column; align-items: flex-end; gap: 6px;">
+      <span class="eyebrow">Foundations</span>
+      <span style="font-family: 'Plus Jakarta Sans'; font-size: 14px; font-weight: 600; color: #52666A;">v1.0 · Elegant Teal</span>
+    </div>
+  </div>
+
+  <div class="rule"></div>
+
+  <!-- ===== Logo ===== -->
+  <div style="display: flex; flex-direction: column; gap: 20px;">
+    <span class="eyebrow">Logo</span>
+    <div style="display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 20px;">
+
+      <div class="card" style="padding: 32px; display: flex; flex-direction: column; gap: 22px; align-items: center; justify-content: center; min-height: 190px;">
+        <div style="display: flex; align-items: center; gap: 11px;">
+          <svg width="38" height="38" viewBox="0 0 44 44" fill="none">
+            <rect width="44" height="44" rx="13" fill="#087F8C"/>
+            <path d="M15 10h8.5L29 15.5V26H15z" fill="#FFFFFF"/>
+            <path d="M23.5 10v5.5H29z" fill="#087F8C" opacity=".38"/>
+            <rect x="10" y="26" width="24" height="9" rx="3.5" fill="#FFFFFF" opacity=".62"/>
+            <rect x="14" y="29.5" width="9" height="2.2" rx="1.1" fill="#087F8C"/>
+          </svg>
+          <span style="font-family: 'Plus Jakarta Sans'; font-size: 26px; font-weight: 800; letter-spacing: -0.03em;">Printlly</span>
+        </div>
+        <span style="font-size: 12px; color: #829497;">Primary lockup</span>
+      </div>
+
+      <div class="card" style="padding: 32px; display: flex; flex-direction: column; gap: 22px; align-items: center; justify-content: center; min-height: 190px;">
+        <svg width="64" height="64" viewBox="0 0 44 44" fill="none">
+          <rect width="44" height="44" rx="13" fill="#087F8C"/>
+          <path d="M15 10h8.5L29 15.5V26H15z" fill="#FFFFFF"/>
+          <path d="M23.5 10v5.5H29z" fill="#087F8C" opacity=".38"/>
+          <rect x="10" y="26" width="24" height="9" rx="3.5" fill="#FFFFFF" opacity=".62"/>
+          <rect x="14" y="29.5" width="9" height="2.2" rx="1.1" fill="#087F8C"/>
+        </svg>
+        <span style="font-size: 12px; color: #829497;">Mark · app icon</span>
+      </div>
+
+      <div style="background: #087F8C; border-radius: 18px; padding: 32px; display: flex; flex-direction: column; gap: 22px; align-items: center; justify-content: center; min-height: 190px;">
+        <div style="display: flex; align-items: center; gap: 11px;">
+          <svg width="38" height="38" viewBox="0 0 44 44" fill="none">
+            <rect width="44" height="44" rx="13" fill="#FFFFFF" opacity=".16"/>
+            <path d="M15 10h8.5L29 15.5V26H15z" fill="#FFFFFF"/>
+            <path d="M23.5 10v5.5H29z" fill="#087F8C" opacity=".45"/>
+            <rect x="10" y="26" width="24" height="9" rx="3.5" fill="#FFFFFF" opacity=".62"/>
+            <rect x="14" y="29.5" width="9" height="2.2" rx="1.1" fill="#087F8C"/>
+          </svg>
+          <span style="font-family: 'Plus Jakarta Sans'; font-size: 26px; font-weight: 800; letter-spacing: -0.03em; color: #fff;">Printlly</span>
+        </div>
+        <span style="font-size: 12px; color: rgba(255,255,255,.72);">Reversed on teal</span>
+      </div>
+
+      <div class="card" style="padding: 32px; display: flex; flex-direction: column; gap: 22px; align-items: center; justify-content: center; min-height: 190px;">
+        <div style="display: flex; align-items: flex-end; gap: 16px;">
+          <svg width="32" height="32" viewBox="0 0 44 44" fill="none">
+            <rect width="44" height="44" rx="13" fill="#102A2E"/>
+            <path d="M15 10h8.5L29 15.5V26H15z" fill="#FFFFFF"/>
+            <path d="M23.5 10v5.5H29z" fill="#102A2E" opacity=".38"/>
+            <rect x="10" y="26" width="24" height="9" rx="3.5" fill="#FFFFFF" opacity=".62"/>
+            <rect x="14" y="29.5" width="9" height="2.2" rx="1.1" fill="#102A2E"/>
+          </svg>
+          <svg width="20" height="20" viewBox="0 0 44 44" fill="none">
+            <rect width="44" height="44" rx="13" fill="#102A2E"/>
+            <path d="M15 10h8.5L29 15.5V26H15z" fill="#FFFFFF"/>
+            <rect x="10" y="26" width="24" height="9" rx="3.5" fill="#FFFFFF" opacity=".62"/>
+          </svg>
+          <svg width="14" height="14" viewBox="0 0 44 44" fill="none">
+            <rect width="44" height="44" rx="13" fill="#102A2E"/>
+            <path d="M15 10h8.5L29 15.5V26H15z" fill="#FFFFFF"/>
+            <rect x="10" y="26" width="24" height="9" rx="3.5" fill="#FFFFFF" opacity=".62"/>
+          </svg>
+        </div>
+        <span style="font-size: 12px; color: #829497;">Mono · favicon 32/20/14</span>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ===== Colour ===== -->
+  <div style="display: flex; flex-direction: column; gap: 20px;">
+    <span class="eyebrow">Colour</span>
+
+    <div style="display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 16px;">
+      <div class="card" style="overflow: hidden;">
+        <div style="height: 84px; background: #087F8C;"></div>
+        <div style="padding: 14px 16px; display: flex; flex-direction: column; gap: 3px;">
+          <span style="font-family: 'Plus Jakarta Sans'; font-size: 13px; font-weight: 700;">Primary Teal</span>
+          <span style="font-size: 12px; color: #829497; font-variant-numeric: tabular-nums;">#087F8C</span>
+        </div>
+      </div>
+      <div class="card" style="overflow: hidden;">
+        <div style="height: 84px; background: #066A73;"></div>
+        <div style="padding: 14px 16px; display: flex; flex-direction: column; gap: 3px;">
+          <span style="font-family: 'Plus Jakarta Sans'; font-size: 13px; font-weight: 700;">Dark Teal</span>
+          <span style="font-size: 12px; color: #829497; font-variant-numeric: tabular-nums;">#066A73</span>
+        </div>
+      </div>
+      <div class="card" style="overflow: hidden;">
+        <div style="height: 84px; background: #0EA5A8;"></div>
+        <div style="padding: 14px 16px; display: flex; flex-direction: column; gap: 3px;">
+          <span style="font-family: 'Plus Jakarta Sans'; font-size: 13px; font-weight: 700;">Accent Teal</span>
+          <span style="font-size: 12px; color: #829497; font-variant-numeric: tabular-nums;">#0EA5A8</span>
+        </div>
+      </div>
+      <div class="card" style="overflow: hidden;">
+        <div style="height: 84px; background: #E8F7F7;"></div>
+        <div style="padding: 14px 16px; display: flex; flex-direction: column; gap: 3px;">
+          <span style="font-family: 'Plus Jakarta Sans'; font-size: 13px; font-weight: 700;">Light Teal</span>
+          <span style="font-size: 12px; color: #829497; font-variant-numeric: tabular-nums;">#E8F7F7</span>
+        </div>
+      </div>
+      <div class="card" style="overflow: hidden;">
+        <div style="height: 84px; background: #159A8A;"></div>
+        <div style="padding: 14px 16px; display: flex; flex-direction: column; gap: 3px;">
+          <span style="font-family: 'Plus Jakarta Sans'; font-size: 13px; font-weight: 700;">Success</span>
+          <span style="font-size: 12px; color: #829497; font-variant-numeric: tabular-nums;">#159A8A</span>
+        </div>
+      </div>
+      <div class="card" style="overflow: hidden;">
+        <div style="height: 84px; background: #D9534F;"></div>
+        <div style="padding: 14px 16px; display: flex; flex-direction: column; gap: 3px;">
+          <span style="font-family: 'Plus Jakarta Sans'; font-size: 13px; font-weight: 700;">Error</span>
+          <span style="font-size: 12px; color: #829497; font-variant-numeric: tabular-nums;">#D9534F</span>
+        </div>
+      </div>
+    </div>
+
+    <div style="display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 16px;">
+      <div class="card" style="overflow: hidden;">
+        <div style="height: 56px; background: #FAFCFC; border-bottom: 1px solid #D8E7E8;"></div>
+        <div style="padding: 12px 16px; display: flex; flex-direction: column; gap: 2px;">
+          <span style="font-size: 12px; font-weight: 600;">Main BG</span>
+          <span style="font-size: 11px; color: #829497; font-variant-numeric: tabular-nums;">#FAFCFC</span>
+        </div>
+      </div>
+      <div class="card" style="overflow: hidden;">
+        <div style="height: 56px; background: #F7FAFA; border-bottom: 1px solid #D8E7E8;"></div>
+        <div style="padding: 12px 16px; display: flex; flex-direction: column; gap: 2px;">
+          <span style="font-size: 12px; font-weight: 600;">Soft BG</span>
+          <span style="font-size: 11px; color: #829497; font-variant-numeric: tabular-nums;">#F7FAFA</span>
+        </div>
+      </div>
+      <div class="card" style="overflow: hidden;">
+        <div style="height: 56px; background: #D8E7E8;"></div>
+        <div style="padding: 12px 16px; display: flex; flex-direction: column; gap: 2px;">
+          <span style="font-size: 12px; font-weight: 600;">Border</span>
+          <span style="font-size: 11px; color: #829497; font-variant-numeric: tabular-nums;">#D8E7E8</span>
+        </div>
+      </div>
+      <div class="card" style="overflow: hidden;">
+        <div style="height: 56px; background: #102A2E;"></div>
+        <div style="padding: 12px 16px; display: flex; flex-direction: column; gap: 2px;">
+          <span style="font-size: 12px; font-weight: 600;">Text Primary</span>
+          <span style="font-size: 11px; color: #829497; font-variant-numeric: tabular-nums;">#102A2E</span>
+        </div>
+      </div>
+      <div class="card" style="overflow: hidden;">
+        <div style="height: 56px; background: #52666A;"></div>
+        <div style="padding: 12px 16px; display: flex; flex-direction: column; gap: 2px;">
+          <span style="font-size: 12px; font-weight: 600;">Text Secondary</span>
+          <span style="font-size: 11px; color: #829497; font-variant-numeric: tabular-nums;">#52666A</span>
+        </div>
+      </div>
+      <div class="card" style="overflow: hidden;">
+        <div style="height: 56px; background: #829497;"></div>
+        <div style="padding: 12px 16px; display: flex; flex-direction: column; gap: 2px;">
+          <span style="font-size: 12px; font-weight: 600;">Text Muted</span>
+          <span style="font-size: 11px; color: #829497; font-variant-numeric: tabular-nums;">#829497</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="card" style="padding: 22px 24px; display: flex; flex-direction: column; gap: 14px;">
+      <div style="display: flex; align-items: baseline; justify-content: space-between;">
+        <span style="font-family: 'Plus Jakarta Sans'; font-size: 14px; font-weight: 700;">Surface ratio</span>
+        <span style="font-size: 12px; color: #829497;">Teal is punctuation, not the page.</span>
+      </div>
+      <div style="display: flex; height: 26px; border-radius: 8px; overflow: hidden; border: 1px solid #D8E7E8;">
+        <div style="flex-grow: 70; background: #FFFFFF;"></div>
+        <div style="flex-grow: 20; background: #E8F7F7;"></div>
+        <div style="flex-grow: 8; background: #102A2E;"></div>
+        <div style="flex-grow: 2; background: #087F8C;"></div>
+      </div>
+      <div style="display: flex; gap: 28px;">
+        <span style="font-size: 12px; color: #52666A;">70% white / off-white</span>
+        <span style="font-size: 12px; color: #52666A;">20% light teal</span>
+        <span style="font-size: 12px; color: #52666A;">8% dark text</span>
+        <span style="font-size: 12px; color: #52666A;">2% strong teal</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== Typography ===== -->
+  <div style="display: flex; flex-direction: column; gap: 20px;">
+    <span class="eyebrow">Typography</span>
+    <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 20px;">
+
+      <div class="card" style="padding: 30px 32px; display: flex; flex-direction: column; gap: 22px;">
+        <div style="display: flex; align-items: baseline; justify-content: space-between;">
+          <span style="font-family: 'Plus Jakarta Sans'; font-size: 15px; font-weight: 700;">Plus Jakarta Sans</span>
+          <span style="font-size: 12px; color: #829497;">Headings · 600 / 700 / 800</span>
+        </div>
+        <div style="display: flex; flex-direction: column; gap: 18px;">
+          <div style="display: flex; flex-direction: column; gap: 4px;">
+            <span style="font-size: 11px; color: #829497;">Display · 44/50 · 800</span>
+            <span style="font-family: 'Plus Jakarta Sans'; font-size: 44px; line-height: 50px; font-weight: 800; letter-spacing: -0.035em;">Print without the wait.</span>
+          </div>
+          <div style="display: flex; flex-direction: column; gap: 4px;">
+            <span style="font-size: 11px; color: #829497;">H1 · 28/34 · 700</span>
+            <span style="font-family: 'Plus Jakarta Sans'; font-size: 28px; line-height: 34px; font-weight: 700; letter-spacing: -0.028em;">Ready for pickup</span>
+          </div>
+          <div style="display: flex; flex-direction: column; gap: 4px;">
+            <span style="font-size: 11px; color: #829497;">H2 · 22/28 · 700</span>
+            <span style="font-family: 'Plus Jakarta Sans'; font-size: 22px; line-height: 28px; font-weight: 700; letter-spacing: -0.024em;">CopyHub · Sector 14</span>
+          </div>
+          <div style="display: flex; flex-direction: column; gap: 4px;">
+            <span style="font-size: 11px; color: #829497;">H3 · 18/24 · 600</span>
+            <span style="font-family: 'Plus Jakarta Sans'; font-size: 18px; line-height: 24px; font-weight: 600;">Additional services</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="card" style="padding: 30px 32px; display: flex; flex-direction: column; gap: 22px;">
+        <div style="display: flex; align-items: baseline; justify-content: space-between;">
+          <span style="font-family: 'Plus Jakarta Sans'; font-size: 15px; font-weight: 700;">Inter</span>
+          <span style="font-size: 12px; color: #829497;">Body &amp; UI · 400 / 500 / 600</span>
+        </div>
+        <div style="display: flex; flex-direction: column; gap: 18px;">
+          <div style="display: flex; flex-direction: column; gap: 5px;">
+            <span style="font-size: 11px; color: #829497;">Body · 16/24 · 400</span>
+            <span style="font-size: 16px; line-height: 24px; color: #52666A;">Upload your documents, choose your preferences, pay online, and pick them up from a nearby print shop when they're ready.</span>
+          </div>
+          <div style="display: flex; flex-direction: column; gap: 5px;">
+            <span style="font-size: 11px; color: #829497;">Body small · 14/20 · 400</span>
+            <span style="font-size: 14px; line-height: 20px; color: #52666A;">Documents are deleted automatically once your order is collected.</span>
+          </div>
+          <div style="display: flex; flex-direction: column; gap: 5px;">
+            <span style="font-size: 11px; color: #829497;">Label · 14/18 · 500</span>
+            <span style="font-size: 14px; line-height: 18px; font-weight: 500;">Estimated total</span>
+          </div>
+          <div style="display: flex; flex-direction: column; gap: 5px;">
+            <span style="font-size: 11px; color: #829497;">Caption · 12/16 · 400</span>
+            <span style="font-size: 12px; line-height: 16px; color: #829497;">Ready in approximately 10 min</span>
+          </div>
+          <div style="display: flex; flex-direction: column; gap: 5px;">
+            <span style="font-size: 11px; color: #829497;">Numeric · tabular</span>
+            <span style="font-size: 22px; font-weight: 600; font-variant-numeric: tabular-nums; letter-spacing: .02em;">₹46.00 · 4827 · 12 pages</span>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ===== Components ===== -->
+  <div style="display: flex; flex-direction: column; gap: 20px;">
+    <span class="eyebrow">Components</span>
+
+    <div class="card" style="padding: 30px 32px; display: flex; flex-direction: column; gap: 28px;">
+
+      <div style="display: flex; flex-direction: column; gap: 14px;">
+        <span style="font-size: 12px; font-weight: 600; color: #829497;">Buttons — 48px, 14px radius, one primary per view</span>
+        <div style="display: flex; align-items: center; gap: 14px; flex-wrap: wrap;">
+          <div style="display: inline-flex; align-items: center; justify-content: center; height: 48px; padding: 0 26px; border-radius: 14px; background: #087F8C; color: #fff; font-family: 'Plus Jakarta Sans'; font-weight: 700; font-size: 15px;">Upload &amp; Print</div>
+          <div style="display: inline-flex; align-items: center; justify-content: center; height: 48px; padding: 0 26px; border-radius: 14px; background: #066A73; color: #fff; font-family: 'Plus Jakarta Sans'; font-weight: 700; font-size: 15px;">Pressed</div>
+          <div style="display: inline-flex; align-items: center; justify-content: center; height: 48px; padding: 0 26px; border-radius: 14px; background: #fff; border: 1.5px solid #087F8C; color: #087F8C; font-family: 'Plus Jakarta Sans'; font-weight: 700; font-size: 15px;">Find Print Shops</div>
+          <div style="display: inline-flex; align-items: center; justify-content: center; height: 48px; padding: 0 26px; border-radius: 14px; color: #087F8C; font-family: 'Plus Jakarta Sans'; font-weight: 700; font-size: 15px;">Ghost</div>
+          <div style="display: inline-flex; align-items: center; justify-content: center; height: 48px; padding: 0 26px; border-radius: 14px; background: #E8F7F7; color: #829497; font-family: 'Plus Jakarta Sans'; font-weight: 700; font-size: 15px;">Disabled</div>
+        </div>
+      </div>
+
+      <div class="rule"></div>
+
+      <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 28px;">
+        <div style="display: flex; flex-direction: column; gap: 14px;">
+          <span style="font-size: 12px; font-weight: 600; color: #829497;">Search &amp; input</span>
+          <div style="display: flex; align-items: center; gap: 11px; height: 50px; padding: 0 16px; background: #fff; border: 1px solid #D8E7E8; border-radius: 14px;">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#829497" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+            <span style="font-size: 15px; color: #829497;">Search nearby print shops...</span>
+          </div>
+          <div style="display: flex; align-items: center; height: 50px; padding: 0 16px; background: #fff; border: 1.5px solid #087F8C; border-radius: 14px; box-shadow: 0 0 0 3px rgba(8,127,140,.10);">
+            <span style="font-size: 15px; color: #102A2E;">Focused field</span>
+          </div>
+        </div>
+
+        <div style="display: flex; flex-direction: column; gap: 14px;">
+          <span style="font-size: 12px; font-weight: 600; color: #829497;">Status badges</span>
+          <div style="display: flex; gap: 9px; flex-wrap: wrap;">
+            <span style="padding: 7px 13px; border-radius: 999px; background: #FFF4DB; color: #8A6410; font-size: 12.5px; font-weight: 600;">Pending</span>
+            <span style="padding: 7px 13px; border-radius: 999px; background: #E3F0FF; color: #1D4E89; font-size: 12.5px; font-weight: 600;">Printing</span>
+            <span style="padding: 7px 13px; border-radius: 999px; background: #DFF5EF; color: #0E7A67; font-size: 12.5px; font-weight: 600;">Ready for pickup</span>
+            <span style="padding: 7px 13px; border-radius: 999px; background: #EDF1F1; color: #52666A; font-size: 12.5px; font-weight: 600;">Completed</span>
+            <span style="padding: 7px 13px; border-radius: 999px; background: #FBEAEA; color: #B23F3B; font-size: 12.5px; font-weight: 600;">Expired</span>
+          </div>
+          <span style="font-size: 12px; font-weight: 600; color: #829497; margin-top: 6px;">Filter chips</span>
+          <div style="display: flex; gap: 9px; flex-wrap: wrap;">
+            <span style="padding: 9px 16px; border-radius: 999px; background: #087F8C; color: #fff; font-size: 13px; font-weight: 600;">Recommended</span>
+            <span style="padding: 9px 16px; border-radius: 999px; background: #fff; border: 1px solid #D8E7E8; color: #52666A; font-size: 13px; font-weight: 500;">Nearest</span>
+            <span style="padding: 9px 16px; border-radius: 999px; background: #fff; border: 1px solid #D8E7E8; color: #52666A; font-size: 13px; font-weight: 500;">Cheapest</span>
+            <span style="padding: 9px 16px; border-radius: 999px; background: #fff; border: 1px solid #D8E7E8; color: #52666A; font-size: 13px; font-weight: 500;">Fastest</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="rule"></div>
+
+      <div style="display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 18px;">
+
+        <div style="display: flex; flex-direction: column; gap: 12px;">
+          <span style="font-size: 12px; font-weight: 600; color: #829497;">Shop card</span>
+          <div style="border: 1px solid #D8E7E8; border-radius: 18px; overflow: hidden; background: #fff;">
+            <div style="height: 86px; background: linear-gradient(135deg, #E8F7F7, #D5EEF0); position: relative;">
+              <span style="position: absolute; top: 10px; left: 10px; padding: 5px 10px; border-radius: 999px; background: rgba(255,255,255,.94); color: #0E7A67; font-size: 11px; font-weight: 600;">Open now</span>
+            </div>
+            <div style="padding: 14px; display: flex; flex-direction: column; gap: 8px;">
+              <span style="font-family: 'Plus Jakarta Sans'; font-size: 15px; font-weight: 700;">CopyHub</span>
+              <div style="display: flex; align-items: center; gap: 8px; font-size: 12px; color: #52666A;">
+                <span style="display: inline-flex; align-items: center; gap: 3px;">
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="#087F8C"><path d="m12 3 2.6 5.6 6.1.8-4.5 4.2 1.2 6-5.4-3-5.4 3 1.2-6L3.3 9.4l6.1-.8z"/></svg>
+                  4.8
+                </span>
+                <span style="color: #D8E7E8;">·</span>
+                <span>1.2 km</span>
+              </div>
+              <span style="font-size: 12px; color: #829497;">B&amp;W ₹1 · Colour ₹5</span>
+            </div>
+          </div>
+        </div>
+
+        <div style="display: flex; flex-direction: column; gap: 12px;">
+          <span style="font-size: 12px; font-weight: 600; color: #829497;">Price summary</span>
+          <div style="border: 1px solid #D8E7E8; border-radius: 18px; background: #fff; padding: 16px; display: flex; flex-direction: column; gap: 9px;">
+            <div style="display: flex; justify-content: space-between; font-size: 13px; color: #52666A;"><span>Printing</span><span>₹24</span></div>
+            <div style="display: flex; justify-content: space-between; font-size: 13px; color: #52666A;"><span>Spiral binding</span><span>₹20</span></div>
+            <div style="display: flex; justify-content: space-between; font-size: 13px; color: #52666A;"><span>Platform fee</span><span>₹2</span></div>
+            <div style="height: 1px; background: #D8E7E8; margin: 3px 0;"></div>
+            <div style="display: flex; justify-content: space-between; align-items: baseline;">
+              <span style="font-family: 'Plus Jakarta Sans'; font-size: 14px; font-weight: 700;">Total</span>
+              <span style="font-family: 'Plus Jakarta Sans'; font-size: 22px; font-weight: 800; color: #087F8C; font-variant-numeric: tabular-nums;">₹46</span>
+            </div>
+          </div>
+        </div>
+
+        <div style="display: flex; flex-direction: column; gap: 12px;">
+          <span style="font-size: 12px; font-weight: 600; color: #829497;">Upload box</span>
+          <div style="border: 1.5px dashed #A9D2D6; border-radius: 18px; background: #F7FAFA; padding: 24px 16px; display: flex; flex-direction: column; align-items: center; gap: 10px; text-align: center;">
+            <div style="width: 46px; height: 46px; border-radius: 14px; background: #E8F7F7; display: flex; align-items: center; justify-content: center;">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#087F8C" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 16V6"/><path d="m8 10 4-4 4 4"/><path d="M5 18h14"/></svg>
+            </div>
+            <span style="font-family: 'Plus Jakarta Sans'; font-size: 14px; font-weight: 700;">Upload your document</span>
+            <span style="font-size: 12px; color: #829497;">PDF, DOC, JPG, PNG</span>
+          </div>
+        </div>
+
+        <div style="display: flex; flex-direction: column; gap: 12px;">
+          <span style="font-size: 12px; font-weight: 600; color: #829497;">OTP card</span>
+          <div style="border: 1.5px solid #087F8C; border-radius: 18px; background: #E8F7F7; padding: 20px 16px; display: flex; flex-direction: column; align-items: center; gap: 7px;">
+            <span style="font-size: 11px; font-weight: 600; letter-spacing: .12em; text-transform: uppercase; color: #087F8C;">Pickup OTP</span>
+            <span style="font-family: 'Plus Jakarta Sans'; font-size: 40px; font-weight: 800; letter-spacing: .14em; color: #066A73; font-variant-numeric: tabular-nums;">4827</span>
+            <span style="font-size: 11.5px; color: #52666A; text-align: center;">Show at the counter</span>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== Tokens ===== -->
+  <div style="display: flex; flex-direction: column; gap: 20px;">
+    <span class="eyebrow">Shape, space &amp; elevation</span>
+    <div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 20px;">
+
+      <div class="card" style="padding: 26px 28px; display: flex; flex-direction: column; gap: 18px;">
+        <span style="font-family: 'Plus Jakarta Sans'; font-size: 14px; font-weight: 700;">Corner radius</span>
+        <div style="display: flex; align-items: flex-end; gap: 16px;">
+          <div style="display: flex; flex-direction: column; align-items: center; gap: 8px;">
+            <div style="width: 54px; height: 54px; background: #E8F7F7; border: 1px solid #D8E7E8; border-radius: 12px;"></div>
+            <span style="font-size: 11px; color: #829497;">12 · chips</span>
+          </div>
+          <div style="display: flex; flex-direction: column; align-items: center; gap: 8px;">
+            <div style="width: 54px; height: 54px; background: #E8F7F7; border: 1px solid #D8E7E8; border-radius: 14px;"></div>
+            <span style="font-size: 11px; color: #829497;">14 · buttons</span>
+          </div>
+          <div style="display: flex; flex-direction: column; align-items: center; gap: 8px;">
+            <div style="width: 54px; height: 54px; background: #E8F7F7; border: 1px solid #D8E7E8; border-radius: 18px;"></div>
+            <span style="font-size: 11px; color: #829497;">18 · cards</span>
+          </div>
+          <div style="display: flex; flex-direction: column; align-items: center; gap: 8px;">
+            <div style="width: 54px; height: 54px; background: #E8F7F7; border: 1px solid #D8E7E8; border-radius: 20px;"></div>
+            <span style="font-size: 11px; color: #829497;">20 · sheets</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="card" style="padding: 26px 28px; display: flex; flex-direction: column; gap: 18px;">
+        <span style="font-family: 'Plus Jakarta Sans'; font-size: 14px; font-weight: 700;">Spacing · 4px base</span>
+        <div style="display: flex; flex-direction: column; gap: 9px;">
+          <div style="display: flex; align-items: center; gap: 12px;"><div style="width: 4px; height: 14px; background: #087F8C; border-radius: 2px;"></div><span style="font-size: 12px; color: #52666A;">4 · icon gap</span></div>
+          <div style="display: flex; align-items: center; gap: 12px;"><div style="width: 8px; height: 14px; background: #087F8C; border-radius: 2px;"></div><span style="font-size: 12px; color: #52666A;">8 · inline</span></div>
+          <div style="display: flex; align-items: center; gap: 12px;"><div style="width: 16px; height: 14px; background: #087F8C; border-radius: 2px;"></div><span style="font-size: 12px; color: #52666A;">16 · card padding</span></div>
+          <div style="display: flex; align-items: center; gap: 12px;"><div style="width: 24px; height: 14px; background: #087F8C; border-radius: 2px;"></div><span style="font-size: 12px; color: #52666A;">24 · screen gutter</span></div>
+          <div style="display: flex; align-items: center; gap: 12px;"><div style="width: 40px; height: 14px; background: #087F8C; border-radius: 2px;"></div><span style="font-size: 12px; color: #52666A;">40 · section</span></div>
+        </div>
+      </div>
+
+      <div class="card" style="padding: 26px 28px; display: flex; flex-direction: column; gap: 18px;">
+        <span style="font-family: 'Plus Jakarta Sans'; font-size: 14px; font-weight: 700;">Elevation</span>
+        <div style="display: flex; gap: 16px;">
+          <div style="display: flex; flex-direction: column; align-items: center; gap: 9px;">
+            <div style="width: 78px; height: 54px; background: #fff; border: 1px solid #D8E7E8; border-radius: 14px;"></div>
+            <span style="font-size: 11px; color: #829497;">Flat</span>
+          </div>
+          <div style="display: flex; flex-direction: column; align-items: center; gap: 9px;">
+            <div style="width: 78px; height: 54px; background: #fff; border: 1px solid #D8E7E8; border-radius: 14px; box-shadow: 0 1px 2px rgba(16,42,46,.04), 0 10px 28px -16px rgba(16,42,46,.14);"></div>
+            <span style="font-size: 11px; color: #829497;">Card</span>
+          </div>
+          <div style="display: flex; flex-direction: column; align-items: center; gap: 9px;">
+            <div style="width: 78px; height: 54px; background: #fff; border: 1px solid #D8E7E8; border-radius: 14px; box-shadow: 0 4px 10px rgba(16,42,46,.06), 0 22px 44px -20px rgba(16,42,46,.24);"></div>
+            <span style="font-size: 11px; color: #829497;">Sheet</span>
+          </div>
+        </div>
+        <p style="font-size: 12px; line-height: 17px; color: #829497;">Shadows stay near-invisible. Structure comes from the 1px border, not the shadow.</p>
+      </div>
+
+    </div>
+  </div>
+
+</div>
+</x-dc>
+</body>
+</html>
