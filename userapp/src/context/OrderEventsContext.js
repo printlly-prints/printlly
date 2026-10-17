@@ -3,10 +3,12 @@ import { AppState, Platform } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import * as Notifications from "expo-notifications";
 import Constants from "expo-constants";
+import { isDevice } from "expo-device";
 import { io } from "socket.io-client";
 import api from "../api/client";
 import { useAuth } from "./AuthContext";
 import { useNotifications } from "./NotificationsContext";
+import { useEventSounds } from "./EventSoundsContext";
 
 // Realtime order events, plus push-token registration.
 //
@@ -27,17 +29,10 @@ const OrderEventsContext = createContext(null);
 // How a notification behaves when one arrives while the app is in the
 // foreground. Without this, Expo shows nothing at all in the foreground, which
 // looks like push being broken.
-Notifications.setNotificationHandler({
-  handleNotification: async () => ({
-    shouldShowBanner: true,
-    shouldShowList: true,
-    shouldPlaySound: false,
-    shouldSetBadge: false,
-  }),
-});
+// EventSoundsContext owns the foreground handler and its shared event ledger.
 
-// Asks for permission and registers this device's Expo push token with the
-// backend.
+// Registers the push token only when Android notification permission was
+// already granted. Startup never presents a permission dialog.
 //
 // Returns the token on success and null on every failure - and there are
 // several legitimate ones: the user declined permission, this is a simulator,
@@ -48,15 +43,12 @@ async function registerForPush() {
   try {
     // Push is not available on a simulator/emulator at all, so asking would
     // only produce a confusing permission prompt.
-    if (!Constants.isDevice) return null;
+    if (!isDevice) return null;
 
     const existing = await Notifications.getPermissionsAsync();
-    let status = existing.status;
-    if (status !== "granted") {
-      // Only asked once by the OS; declining is remembered.
-      status = (await Notifications.requestPermissionsAsync()).status;
-    }
-    if (status !== "granted") return null;
+    // Never display a notification permission prompt during startup. Permission
+    // is granted through an explicit customer action or Android app settings.
+    if (existing.status !== "granted") return null;
 
     // Android needs a channel declared or notifications arrive silently with
     // no heads-up display.
@@ -99,6 +91,7 @@ async function registerForPush() {
 export function OrderEventsProvider({ children }) {
   const { isAuthenticated, token } = useAuth();
   const { refresh: refreshNotifications } = useNotifications();
+  const { notify, refreshPermission } = useEventSounds();
   const [connected, setConnected] = useState(false);
   // The most recent event, so an order screen can react to its own order
   // changing without holding a socket itself.
@@ -111,8 +104,8 @@ export function OrderEventsProvider({ children }) {
     // Registration is an upsert on the token server-side, so running it on
     // every launch costs one request and keeps a reinstalled app's new token
     // current.
-    registerForPush();
-  }, [isAuthenticated]);
+    registerForPush().finally(refreshPermission);
+  }, [isAuthenticated, refreshPermission]);
 
   // ---- the socket ----
   useEffect(() => {
@@ -150,6 +143,7 @@ export function OrderEventsProvider({ children }) {
         // one source of truth and means a duplicate event cannot produce a
         // duplicate row in the list.
         refreshNotifications();
+        notify(event);
       });
     })();
 
@@ -158,7 +152,7 @@ export function OrderEventsProvider({ children }) {
       socketRef.current?.disconnect();
       socketRef.current = null;
     };
-  }, [isAuthenticated, token, refreshNotifications]);
+  }, [isAuthenticated, token, refreshNotifications, notify]);
 
   // Coming back from the background is exactly when something was missed
   // while disconnected. socket.io reconnects on its own, but the catch-up read

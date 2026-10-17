@@ -1,5 +1,6 @@
 import LegalPage, { Section, P, List } from "../../components/legal/LegalPage";
 import { LEGAL_BUSINESS_NAME, SUPPORT_EMAIL, FACTS } from "../../config/legal";
+import { Button, PaperPanel } from "../../components/PaperUI";
 
 const TOC = [
   { id: "what", title: "What Printlly is" },
@@ -14,6 +15,7 @@ export default function About() {
   return (
     <LegalPage
       title="About Printlly"
+      hero={<><section className="public-hero about-hero"><div className="public-hero-copy"><h1>Less waiting.<br />More paper.</h1><p>Printlly connects your documents with local print shops. See your options, pay online and collect with a clear pickup ticket.</p><Button to="/auth">Get Printlly</Button></div></section><PaperPanel><h2>Built around the print</h2><p>Set print options for each file, find nearby shops and follow your order.</p></PaperPanel></>}
       description="Printlly connects customers with nearby print shops: upload, pay online, collect in person."
       toc={TOC}
       intro={

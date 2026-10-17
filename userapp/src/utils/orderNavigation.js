@@ -8,6 +8,8 @@
 //      track - see PaymentScreen.js).
 //   3. Ready for pickup -> the big OTP screen.
 //   4. Anything else -> the general tracking view.
+import { pickupCodeForOrder } from "./orderState.js";
+
 export const CLOSED_STATUSES = ["expired", "cancelled"];
 
 export function isAwaitingPayment(order) {
@@ -41,7 +43,7 @@ export function navigateToOrder(navigation, order) {
     return;
   }
 
-  if (order.status === "ready_for_pickup") {
+  if (order.status === "ready_for_pickup" && pickupCodeForOrder(order)) {
     navigation.navigate("PickupOtp", { order });
   } else {
     navigation.navigate("OrderTracking", { order });

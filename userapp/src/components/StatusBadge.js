@@ -1,6 +1,8 @@
 import { memo } from "react";
+import { useTheme } from "../context/ThemeContext";
+import { semanticStatusColors } from "../theme/colors";
 import { StyleSheet, Text, View } from "react-native";
-import { statusColors, statusLabels, typography, radius } from "../theme";
+import { statusLabels, typography, radius } from "../theme";
 
 // Small coloured pill showing an order's current status. Colours are
 // deliberately not teal - see theme/colors.js for why.
@@ -8,6 +10,8 @@ import { statusColors, statusLabels, typography, radius } from "../theme";
 // memo()'d: one per row in MyOrdersScreen's list and HomeScreen's recent
 // orders, taking a single string prop.
 function StatusBadge({ status }) {
+  const { colors } = useTheme();
+  const statusColors = semanticStatusColors(colors);
   const palette = statusColors[status] || statusColors.completed;
 
   return (

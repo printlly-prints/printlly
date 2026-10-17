@@ -1,31 +1,8 @@
-import { StyleSheet, Text, View } from "react-native";
-import { colors, fonts } from "../theme";
-
-// Initials-based circle avatar - there is no photo upload feature, so a
-// real image is never available to show here.
-export default function Avatar({ name, size = 40 }) {
-  const initial = (name || "?").trim().charAt(0).toUpperCase();
-
-  return (
-    <View
-      style={[
-        styles.circle,
-        { width: size, height: size, borderRadius: size / 2 },
-      ]}
-    >
-      <Text style={[styles.initial, { fontSize: size * 0.4 }]}>{initial}</Text>
-    </View>
-  );
+import { Image } from "react-native";
+import { useAvatar } from "../context/AvatarContext";
+import { avatarSources } from "../constants/avatarSources";
+import { customerAvatarId } from "../constants/avatarIds";
+export default function Avatar({ name, size = 40, avatarId, decorative = false }) {
+  const stored = useAvatar();
+  return <Image source={avatarSources[customerAvatarId(avatarId || stored?.avatarId)]} resizeMode="contain" style={{ width: size, height: size, borderRadius: size / 2 }} accessible={!decorative} accessibilityLabel={name ? `${name}'s avatar` : "Selected avatar"} />;
 }
-
-const styles = StyleSheet.create({
-  circle: {
-    backgroundColor: colors.primaryWash,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  initial: {
-    fontFamily: fonts.headingBold,
-    color: colors.primaryDeep,
-  },
-});

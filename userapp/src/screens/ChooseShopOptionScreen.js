@@ -2,11 +2,12 @@ import { useState } from "react";
 import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import ShopPhoto from "../components/ShopPhoto";
-import { shopImageSource } from "../utils/shopImages";
 import api from "../api/client";
 import { useLocation } from "../context/LocationContext";
 import { toComparePricingDocuments } from "../utils/documentSettings";
-import { colors, typography, spacing, radius } from "../theme";
+import { typography, spacing, radius } from "../theme";
+import ScreenFrame from "../components/ScreenFrame";
+import { useTheme, useThemedStyles } from "../context/ThemeContext";
 
 // Shown ONLY when the customer entered the flow from one particular
 // shop's page ("Print here"), between preferences and checkout. Coming in
@@ -19,6 +20,7 @@ import { colors, typography, spacing, radius } from "../theme";
 // So neither option is styled as the obvious one, and the direct option
 // says in as many words what the customer gives up.
 export default function ChooseShopOptionScreen({ route, navigation }) {
+  const { colors } = useTheme(), styles = useThemedStyles(createStyles);
   const { uploadedDocs, docSettings, notes, preselectedShop } = route.params;
   const { coords } = useLocation();
 
@@ -82,7 +84,7 @@ export default function ChooseShopOptionScreen({ route, navigation }) {
   const fileCount = uploadedDocs.length;
 
   return (
-    <ScrollView style={styles.screen} contentContainerStyle={styles.content}>
+    <ScreenFrame title="Choose print shop" onBack={() => navigation.goBack()}>
       <Text style={styles.title}>How would you like to order?</Text>
       <Text style={styles.subtitle}>
         You started from {preselectedShop.shop_name}. You can order there, or check what other shops
@@ -114,7 +116,7 @@ export default function ChooseShopOptionScreen({ route, navigation }) {
           <Text style={styles.errorText}>{error}</Text>
         </View>
       ) : null}
-    </ScrollView>
+    </ScreenFrame>
   );
 }
 
@@ -122,6 +124,7 @@ export default function ChooseShopOptionScreen({ route, navigation }) {
 // one the big primary button would be nudging the customer out of
 // comparing, which is the part of this product that saves them money.
 function Option({ icon, title, body, onPress, disabled, loading, shop }) {
+  const { colors } = useTheme(), styles = useThemedStyles(createStyles);
   return (
     <Pressable
       style={({ pressed }) => [styles.option, pressed && !disabled && styles.optionPressed]}
@@ -131,7 +134,7 @@ function Option({ icon, title, body, onPress, disabled, loading, shop }) {
     >
       <View style={styles.optionHeader}>
         {shop ? (
-          <ShopPhoto source={shopImageSource(shop)} shopName={shop.shop_name} style={styles.optionPhoto} iconSize={18} />
+          <ShopPhoto source={shop.shop_photo_url ? { uri: shop.shop_photo_url } : null} shopName={shop.shop_name} style={styles.optionPhoto} iconSize={18} />
         ) : (
           <View style={styles.optionIcon}>
             <Ionicons name={icon} size={20} color={colors.primaryBright} />
@@ -149,7 +152,7 @@ function Option({ icon, title, body, onPress, disabled, loading, shop }) {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = ({ colors }) => ({
   screen: { flex: 1, backgroundColor: colors.background },
   content: { padding: spacing.lg, paddingBottom: spacing.xl },
   title: { ...typography.h1, color: colors.textPrimary },

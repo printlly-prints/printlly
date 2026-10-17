@@ -115,6 +115,9 @@ const orderSchema = new mongoose.Schema(
         _id: false,
       },
     ],
+    // Only written on the real ready transition; legacy orders remain null.
+    // updatedAt cannot measure output: pickup and settlement also change it.
+    ready_at: { type: Date, default: null },
     instructions: {
       type: String,
       default: "",
@@ -262,6 +265,7 @@ orderSchema.index({ shop_id: 1, settlement_status: 1, status: 1 });
 // exact {shop_id, payment_status, status} combination. The single-field
 // payment_status index above doesn't cover a compound query like this.
 orderSchema.index({ shop_id: 1, payment_status: 1, status: 1 });
+orderSchema.index({ shop_id: 1, payment_status: 1, ready_at: 1 });
 
 // Matches getMyOrders (a customer's own order history) - the one query
 // that filters by customer_id alone.

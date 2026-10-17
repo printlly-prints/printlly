@@ -1,4 +1,6 @@
 import { useEffect, useState } from "react";
+import { Image, View } from "react-native";
+import OpeningArtwork, { OpeningProvider, useOpening } from "./src/components/OpeningArtwork";
 import { NavigationContainer } from "@react-navigation/native";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
@@ -6,14 +8,19 @@ import { SafeAreaProvider } from "react-native-safe-area-context";
 import { StatusBar } from "expo-status-bar";
 import { useFonts } from "expo-font";
 import * as SplashScreen from "expo-splash-screen";
-import {
-  PlusJakartaSans_600SemiBold,
-  PlusJakartaSans_700Bold,
-  PlusJakartaSans_800ExtraBold,
-} from "@expo-google-fonts/plus-jakarta-sans";
-import { Inter_400Regular, Inter_500Medium } from "@expo-google-fonts/inter";
+import { Manrope_600SemiBold } from "@expo-google-fonts/manrope/600SemiBold";
+import { Manrope_700Bold } from "@expo-google-fonts/manrope/700Bold";
+import { Manrope_800ExtraBold } from "@expo-google-fonts/manrope/800ExtraBold";
+import { Inter_400Regular } from "@expo-google-fonts/inter/400Regular";
+import { Inter_500Medium } from "@expo-google-fonts/inter/500Medium";
 
 import { AuthProvider, useAuth } from "./src/context/AuthContext";
+import { AvatarProvider } from "./src/context/AvatarContext";
+import { OrderDraftProvider } from "./src/context/OrderDraftContext";
+import { ThemeProvider, useTheme } from "./src/context/ThemeContext";
+import { OpeningPreferencesProvider, useOpeningPreferences } from "./src/context/OpeningPreferencesContext";
+import { prepareOpeningAudio, startOpeningAudio, stopOpeningAudio } from "./src/utils/openingAudio";
+import { EventSoundsProvider } from "./src/context/EventSoundsContext";
 import { SavedShopsProvider } from "./src/context/SavedShopsContext";
 import { LocationProvider } from "./src/context/LocationContext";
 import { NotificationsProvider, useNotifications } from "./src/context/NotificationsContext";
@@ -23,6 +30,8 @@ import PhoneEntryScreen from "./src/screens/PhoneEntryScreen";
 import OtpScreen from "./src/screens/OtpScreen";
 import AccountSetupScreen from "./src/screens/AccountSetupScreen";
 import AuthUnavailableScreen from "./src/screens/AuthUnavailableScreen";
+import SessionExpiredScreen from "./src/screens/SessionExpiredScreen";
+import NotFoundScreen from "./src/screens/NotFoundScreen";
 import HomeScreen from "./src/screens/HomeScreen";
 import ShopsScreen from "./src/screens/ShopsScreen";
 import ShopDetailsScreen from "./src/screens/ShopDetailsScreen";
@@ -47,28 +56,24 @@ import BrandSplash from "./src/screens/BrandSplash";
 import BottomTabBar from "./src/components/BottomTabBar";
 import ErrorBoundary from "./src/components/ErrorBoundary";
 import { initAnalytics, trackEvent, EVENTS } from "./src/lib/analytics";
-import { colors, typography } from "./src/theme";
+import { typography } from "./src/theme";
 
 // Started at module scope, before any component mounts, so an event
 // emitted during the first render is not dropped. A no-op when
 // EXPO_PUBLIC_POSTHOG_KEY is unset - see src/lib/analytics.js.
 initAnalytics();
 
-// How long the branded splash stays up at minimum. Fonts and the stored
-// session usually resolve in well under this, so without a floor the
-// splash would flash past too fast to read.
-const MIN_SPLASH_MS = 1800;
-
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
 
-// Keeps the native splash screen up until useFonts (below) resolves.
+// Hand the native splash to the first logo layout, before network or session work.
 SplashScreen.preventAutoHideAsync();
 
 // The 4-tab home for a logged-in customer. Upload is deliberately not a
 // tab - it's reached as a full-screen flow (pushed on the root stack
 // below), started from Home's hero button or the Shops tab.
 function MainTabs() {
+  const { colors } = useTheme();
   const { unreadCount } = useNotifications();
 
   return (
@@ -88,8 +93,8 @@ function MainTabs() {
       {/* Home and Profile build their own in-content header (greeting /
           avatar block), so the native stack header is hidden for them. */}
       <Tab.Screen name="Home" component={HomeScreen} options={{ headerShown: false }} />
-      <Tab.Screen name="Shops" component={ShopsScreen} options={{ title: "Print Shops" }} />
-      <Tab.Screen name="Orders" component={MyOrdersScreen} options={{ title: "My Orders" }} />
+      <Tab.Screen name="Shops" component={ShopsScreen} options={{ headerShown: false }} />
+      <Tab.Screen name="Orders" component={MyOrdersScreen} options={{ headerShown: false }} />
       <Tab.Screen
         name="Profile"
         component={ProfileScreen}
@@ -102,8 +107,84 @@ function MainTabs() {
 // Chooses between the auth stack and the main app stack based on whether
 // a JWT is present. Switching happens automatically when AuthContext
 // updates, so screens never navigate to login by hand.
+const openingClouds = [
+  require('./assets/opening/cloud-265-479.png'),
+  require('./assets/opening/cloud-265-482.png'),
+  require('./assets/opening/cloud-265-485.png'),
+];
+function OpeningSurface({ resourcesReady }) {
+  const { loading, isAuthenticated } = useAuth();
+  const { colors, mode, ready, reducedMotion, motionReady } = useTheme();
+  const { dismiss, uploadAvailable } = useOpening();
+  const { ready: openingReady, enabled: openingEnabled } = useOpeningPreferences();
+  const [audioReady, setAudioReady] = useState(false);
+  const [phase, setPhase] = useState('logo');
+  const [revealed, setRevealed] = useState(false);
+  const [logoVisible, setLogoVisible] = useState(false);
+  const [logoElapsed, setLogoElapsed] = useState(false);
+  const [loadedClouds, setLoadedClouds] = useState({});
+  const [assetError, setAssetError] = useState(false);
+  const [size, setSize] = useState(null);
+  useEffect(() => {
+    if (phase !== 'logo' || !openingReady || !motionReady) return;
+    if (!openingEnabled || reducedMotion) { setAudioReady(true); return; }
+    let active = true;
+    setAudioReady(false);
+    const timeout = setTimeout(() => { if (active) setAudioReady(true); }, 2000);
+    prepareOpeningAudio().finally(() => {
+      clearTimeout(timeout);
+      if (active) setAudioReady(true);
+    });
+    return () => { active = false; clearTimeout(timeout); };
+  }, [phase, openingReady, openingEnabled, motionReady, reducedMotion]);
+  useEffect(() => {
+    if (phase === 'home' || !openingEnabled || reducedMotion || (phase === 'motion' && isAuthenticated && !uploadAvailable)) stopOpeningAudio();
+  }, [phase, openingEnabled, reducedMotion, isAuthenticated, uploadAvailable]);
+  useEffect(() => () => stopOpeningAudio(), []);
+  useEffect(() => {
+    if (!logoVisible) return;
+    const timer = setTimeout(() => setLogoElapsed(true), 1000);
+    return () => clearTimeout(timer);
+  }, [logoVisible]);
+  useEffect(() => {
+    if (phase !== 'logo' || !logoElapsed || !resourcesReady || !ready || !motionReady || !openingReady || !audioReady || loading) return;
+    if (openingEnabled && !reducedMotion && !assetError && Object.keys(loadedClouds).length !== openingClouds.length) return;
+    setPhase(!openingEnabled || reducedMotion || assetError ? 'home' : 'motion');
+  }, [phase, logoElapsed, resourcesReady, ready, motionReady, loading, reducedMotion, loadedClouds, assetError, openingReady, openingEnabled, audioReady]);
+  useEffect(() => {
+    if (phase === 'motion' && (reducedMotion || !openingEnabled)) { dismiss(); setPhase('home'); }
+  }, [phase, reducedMotion, openingEnabled, dismiss]);
+  const appReady = resourcesReady && ready && motionReady && !loading;
+  const appVisible = phase === 'home' || revealed;
+  return <View style={{ flex: 1, backgroundColor: colors.canvas }}>
+    <View style={{ flex: 1 }} pointerEvents={appVisible ? 'auto' : 'none'}
+      onTouchStart={() => { if (revealed && phase !== 'home') { dismiss(); setPhase('home'); } }}
+      accessibilityElementsHidden={!appVisible} importantForAccessibility={appVisible ? 'auto' : 'no-hide-descendants'}>
+      {appReady ? <RootNavigator /> : null}
+    </View>
+    {phase !== 'home' ? <View pointerEvents={revealed ? 'none' : 'auto'} style={{ position: 'absolute', left: 0, right: 0, top: 0, bottom: 0,
+      backgroundColor: phase === 'logo' ? '#311434' : revealed ? 'transparent' : colors.canvas }}
+      onLayout={event => { setSize(event.nativeEvent.layout); SplashScreen.hideAsync().catch(() => {}); }}>
+      <StatusBar style={phase === 'logo' || mode === 'dark' ? 'light' : 'dark'} />
+      {phase === 'logo' ? <>
+        <Image source={require('./assets/printlly-folded-emblem.png')} accessibilityLabel="Printlly" resizeMode="contain"
+          onLoad={() => setLogoVisible(true)} onError={() => { setLogoVisible(true); setAssetError(true); }}
+          style={{ width: 160, height: 160, position: 'absolute', alignSelf: 'center', top: '38%' }} />
+        {openingClouds.map((source, index) => <Image key={index} source={source} fadeDuration={0}
+          onLoad={() => setLoadedClouds(previous => ({ ...previous, [index]: true }))}
+          onError={() => setAssetError(true)}
+          style={{ position: 'absolute', width: 1, height: 1, opacity: 0 }} />)}
+      </> : size ? <OpeningArtwork width={size.width} height={size.height} mode={mode} signedOut={!isAuthenticated}
+        showPaper={!isAuthenticated || uploadAvailable}
+        onStart={() => { if (openingEnabled && !reducedMotion && (!isAuthenticated || uploadAvailable)) startOpeningAudio(); }}
+        onReveal={() => setRevealed(true)} onComplete={() => { dismiss(); setPhase('home'); }} /> : null}
+    </View> : null}
+  </View>;
+}
+
 function RootNavigator() {
-  const { isAuthenticated, loading } = useAuth();
+  const { colors } = useTheme();
+  const { isAuthenticated, loading, sessionExpired } = useAuth();
 
   // One app_opened per launch, emitted once the stored session has resolved
   // so the event can say whether this was a signed-in customer returning or
@@ -131,7 +212,9 @@ function RootNavigator() {
         contentStyle: { backgroundColor: colors.background },
       }}
     >
-      {!isAuthenticated ? (
+      {sessionExpired ? (
+        <Stack.Screen name="SessionExpired" component={SessionExpiredScreen} options={{ headerShown: false }} />
+      ) : !isAuthenticated ? (
         // The demo phone-login flow (PhoneEntry -> Otp -> AccountSetup,
         // see constants/demoAuth.js) only exists in development - __DEV__
         // is false in every built binary, dev/preview/production EAS
@@ -151,12 +234,13 @@ function RootNavigator() {
               component={PhoneEntryScreen}
               options={{ headerShown: false }}
             />
-            <Stack.Screen name="Otp" component={OtpScreen} options={{ title: "Verify" }} />
+            <Stack.Screen name="Otp" component={OtpScreen} options={{ headerShown: false }} />
             <Stack.Screen
               name="AccountSetup"
               component={AccountSetupScreen}
-              options={{ title: "Set up account", headerBackVisible: false }}
+              options={{ headerShown: false }}
             />
+            <Stack.Screen name="SignInHelp" component={AuthUnavailableScreen} options={{ headerShown: false }} />
           </>
         ) : (
           <Stack.Screen
@@ -186,12 +270,12 @@ function RootNavigator() {
           <Stack.Screen
             name="UploadDocuments"
             component={UploadDocumentsScreen}
-            options={{ title: "Add documents" }}
+            options={{ headerShown: false }}
           />
           <Stack.Screen
             name="PrintPreferences"
             component={PrintPreferencesScreen}
-            options={{ title: "Preferences" }}
+            options={{ headerShown: false }}
           />
           {/* Only reached from the "Print here" entry path - see
               PrintPreferencesScreen's handleContinue. The generic upload
@@ -199,9 +283,9 @@ function RootNavigator() {
           <Stack.Screen
             name="ChooseShopOption"
             component={ChooseShopOptionScreen}
-            options={{ title: "Order options" }}
+            options={{ headerShown: false }}
           />
-          <Stack.Screen name="SelectShop" component={SelectShopScreen} options={{ title: "Select shop" }} />
+          <Stack.Screen name="SelectShop" component={SelectShopScreen} options={{ headerShown: false }} />
           {/* Cart -> Checkout -> Payment -> Order placed, matching the
               reference flow. ReviewCheckout is the cart; Checkout is the
               new step that collects fulfilment, shop, contact and
@@ -209,10 +293,10 @@ function RootNavigator() {
           <Stack.Screen
             name="ReviewCheckout"
             component={ReviewCheckoutScreen}
-            options={{ title: "Your cart" }}
+            options={{ headerShown: false }}
           />
-          <Stack.Screen name="Checkout" component={CheckoutScreen} options={{ title: "Checkout" }} />
-          <Stack.Screen name="Payment" component={PaymentScreen} options={{ title: "Payment" }} />
+          <Stack.Screen name="Checkout" component={CheckoutScreen} options={{ headerShown: false }} />
+          <Stack.Screen name="Payment" component={PaymentScreen} options={{ headerShown: false }} />
           {/* No back button: the whole checkout stack is cleared by the
               reset in PaymentScreen once payment is verified, so there is
               nothing behind this but Home. */}
@@ -227,20 +311,21 @@ function RootNavigator() {
             name="OrderTracking"
             component={OrderTrackingScreen}
             options={({ route }) => ({
+              headerShown: false,
               title: "Order",
               // No back button only right after paying (navigation.replace
               // from Payment) - reached any other way, back works normally.
               headerBackVisible: !route.params?.justPlaced,
             })}
           />
-          <Stack.Screen name="PickupOtp" component={PickupOtpScreen} options={{ title: "Pickup" }} />
+          <Stack.Screen name="PickupOtp" component={PickupOtpScreen} options={{ headerShown: false }} />
 
-          <Stack.Screen name="Settings" component={SettingsScreen} options={{ title: "Settings" }} />
-          <Stack.Screen name="SavedShops" component={SavedShopsScreen} options={{ title: "Saved Shops" }} />
+          <Stack.Screen name="Settings" component={SettingsScreen} options={{ headerShown: false }} />
+          <Stack.Screen name="SavedShops" component={SavedShopsScreen} options={{ headerShown: false }} />
           <Stack.Screen
             name="Notifications"
             component={NotificationsScreen}
-            options={{ title: "Notifications" }}
+            options={{ headerShown: false }}
           />
 
           {/* Support: the FAQ/contact screen, and the live chat it leads
@@ -249,63 +334,42 @@ function RootNavigator() {
           <Stack.Screen
             name="HelpSupport"
             component={HelpSupportScreen}
-            options={{ title: "Help & Support" }}
+            options={{ headerShown: false }}
           />
-          <Stack.Screen name="Chat" component={ChatScreen} options={{ title: "Support chat" }} />
+          <Stack.Screen name="Chat" component={ChatScreen} options={{ headerShown: false }} />
         </>
       )}
+      <Stack.Screen name="NotFound" component={NotFoundScreen} options={{ headerShown: false }} />
     </Stack.Navigator>
   );
 }
 
 export default function App() {
+  return <ThemeProvider><OpeningPreferencesProvider><AppContent /></OpeningPreferencesProvider></ThemeProvider>;
+}
+
+function AppContent() {
+  const { colors, mode } = useTheme();
   // Keys here must match theme/typography.js's `fonts` constants exactly,
   // or React Native falls back to the system font without warning.
   const [fontsLoaded, fontError] = useFonts({
-    PlusJakartaSans_600SemiBold,
-    PlusJakartaSans_700Bold,
-    PlusJakartaSans_800ExtraBold,
+    Manrope_600SemiBold,
+    Manrope_700Bold,
+    Manrope_800ExtraBold,
     Inter_400Regular,
     Inter_500Medium,
   });
 
-  const [minTimeElapsed, setMinTimeElapsed] = useState(false);
-
-  useEffect(() => {
-    const timer = setTimeout(() => setMinTimeElapsed(true), MIN_SPLASH_MS);
-    return () => clearTimeout(timer);
-  }, []);
-
-  // Hand off from the native splash to BrandSplash as soon as the fonts
-  // are ready - BrandSplash uses them, so showing it earlier would render
-  // the system font for a frame and then reflow.
-  useEffect(() => {
-    if (fontsLoaded || fontError) {
-      SplashScreen.hideAsync();
-    }
-  }, [fontsLoaded, fontError]);
-
-  if (!fontsLoaded && !fontError) {
-    return null;
-  }
-
-  if (!minTimeElapsed) {
-    return (
-      <SafeAreaProvider>
-        <StatusBar style="light" />
-        <BrandSplash />
-      </SafeAreaProvider>
-    );
-  }
 
   return (
-    // Outermost, outside every provider: a throw while AuthProvider,
-    // LocationProvider or any other context initialises would otherwise
-    // unmount the root view and leave a blank screen with no way out but
-    // force-quitting the app. See src/components/ErrorBoundary.js.
-    <ErrorBoundary>
+    // Keep safe-area context available to the recovery screen even when
+    // an application provider fails during initialization.
     <SafeAreaProvider>
+    <ErrorBoundary>
       <AuthProvider>
+        <OrderDraftProvider>
+        <EventSoundsProvider>
+        <AvatarProvider>
         {/* Above SavedShopsProvider, which reads coords to fetch distances. */}
         <LocationProvider>
           <SavedShopsProvider>
@@ -316,17 +380,22 @@ export default function App() {
                   connects with the stored JWT and tears down on logout. */}
               <OrderEventsProvider>
               <SupportProvider>
-                <NavigationContainer>
-                  <StatusBar style="light" />
-                  <RootNavigator />
+                <NavigationContainer theme={{ dark: mode === "dark", colors: { primary: colors.action, background: colors.canvas, card: colors.surface, text: colors.textPrimary, border: colors.divider, notification: colors.error }, fonts: { regular: { fontFamily: "Inter_400Regular", fontWeight: "400" }, medium: { fontFamily: "Inter_500Medium", fontWeight: "500" }, bold: { fontFamily: "Manrope_700Bold", fontWeight: "700" }, heavy: { fontFamily: "Manrope_800ExtraBold", fontWeight: "800" } } }}>
+                  <StatusBar style={mode === "dark" ? "light" : "dark"} />
+                  <OpeningProvider>
+                    <OpeningSurface resourcesReady={Boolean(fontsLoaded || fontError)} />
+                  </OpeningProvider>
                 </NavigationContainer>
               </SupportProvider>
               </OrderEventsProvider>
             </NotificationsProvider>
           </SavedShopsProvider>
         </LocationProvider>
+        </AvatarProvider>
+        </EventSoundsProvider>
+        </OrderDraftProvider>
       </AuthProvider>
-    </SafeAreaProvider>
     </ErrorBoundary>
+    </SafeAreaProvider>
   );
 }

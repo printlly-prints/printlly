@@ -113,13 +113,13 @@ export function ActiveOrderRow({ order, zebra, onView }) {
   );
 }
 
-// The narrower row used by Printing now / Ready for pickup / Recent - the
+// The narrower row used by Accepted / Ready for pickup / Recent - the
 // same visual language, fewer columns, because those sections answer one
 // question each rather than being a full queue.
 export function MiniOrderRow({ primary, secondary, meta, trailing, action, tone = "default" }) {
   const tones = {
     default: "bg-surface border-border",
-    printing: "bg-primary-wash/40 border-primary/20",
+    accepted: "bg-primary-wash/40 border-primary/20",
     ready: "bg-success-bg/50 border-success/20",
   };
   return (

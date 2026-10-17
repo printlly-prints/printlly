@@ -7,6 +7,7 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
+    "test": "node --test src/utils/dashboardStats.test.js src/utils/webEventSounds.test.js src/utils/partnerAnalytics.test.js src/utils/recoveryState.test.js src/utils/readCooldown.test.js",
     "preview": "vite preview"
   },
   "dependencies": {

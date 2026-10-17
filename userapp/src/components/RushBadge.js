@@ -1,33 +1,32 @@
 import { memo } from "react";
+import { useTheme } from "../context/ThemeContext";
 import { StyleSheet, Text, View } from "react-native";
-import { rushColors, rushLabels, typography, radius } from "../theme";
-
-// Emoji dot per level, per the design spec ("🟢 Low rush" etc.) - a quick
-// visual read that doesn't rely on the badge's (already soft) colour
-// alone.
-const RUSH_EMOJI = { low: "🟢", medium: "🟡", high: "🔴" };
+import { rushLabels, typography, radius } from "../theme";
+import { shopRushLevel } from "../utils/shopRush";
 
 // Small pill showing a shop's live rush level - the same shape as
 // StatusBadge, for a shop's queue instead of an order's status. Used on
 // ShopsScreen, HomeScreen's nearby-shops cards, and SelectShopScreen.
 //
-// `level` is GET /shops / GET /shops/:shopId/queue's rush_level
+// `shop.queue.rush_level` is GET /shops / GET /shops/:shopId/queue's rush_level
 // ("low"/"medium"/"high"). Renders nothing for an unrecognized or
-// missing level rather than guessing - callers should already guard on
-// `shop.queue` existing, but this is a second line of defense.
+// missing level rather than guessing. The shared guard also suppresses cached
+// levels when either authoritative availability field says the shop is closed.
 // memo()'d for the same reason as ShopPhoto: one per row across three
 // lists, with primitive/stable props.
-function RushBadge({ level, style }) {
-  const palette = rushColors[level];
+function RushBadge({ shop, style }) {
+  const { colors } = useTheme();
+  const level = shopRushLevel(shop);
+  const palettes = { low: { bg: colors.successSurface, text: colors.success }, medium: { bg: colors.infoSurface, text: colors.info }, high: { bg: colors.errorSurface, text: colors.error } };
+  const palette = palettes[level];
   if (!palette) return null;
 
   return (
     <View
-      style={[styles.badge, { backgroundColor: palette.bg, borderColor: palette.border }, style]}
+      style={[styles.badge, { backgroundColor: palette.bg, borderColor: colors.controlBorder }, style]}
     >
-      <Text style={[styles.text, { color: palette.text }]}>
-        {RUSH_EMOJI[level]} {rushLabels[level]}
-      </Text>
+      <View accessible={false} style={[styles.dot, { backgroundColor: palette.text }]} />
+      <Text style={[styles.text, { color: palette.text }]}>{rushLabels[level]}</Text>
     </View>
   );
 }
@@ -37,6 +36,9 @@ export default memo(RushBadge);
 const styles = StyleSheet.create({
   // See StatusBadge for why the border is load-bearing on a dark card.
   badge: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
     paddingHorizontal: 10,
     paddingVertical: 5,
     borderRadius: radius.pill,
@@ -44,4 +46,5 @@ const styles = StyleSheet.create({
     borderWidth: 1,
   },
   text: { ...typography.caption },
+  dot: { width: 6, height: 6, borderRadius: 3 },
 });

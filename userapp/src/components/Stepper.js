@@ -1,5 +1,6 @@
 import { Pressable, StyleSheet, Text, View } from "react-native";
-import { colors, typography, spacing, radius, fonts } from "../theme";
+import { typography, spacing, radius, fonts } from "../theme";
+import { useThemedStyles } from "../context/ThemeContext";
 
 // Plus/minus stepper for numeric fields. Preferred over a keyboard input
 // here because tapping is faster and cannot produce an invalid value.
@@ -10,6 +11,7 @@ import { colors, typography, spacing, radius, fonts } from "../theme";
 // DocumentSettingsCard does to keep four print controls on four lines
 // instead of eight.
 export default function Stepper({ label, value, onChange, min = 1, max = 999 }) {
+  const styles = useThemedStyles(createStyles);
   const control = (
     <View style={styles.row}>
       <Pressable
@@ -50,7 +52,7 @@ export default function Stepper({ label, value, onChange, min = 1, max = 999 }) 
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = ({ colors }) => ({
   wrapper: { marginBottom: spacing.xl },
   label: { ...typography.label, color: colors.textPrimary, marginBottom: spacing.sm },
   row: { flexDirection: "row", alignItems: "center" },
@@ -58,8 +60,8 @@ const styles = StyleSheet.create({
   // 56x56 was sized for a screen showing one set of preferences; with a
   // card per document there can be four of these on screen at once.
   stepButton: {
-    width: 40,
-    height: 40,
+    width: 48,
+    height: 48,
     borderRadius: radius.sm,
     borderWidth: 1,
     borderColor: colors.primary,

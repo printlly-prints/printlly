@@ -7,6 +7,7 @@ import Panel, { PanelHeader } from "../components/dashboard/Panel";
 import PayoutDetailsPanel from "../components/PayoutDetailsPanel";
 import api from "../api/axios";
 import { useAuth } from "../context/AuthContext";
+import { FormField } from "../components/PaperUI";
 
 const ID_PROOF_OPTIONS = [
   { value: "aadhaar", label: "Aadhaar" },
@@ -217,14 +218,14 @@ export default function ShopProfile() {
         <header className="flex flex-wrap items-start justify-between gap-3">
           <div>
             <div className="flex items-center gap-2.5">
-              <h1 className="font-heading text-2xl font-bold text-text-primary">Shop profile</h1>
+              <h1 className="partner-page-title">Shop profile</h1>
               <span className={`px-2.5 py-1 rounded-full text-xs font-semibold ${badge.className}`}>
                 {badgeLabel}
               </span>
             </div>
             <p className="text-sm text-text-secondary mt-1 max-w-2xl">
-              Manage your shop photos, location and verification details. None of this blocks you from
-              taking orders in the meantime — see your{" "}
+              Manage your shop photos, location and verification details. Your shop appears to
+              customers after approval. You can review your{" "}
               <Link to="/orders" className="text-primary-bright font-medium hover:text-primary-deep">
                 orders
               </Link>
@@ -322,19 +323,12 @@ export default function ShopProfile() {
               title="Shop information"
               subtitle="Set when you registered. These can't be changed from the dashboard yet."
             />
-            <dl className="grid sm:grid-cols-2 gap-x-4 gap-y-3">
-              <DetailField label="Shop name" value={shop.shop_name} />
-              <DetailField label="Phone" value={shop.contact} />
-              <DetailField label="Address" value={shop.address} className="sm:col-span-2" />
-              <DetailField
-                label="Locality / landmark"
-                value={shop.locality}
-                empty="Not set — add it in Location below"
-                className="sm:col-span-2"
-              />
-            </dl>
+            <FormField label="Shop name" id="registered-shop-name" value={shop.shop_name || ""} readOnly />
+            <FormField label="Address" id="registered-shop-address" value={shop.address || ""} multiline rows={3} readOnly />
+            <FormField label="Contact number" id="registered-shop-contact" value={shop.contact || ""} readOnly />
+            <p className="text-sm text-text-secondary">Locality: {shop.locality || "Not set — add it in Location below"}</p>
             <p className="text-xs text-text-muted">
-              Need one of these changed? Contact support and we'll update it for you.
+              Contact support if your registered details need correction.
             </p>
           </Panel>
         </div>
@@ -502,7 +496,7 @@ export default function ShopProfile() {
               <h2 className="font-heading font-bold text-error-text">Danger zone</h2>
               <p className="text-xs text-text-secondary mt-0.5 max-w-xl">
                 Deactivate your shop from Printlly. This takes it off the platform entirely — separate
-                from, and much bigger than, the Open/Closed toggle in the sidebar.
+                from, and much bigger than, changing your availability.
               </p>
             </div>
             <button
@@ -571,12 +565,12 @@ function ShopHoursPanel({ shop }) {
         subtitle={
           enabled
             ? "The same hours apply every day. Outside them your shop shows as closed automatically."
-            : "No automatic schedule — your shop follows the Open/Closed toggle in the sidebar."
+            : "No automatic schedule — your shop follows the status you choose in Availability."
         }
         className="mb-3"
         action={
           <Link
-            to="/pricing"
+            to="/availability"
             className="shrink-0 px-4 h-9 grid place-items-center rounded-control border border-border text-sm font-semibold text-text-primary hover:bg-background-soft transition-colors duration-200"
           >
             Edit hours

@@ -1,11 +1,11 @@
-import { Linking, Platform, Pressable, StyleSheet, Text, View } from "react-native";
+import { Linking, Platform, Pressable, Text, View } from "react-native";
 import Ionicons from "@expo/vector-icons/Ionicons";
+import { useTheme, useThemedStyles } from "../context/ThemeContext";
 import ShopPhoto from "./ShopPhoto";
 import Card from "./Card";
-import { shopImageSource } from "../utils/shopImages";
 import { formatDistance } from "../utils/distance";
 import { shopAvailability } from "../utils/shopAvailability";
-import { colors, typography, spacing, radius } from "../theme";
+import { typography, spacing, radius } from "../theme";
 
 // The shop, shown the same way everywhere it appears - checkout, order
 // tracking, pickup. One component so the photo, the name and the address
@@ -29,6 +29,7 @@ export default function ShopCard({
   showActions,
   style,
 }) {
+  const { colors } = useTheme(), styles = useThemedStyles(createStyles);
   if (!shop) return null;
 
   // Open / Busy / Closed from the one shared resolver. `hasStatus` keeps
@@ -36,6 +37,8 @@ export default function ShopCard({
   // shop without its status, rather than guessing at "open".
   const hasStatus = typeof shop.is_currently_open === "boolean" || !!shop.shop_status;
   const availability = shopAvailability(shop);
+  const tint = availability.isClosed ? colors.error : availability.isBusy ? colors.info : colors.success;
+  const surface = availability.isClosed ? colors.errorSurface : availability.isBusy ? colors.infoSurface : colors.successSurface;
   const distance = formatDistance(distanceKm ?? shop.distance_km);
 
   const call = () => {
@@ -61,7 +64,7 @@ export default function ShopCard({
   return (
     <Card style={style}>
       <View style={styles.row}>
-        <ShopPhoto source={shopImageSource(shop)} shopName={shop.shop_name} style={styles.photo} iconSize={22} />
+        <ShopPhoto source={shop.shop_photo_url ? { uri: shop.shop_photo_url } : null} shopName={shop.shop_name} style={styles.photo} iconSize={22} />
 
         <View style={styles.details}>
           <Text style={styles.name} numberOfLines={1}>
@@ -93,11 +96,11 @@ export default function ShopCard({
               <View
                 style={[
                   styles.badge,
-                  { backgroundColor: availability.colors.bg, borderColor: availability.colors.border },
+                  { backgroundColor: surface, borderColor: colors.controlBorder },
                 ]}
               >
-                <View style={[styles.dot, { backgroundColor: availability.colors.dot }]} />
-                <Text style={[styles.badgeText, { color: availability.colors.text }]}>
+                <View style={[styles.dot, { backgroundColor: tint }]} />
+                <Text style={[styles.badgeText, { color: tint }]}>
                   {availability.isBusy
                     ? availability.prepLine
                       ? `Busy · ${availability.prepLine}`
@@ -142,7 +145,7 @@ export default function ShopCard({
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = ({ colors }) => ({
   row: { flexDirection: "row", gap: spacing.md, alignItems: "flex-start" },
   // Big enough to actually recognise the storefront, per the brief, while
   // leaving the name and address room on a narrow screen.
@@ -152,7 +155,7 @@ const styles = StyleSheet.create({
   metaRow: { flexDirection: "row", alignItems: "flex-start", gap: 5, marginTop: 3 },
   meta: { ...typography.caption, color: colors.textSecondary, flex: 1 },
 
-  badgeRow: { flexDirection: "row", alignItems: "center", gap: spacing.sm, marginTop: spacing.sm },
+  badgeRow: { flexWrap: "wrap", flexDirection: "row", alignItems: "center", gap: spacing.sm, marginTop: spacing.sm },
   badge: {
     flexDirection: "row",
     alignItems: "center",
@@ -185,7 +188,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     gap: spacing.xs + 2,
-    minHeight: 42,
+    minHeight: 48,
     borderRadius: radius.sm,
     borderWidth: 1,
     borderColor: colors.border,

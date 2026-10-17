@@ -22,7 +22,8 @@ export function shopAvailability(shop) {
   const status =
     shop?.shop_status || (shop?.is_currently_open === false ? "closed" : "open");
 
-  const prepMinutes = status === "busy" ? shop?.busy_prep_minutes || 25 : null;
+  const configuredPrep = shop?.busy_prep_minutes;
+  const prepMinutes = status === "busy" && typeof configuredPrep === "number" && Number.isFinite(configuredPrep) && configuredPrep > 0 ? configuredPrep : null;
 
   return {
     status,

@@ -1,7 +1,8 @@
-import { Pressable, StyleSheet, Text, View } from "react-native";
+import { Pressable, Text, View } from "react-native";
 import Ionicons from "@expo/vector-icons/Ionicons";
+import { useTheme, useThemedStyles } from "../context/ThemeContext";
 import { formatRupees } from "./PriceBreakdown";
-import { colors, typography, spacing, radius, fonts } from "../theme";
+import { typography, spacing, radius, fonts } from "../theme";
 
 // One document in the cart / order summary.
 //
@@ -28,6 +29,7 @@ export default function CartItem({
   onRemove,
   canRemove,
 }) {
+  const { colors } = useTheme(), styles = useThemedStyles(createStyles);
   const bw = settings?.color_mode !== "color";
   const descriptor = [
     settings?.paper_size || "A4",
@@ -99,7 +101,7 @@ export default function CartItem({
         {/* The working, spelled out - section 19's whole point. */}
         {typeof total === "number" && typeof perPageRate === "number" ? (
           <Text style={styles.workings}>
-            {pageCount} × {copies} × {formatRupees(perPageRate)}
+            Base: {pageCount} × {copies} × {formatRupees(perPageRate)}
           </Text>
         ) : null}
       </View>
@@ -110,6 +112,7 @@ export default function CartItem({
 // Small inline stepper, sized to sit inside a card row rather than the
 // full-width one on the preferences screen.
 function Stepper({ value, onChange }) {
+  const styles = useThemedStyles(createStyles);
   return (
     <View style={styles.stepper}>
       <Pressable
@@ -136,8 +139,8 @@ function Stepper({ value, onChange }) {
   );
 }
 
-const styles = StyleSheet.create({
-  card: { flexDirection: "row", gap: spacing.md, paddingVertical: spacing.md },
+const createStyles = ({ colors }) => ({
+  card: { flexDirection: "row", flexWrap: "wrap", gap: spacing.md, paddingVertical: spacing.md },
   thumb: {
     width: 46,
     height: 56,
@@ -148,7 +151,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
-  body: { flex: 1 },
+  body: { flex: 1, minWidth: 140 },
   name: { ...typography.bodyMedium, color: colors.textPrimary },
   descriptor: { ...typography.caption, color: colors.textSecondary, marginTop: 2 },
   rate: { ...typography.caption, color: colors.textMuted, marginTop: 1 },
@@ -162,7 +165,7 @@ const styles = StyleSheet.create({
   },
   serviceText: { ...typography.caption, color: colors.success },
 
-  controls: { flexDirection: "row", alignItems: "center", gap: spacing.md, marginTop: spacing.sm },
+  controls: { flexDirection: "row", flexWrap: "wrap", alignItems: "center", gap: spacing.md, marginTop: spacing.sm },
   copiesStatic: { ...typography.caption, color: colors.textMuted, marginTop: spacing.xs },
 
   stepper: {
@@ -173,7 +176,7 @@ const styles = StyleSheet.create({
     borderRadius: radius.sm,
     overflow: "hidden",
   },
-  step: { width: 34, height: 32, alignItems: "center", justifyContent: "center" },
+  step: { width: 48, height: 48, alignItems: "center", justifyContent: "center" },
   stepPressed: { backgroundColor: colors.primaryWash },
   stepOff: { opacity: 0.4 },
   stepGlyph: { fontSize: 17, lineHeight: 20, color: colors.primaryBright },
@@ -184,10 +187,10 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: colors.textPrimary,
   },
-  remove: { width: 34, height: 32, alignItems: "center", justifyContent: "center", borderRadius: radius.sm },
+  remove: { width: 48, height: 48, alignItems: "center", justifyContent: "center", borderRadius: radius.sm },
   removePressed: { backgroundColor: colors.dangerBg },
 
-  priceColumn: { alignItems: "flex-end", minWidth: 64 },
+  priceColumn: { alignItems: "flex-end", maxWidth: 100, flexShrink: 1, minWidth: 40 },
   price: { ...typography.bodyMedium, color: colors.textPrimary },
   workings: { ...typography.caption, color: colors.textMuted, marginTop: 2, textAlign: "right" },
 });

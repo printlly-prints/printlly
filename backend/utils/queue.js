@@ -1,78 +1,47 @@
 const Order = require("../models/Order");
 const { getPricingSettings } = require("./pricing");
+const { computeShopAvailability } = require("./shopStatus");
+const { WINDOW_MINUTES, calculateQueuePressure, WORKLOAD_EXPRESSION } = require("./queuePressure");
 
-// Statuses that count towards a SHOP's overall "how busy does this place
-// look" indicator (GET /shops, GET /shops/:shopId/queue) - anything the
-// shop hasn't finished handling yet. Deliberately wider than
-// QUEUE_POSITION_STATUSES below: a ready_for_pickup order still occupies
-// the shop's attention (the customer hasn't collected it yet), so it
-// still counts here even though it no longer counts as something a later
-// order is queued behind.
+// Preserve the legacy active total; only pending/accepted consume production capacity.
 const ACTIVE_QUEUE_STATUSES = ["pending", "accepted", "ready_for_pickup"];
-
-// Statuses that still count towards an order's own position in line.
-// Once an order reaches ready_for_pickup its print is already done - it
-// isn't "ahead" of anything in the print queue any more, even though it
-// still counts towards ACTIVE_QUEUE_STATUSES above.
 const QUEUE_POSITION_STATUSES = ["pending", "accepted"];
 
-// count -> "low" | "medium" | "high" using Settings.rush_thresholds.
-function rushLevelFor(count, thresholds) {
-  if (count <= thresholds.low_max) return "low";
-  if (count <= thresholds.medium_max) return "medium";
-  return "high";
+async function getShopQueueInfo(shop, now = new Date()) {
+  return (await getQueueInfoForShops([shop], now)).get(String(shop._id || shop));
 }
 
-// Queue info for ONE shop - GET /shops/:shopId/queue.
-// getPricingSettings() despite its name just returns the one Settings
-// singleton document (creating it with schema defaults the first time
-// anything asks for it) - reused here rather than adding a parallel
-// "get settings" getter for what is still the same one document.
-async function getShopQueueInfo(shopId) {
-  const settings = await getPricingSettings();
-
-  const active_orders_count = await Order.countDocuments({
-    shop_id: shopId,
-    payment_status: "paid",
-    status: { $in: ACTIVE_QUEUE_STATUSES },
-  });
-
-  return {
-    active_orders_count,
-    rush_level: rushLevelFor(active_orders_count, settings.rush_thresholds),
-  };
-}
-
-// Queue info for MANY shops at once - GET /shops, so the listing does one
-// aggregation query total rather than one COUNT per shop (N+1). Returns a
-// Map keyed by shop id (string) -> { active_orders_count, rush_level }.
-// A shop with zero active orders never appears in the aggregation's
-// output at all, so it's filled in afterwards rather than left absent.
-async function getQueueInfoForShops(shopIds) {
-  const settings = await getPricingSettings();
-
-  const counts = await Order.aggregate([
-    {
-      $match: {
-        shop_id: { $in: shopIds },
-        payment_status: "paid",
-        status: { $in: ACTIVE_QUEUE_STATUSES },
-      },
-    },
-    { $group: { _id: "$shop_id", count: { $sum: 1 } } },
+// Callers supply already-loaded shop documents, including availability fields.
+// Two indexed aggregations for the whole listing, never one query per shop.
+async function getQueueInfoForShops(shops, now = new Date()) {
+  if (!shops.length) return new Map();
+  const ids = shops.map(shop => shop._id || shop);
+  const [settings, active, recent] = await Promise.all([
+    getPricingSettings(),
+    Order.aggregate([
+      { $match: { shop_id: { $in: ids }, payment_status: "paid", status: { $in: ACTIVE_QUEUE_STATUSES } } },
+      { $group: { _id: "$shop_id",
+        queued: { $sum: { $cond: [{ $in: ["$status", QUEUE_POSITION_STATUSES] }, 1, 0] } },
+        ready: { $sum: { $cond: [{ $eq: ["$status", "ready_for_pickup"] }, 1, 0] } },
+        units: { $sum: { $cond: [{ $in: ["$status", QUEUE_POSITION_STATUSES] }, WORKLOAD_EXPRESSION, 0] } },
+      } },
+    ]),
+    Order.aggregate([
+      { $match: { shop_id: { $in: ids }, payment_status: "paid", status: { $in: ["ready_for_pickup", "completed"] },
+        ready_at: { $gte: new Date(now.getTime() - WINDOW_MINUTES * 60000), $lte: now } } },
+      { $sort: { ready_at: 1, _id: 1 } },
+      { $group: { _id: "$shop_id", count: { $sum: 1 }, units: { $sum: WORKLOAD_EXPRESSION },
+        first_units: { $first: WORKLOAD_EXPRESSION },
+        first: { $min: "$ready_at" }, last: { $max: "$ready_at" } } },
+    ]),
   ]);
-
-  const countByShopId = new Map(counts.map((c) => [c._id.toString(), c.count]));
-
-  const result = new Map();
-  for (const shopId of shopIds) {
-    const count = countByShopId.get(shopId.toString()) || 0;
-    result.set(shopId.toString(), {
-      active_orders_count: count,
-      rush_level: rushLevelFor(count, settings.rush_thresholds),
-    });
-  }
-  return result;
+  const activeMap = new Map(active.map(row => [String(row._id), row]));
+  const recentMap = new Map(recent.map(row => [String(row._id), row]));
+  return new Map(shops.map(shop => {
+    const id = String(shop._id || shop);
+    return [id, calculateQueuePressure({ active: activeMap.get(id), recent: recentMap.get(id),
+      closed: computeShopAvailability(shop, now).status === "closed", thresholds: settings.rush_thresholds, now })];
+  }));
 }
 
 // An order's position in its own shop's print queue: how many OTHER paid

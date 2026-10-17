@@ -4,7 +4,7 @@
 export default function Panel({ children, className = "", hoverable = false, as: Tag = "section", ...rest }) {
   return (
     <Tag
-      className={`bg-surface border border-border rounded-panel shadow-card ${
+      className={`bg-surface rounded-card ${
         hoverable
           ? "transition-[box-shadow,transform] duration-200 motion-safe:hover:-translate-y-1 hover:shadow-card-hover"
           : ""
@@ -23,8 +23,8 @@ export function PanelHeader({ title, subtitle, action, className = "" }) {
   return (
     <div className={`flex items-start justify-between gap-3 ${className}`}>
       <div className="min-w-0">
-        <h2 className="font-heading font-bold text-text-primary">{title}</h2>
-        {subtitle && <p className="text-xs text-text-secondary mt-0.5">{subtitle}</p>}
+        <h2 className="font-heading font-bold text-xl leading-7 text-text-primary">{title}</h2>
+        {subtitle && <p className="text-sm leading-5 text-text-secondary mt-2">{subtitle}</p>}
       </div>
       {action}
     </div>

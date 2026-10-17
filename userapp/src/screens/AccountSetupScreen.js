@@ -1,107 +1,59 @@
-import { useState } from "react";
-import {
-  KeyboardAvoidingView,
-  Platform,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TextInput,
-  View,
-} from "react-native";
+import { useRef, useState } from "react";
+import { Pressable, Text, View } from "react-native";
+import Ionicons from "@expo/vector-icons/Ionicons";
+import ScreenFrame from "../components/ScreenFrame";
+import FormField from "../components/FormField";
+import Avatar from "../components/Avatar";
+import AvatarPicker from "../components/AvatarPicker";
 import Button from "../components/Button";
+import ProfileDetailsFields from "../components/ProfileDetailsFields";
+import { profileDetailsError } from "../utils/profileDetails";
+import { DEFAULT_AVATAR_ID } from "../constants/avatarIds";
 import { useAuth } from "../context/AuthContext";
+import { useAvatar } from "../context/AvatarContext";
+import { useTheme, useThemedStyles } from "../context/ThemeContext";
 import { toDemoCredentials } from "../constants/demoAuth";
-import { colors, typography, spacing, radius } from "../theme";
+import { typography, radius } from "../theme";
 
-// Step 3 of the demo login - only reached for a phone number with no
-// existing account. Collects just a name; the email/password the real
-// backend account needs are derived automatically (constants/demoAuth.js)
-// so this demo flow never has to show a password field.
-export default function AccountSetupScreen({ route }) {
-  const { phone } = route.params;
-  const { register } = useAuth();
-
-  const [name, setName] = useState("");
-  const [error, setError] = useState("");
-  const [loading, setLoading] = useState(false);
-
-  const handleSubmit = async () => {
-    if (!name.trim()) {
-      setError("Please enter your name.");
-      return;
-    }
-
-    setError("");
-    setLoading(true);
+export default function AccountSetupScreen({ route, navigation }) {
+  const { phone } = route.params, { register } = useAuth(), { saveAvatar } = useAvatar(), { colors } = useTheme();
+  const styles = useThemedStyles(createStyles), submitting = useRef(false);
+  const [name, setName] = useState(""), [error, setError] = useState(""), [loading, setLoading] = useState(false);
+  const [avatarId, setAvatarId] = useState(DEFAULT_AVATAR_ID), [pickerOpen, setPickerOpen] = useState(false);
+  const [details, setDetails] = useState({ dob: "", contactEmail: "" });
+  const submit = async () => {
+    if (submitting.current) return;
+    if (!name.trim()) { setError("Enter your name to continue."); return; }
+    const detailsError = profileDetailsError(details);
+    if (detailsError) { setError(detailsError); return; }
+    submitting.current = true; setError(""); setLoading(true);
     try {
-      // Inside the try, not before it: toDemoCredentials throws outright
-      // in any non-development build (see constants/demoAuth.js's own
-      // comment) - this is the layer-2 backstop for that, surfacing its
-      // message the same way a failed registration would rather than
-      // crashing the screen.
       const { email, password } = toDemoCredentials(phone);
-      await register({ name: name.trim(), phone, email, password });
-      // AuthContext flips isAuthenticated on success; the navigator swaps
-      // to the main stack (shop list) on its own.
-    } catch (err) {
-      setError(err.response?.data?.message || err.message || "Could not create your account. Please try again.");
-    } finally {
-      setLoading(false);
-    }
+      const newUser = await register({ name: name.trim(), phone, email, password, contact_email: details.contactEmail.trim(), date_of_birth: details.dob || undefined });
+      await saveAvatar(avatarId, newUser.id);
+    } catch (err) { setError(err.response?.data?.message || err.message || "Could not create your account. Try again."); }
+    finally { submitting.current = false; setLoading(false); }
   };
-
-  return (
-    <KeyboardAvoidingView
-      style={styles.flex}
-      behavior={Platform.OS === "ios" ? "padding" : undefined}
-    >
-      <ScrollView contentContainerStyle={styles.container} keyboardShouldPersistTaps="handled">
-        <Text style={styles.title}>Set up your account</Text>
-        <Text style={styles.subtitle}>Just your name - you're almost there.</Text>
-
-        <View style={styles.field}>
-          <Text style={styles.fieldLabel}>Full name</Text>
-          <TextInput
-            style={styles.input}
-            value={name}
-            onChangeText={setName}
-            placeholder="e.g. Priya Sharma"
-            placeholderTextColor={colors.textMuted}
-            autoFocus
-          />
-        </View>
-
-        {error ? <Text style={styles.error}>{error}</Text> : null}
-
-        <Button title="Get started" onPress={handleSubmit} loading={loading} />
-      </ScrollView>
-    </KeyboardAvoidingView>
-  );
+  return <>
+    <ScreenFrame title="Your details" onBack={() => navigation.goBack()} footer={<Button title="Continue" loading={loading} onPress={submit} />}>
+      <View style={styles.introduction}>
+        <Avatar avatarId={avatarId} size={88} decorative />
+        <View style={{ flex: 1 }}><Text style={styles.title}>Let’s get to know you</Text><Text style={styles.body}>Add your name and choose an avatar.</Text></View>
+      </View>
+      <View style={styles.fields}>
+        <FormField label="Your name" value={name} onChangeText={setName} placeholder="Your name" autoComplete="name" autoCapitalize="words" error={error} returnKeyType="done" onSubmitEditing={submit} />
+        <ProfileDetailsFields value={details} onChange={setDetails} disabled={loading} />
+      </View>
+      <Pressable onPress={() => setPickerOpen(true)} accessibilityRole="button" style={styles.avatarRow}>
+        <View style={{ flex: 1 }}><Text style={styles.rowTitle}>Choose avatar</Text><Text style={styles.rowNote}>Pick one that feels like you</Text></View>
+        <Ionicons name="chevron-forward" size={22} color={colors.textSecondary} />
+      </Pressable>
+      <Text style={styles.localNote}>Your avatar is saved on this device.</Text>
+    </ScreenFrame>
+    <AvatarPicker visible={pickerOpen} initialId={avatarId} onClose={() => setPickerOpen(false)} onConfirm={(id) => { setAvatarId(id); setPickerOpen(false); }} />
+  </>;
 }
-
-const styles = StyleSheet.create({
-  flex: { flex: 1, backgroundColor: colors.background },
-  container: { padding: spacing.xl, paddingTop: 80, flexGrow: 1 },
-  title: { ...typography.h1, color: colors.textPrimary },
-  subtitle: { ...typography.body, color: colors.textSecondary, marginTop: spacing.sm, marginBottom: spacing.xl },
-  field: { marginBottom: spacing.lg },
-  fieldLabel: { ...typography.label, color: colors.textPrimary, marginBottom: spacing.sm },
-  input: {
-    minHeight: 56,
-    borderWidth: 1,
-    borderColor: colors.border,
-    backgroundColor: colors.surface,
-    borderRadius: radius.md,
-    paddingHorizontal: spacing.lg,
-    ...typography.bodyMedium,
-    color: colors.textPrimary,
-  },
-  error: {
-    color: colors.danger,
-    backgroundColor: colors.dangerBg,
-    padding: spacing.md,
-    borderRadius: radius.md,
-    marginBottom: spacing.lg,
-    ...typography.bodySmall,
-  },
+const createStyles = ({ colors }) => ({
+  introduction: { flexDirection: "row", alignItems: "center", gap: 20, marginBottom: 24 }, title: { ...typography.h3, color: colors.textPrimary }, body: { ...typography.bodySmall, color: colors.textSecondary, marginTop: 4 }, fields: { gap: 20 },
+  avatarRow: { minHeight: 72, backgroundColor: colors.surface, borderRadius: radius.md, padding: 16, flexDirection: "row", alignItems: "center", gap: 12, marginTop: 24 }, rowTitle: { ...typography.bodyMedium, color: colors.textPrimary }, rowNote: { ...typography.caption, color: colors.textSecondary, marginTop: 2 }, localNote: { ...typography.caption, color: colors.textSecondary, marginTop: 16 },
 });

@@ -3,7 +3,8 @@ import { Pressable, StyleSheet, Text, TextInput, View } from "react-native";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import Stepper from "./Stepper";
 import { describeDocumentSettings, sameServiceName } from "../utils/documentSettings";
-import { colors, typography, spacing, radius, fonts } from "../theme";
+import { typography, spacing, radius, fonts } from "../theme";
+import { useTheme, useThemedStyles } from "../context/ThemeContext";
 
 // Convenient starting points, NOT a fixed set. Shops name their own
 // services now ("Matte Lamination", "Hole Punching", "Perfect Binding"),
@@ -40,6 +41,7 @@ export default function DocumentSettingsCard({
   estimate,
   availableServices,
 }) {
+  const { colors } = useTheme(), styles = useThemedStyles(createStyles);
   const set = (patch) => onChange({ ...settings, ...patch });
 
   // What this document is asking for, as plain names. Matching them to a
@@ -123,6 +125,7 @@ export default function DocumentSettingsCard({
           <Field label="Copies">
             <Stepper value={settings.copies} onChange={(v) => set({ copies: v })} />
           </Field>
+          <Field label="Pages"><Text style={styles.serviceLabel}>All {pageCount} pages</Text></Field>
 
           <Field label="Paper">
             <Segmented
@@ -163,7 +166,7 @@ export default function DocumentSettingsCard({
                   onPress={() => toggleService(service.name)}
                 >
                   <View style={[styles.checkbox, checked && styles.checkboxChecked]}>
-                    {checked ? <Ionicons name="checkmark" size={14} color={colors.surface} /> : null}
+                    {checked ? <Ionicons name="checkmark" size={14} color={colors.onAction} /> : null}
                   </View>
                   <Text style={styles.serviceLabel}>{service.name}</Text>
                   {/* A price only exists once a shop is chosen - the
@@ -191,8 +194,11 @@ export default function DocumentSettingsCard({
               style={[styles.addServiceButton, !draft.trim() && styles.addServiceButtonDisabled]}
               onPress={addTypedService}
               disabled={!draft.trim()}
+              accessibilityRole="button"
+              accessibilityLabel="Add service"
+              accessibilityState={{ disabled: !draft.trim() }}
             >
-              <Ionicons name="add" size={20} color={draft.trim() ? colors.surface : colors.textMuted} />
+              <Ionicons name="add" size={20} color={draft.trim() ? colors.onAction : colors.textMuted} />
             </Pressable>
           </View>
 
@@ -226,6 +232,7 @@ export default function DocumentSettingsCard({
 // aligned with each other instead of each starting wherever its own
 // label happens to end.
 function Field({ label, children }) {
+  const styles = useThemedStyles(createStyles);
   return (
     <View style={styles.fieldRow}>
       <Text style={styles.fieldLabel}>{label}</Text>
@@ -243,6 +250,7 @@ function Field({ label, children }) {
 // two signals, so the control is still readable without colour vision.
 // accessibilityState carries it to screen readers, which see neither.
 function Segmented({ value, onChange, options }) {
+  const styles = useThemedStyles(createStyles);
   return (
     <View style={styles.segmented}>
       {options.map((option, i) => {
@@ -268,11 +276,11 @@ function Segmented({ value, onChange, options }) {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = ({ colors }) => ({
   card: {
     backgroundColor: colors.surface,
     borderWidth: 1,
-    borderColor: colors.border,
+    borderColor: colors.divider,
     borderRadius: radius.md,
     marginBottom: spacing.md,
     overflow: "hidden",
@@ -313,7 +321,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     // 40 is the floor for a control that still has to be tapped
     // accurately. Everything else here shrank; this did not.
-    height: 40,
+    minHeight: 48,
     borderRadius: radius.sm,
     borderWidth: 1,
     borderColor: colors.border,
@@ -337,6 +345,7 @@ const styles = StyleSheet.create({
     overflow: "hidden",
   },
   serviceRow: {
+    minHeight: 48,
     flexDirection: "row",
     alignItems: "center",
     // ~41px tall. The row spans the card, so it is an easy target even
@@ -362,7 +371,7 @@ const styles = StyleSheet.create({
   addServiceRow: { flexDirection: "row", alignItems: "center", gap: spacing.sm, marginTop: spacing.sm },
   addServiceInput: {
     flex: 1,
-    minHeight: 40,
+    minHeight: 48,
     borderWidth: 1,
     borderColor: colors.border,
     borderRadius: radius.sm,
@@ -372,16 +381,17 @@ const styles = StyleSheet.create({
     backgroundColor: colors.surface,
   },
   addServiceButton: {
-    width: 40,
-    height: 40,
+    width: 48,
+    height: 48,
     borderRadius: radius.sm,
     backgroundColor: colors.primary,
     alignItems: "center",
     justifyContent: "center",
   },
-  addServiceButtonDisabled: { backgroundColor: colors.border },
+  addServiceButtonDisabled: { backgroundColor: colors.actionDisabled },
   chipRow: { flexDirection: "row", flexWrap: "wrap", gap: spacing.sm, marginTop: spacing.sm },
   chip: {
+    minHeight: 48,
     flexDirection: "row",
     alignItems: "center",
     gap: spacing.xs,
@@ -392,6 +402,7 @@ const styles = StyleSheet.create({
   },
   chipLabel: { ...typography.labelSmall, color: colors.primaryDeep },
   copyRow: {
+    minHeight: 48,
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",

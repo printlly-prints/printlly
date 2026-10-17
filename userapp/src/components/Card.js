@@ -1,5 +1,6 @@
 import { Pressable, StyleSheet, Text, View } from "react-native";
-import { colors, typography, spacing, radius, shadows } from "../theme";
+import { typography, spacing, radius } from "../theme";
+import { useThemedStyles } from "../context/ThemeContext";
 
 // The one white surface every redesigned screen is built from. Defined
 // once here so card chrome - radius, border, shadow, press feedback -
@@ -9,6 +10,7 @@ import { colors, typography, spacing, radius, shadows } from "../theme";
 // Pressable only when an onPress is given; otherwise a plain View, so a
 // static card is not announced to a screen reader as something tappable.
 export default function Card({ children, style, onPress, selected, disabled, ...rest }) {
+  const styles = useThemedStyles(createStyles);
   const content = (
     <>
       {children}
@@ -46,11 +48,12 @@ export default function Card({ children, style, onPress, selected, disabled, ...
 // A card's own heading row, with an optional action on the right
 // ("Change" on the shop and contact cards).
 export function CardHeader({ title, actionLabel, onAction }) {
+  const styles = useThemedStyles(createStyles);
   return (
     <View style={styles.header}>
       <Text style={styles.title}>{title}</Text>
       {actionLabel ? (
-        <Pressable onPress={onAction} hitSlop={8}>
+        <Pressable onPress={onAction} style={{ minHeight: 48, justifyContent: "center" }} accessibilityRole="button">
           <Text style={styles.action}>{actionLabel}</Text>
         </Pressable>
       ) : null}
@@ -58,14 +61,13 @@ export function CardHeader({ title, actionLabel, onAction }) {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = ({ colors }) => ({
   card: {
     backgroundColor: colors.surface,
     borderRadius: radius.md,
     borderWidth: 1,
-    borderColor: colors.border,
+    borderColor: colors.divider,
     padding: spacing.lg,
-    ...shadows.card,
   },
   selected: { borderColor: colors.primary, borderWidth: 2 },
   pressed: { transform: [{ scale: 0.99 }] },

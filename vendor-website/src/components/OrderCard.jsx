@@ -296,7 +296,7 @@ export default function OrderCard({
           <button
             onClick={() => onReady(order._id)}
             disabled={isBusy}
-            className="w-full sm:w-auto px-6 min-h-11 rounded-control bg-success text-white font-heading text-sm font-bold hover:brightness-95 disabled:opacity-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-success/40"
+            className="w-full sm:w-auto px-6 min-h-12 rounded-control bg-primary text-white font-heading text-sm font-bold hover:bg-primary-deep disabled:opacity-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
           >
             {isBusy ? "Updating..." : "Mark Ready"}
           </button>
@@ -307,7 +307,7 @@ export default function OrderCard({
             onClick={() => setShowOtpInput(true)}
             className="w-full sm:w-auto px-6 min-h-11 rounded-control bg-primary text-white font-heading text-sm font-bold hover:bg-primary-deep focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
           >
-            Verify OTP &amp; Complete
+            Verify pickup code
           </button>
         )}
 

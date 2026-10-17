@@ -10,6 +10,7 @@ const { deleteOrderDocuments } = require("../utils/documentCleanup");
 // state change has been saved.
 const { emitOrderEvent, ORDER_EVENTS } = require("../utils/orderEvents");
 const { attachQueuePosition } = require("../utils/queue");
+const { markReadyOnce } = require("../utils/readyTransition");
 const { computeEffectiveOpenStatus } = require("../utils/shopStatus");
 // Shared with the admin list routes (controllers/adminController.js) so
 // every paginated list in the API behaves identically - see utils/pagination.js.
@@ -389,12 +390,14 @@ const readyOrder = async (req, res) => {
       return res.status(400).json({ message: `Cannot mark ready an order with status "${order.status}"` });
     }
 
-    order.status = "ready_for_pickup";
-    await order.save();
+    const ready = await markReadyOnce(Order, order._id);
+    if (!ready) {
+      return res.status(400).json({ message: "This order has already changed. Refresh to see its current status." });
+    }
 
-    await emitOrderEvent(order, ORDER_EVENTS.ORDER_READY_FOR_PICKUP);
+    await emitOrderEvent(ready, ORDER_EVENTS.ORDER_READY_FOR_PICKUP);
 
-    res.status(200).json(order);
+    res.status(200).json(ready);
   } catch (error) {
     console.error(`Failed to update order: ${error.message}`);
     res.status(500).json({ message: "Failed to update order" });

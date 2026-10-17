@@ -1,0 +1,18 @@
+export const avatarSources = {
+  "01-user-customer": require("../../assets/avatars/01-user-customer.png"),
+  "02-student": require("../../assets/avatars/02-student.png"),
+  "03-vendor": require("../../assets/avatars/03-vendor.png"),
+  "05-support": require("../../assets/avatars/05-support.png"),
+  "06-avatar": require("../../assets/avatars/06-avatar.png"),
+  "07-avatar": require("../../assets/avatars/07-avatar.png"),
+  "08-avatar": require("../../assets/avatars/08-avatar.png"),
+  "09-avatar": require("../../assets/avatars/09-avatar.png"),
+  "10-avatar": require("../../assets/avatars/10-avatar.png"),
+  "11-avatar": require("../../assets/avatars/11-avatar.png"),
+  "12-avatar": require("../../assets/avatars/12-avatar.png"),
+  "13-avatar": require("../../assets/avatars/13-avatar.png"),
+  "14-avatar": require("../../assets/avatars/14-avatar.png"),
+  "15-avatar": require("../../assets/avatars/15-avatar.png"),
+  "16-avatar": require("../../assets/avatars/16-avatar.png"),
+  "17-avatar": require("../../assets/avatars/17-avatar.png"),
+};

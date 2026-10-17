@@ -9,8 +9,11 @@ import ReactDOM from "react-dom/client";
 import { BrowserRouter } from "react-router-dom";
 import App from "./App.jsx";
 import { AuthProvider } from "./context/AuthContext.jsx";
+import { ThemeProvider } from "./context/ThemeContext.jsx";
+import { SoundProvider } from "./context/SoundContext.jsx";
 import ErrorBoundary from "./components/ErrorBoundary.jsx";
 import "./index.css";
+import "./styles/paper.css";
 
 ReactDOM.createRoot(document.getElementById("root")).render(
   <React.StrictMode>
@@ -20,9 +23,11 @@ ReactDOM.createRoot(document.getElementById("root")).render(
         last line of defence, so it has to sit above everything it protects. */}
     <ErrorBoundary>
       <BrowserRouter>
-        <AuthProvider>
-          <App />
-        </AuthProvider>
+        <ThemeProvider>
+          <AuthProvider>
+            <SoundProvider><App /></SoundProvider>
+          </AuthProvider>
+        </ThemeProvider>
       </BrowserRouter>
     </ErrorBoundary>
   </React.StrictMode>

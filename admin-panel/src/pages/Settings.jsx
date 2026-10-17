@@ -161,15 +161,15 @@ export default function Settings() {
 
           <section className="bg-surface border border-border rounded-panel p-5 space-y-4">
             <div>
-              <h2 className="font-heading font-bold text-text-primary">Rush thresholds</h2>
+              <h2 className="font-heading font-bold text-text-primary">Rush count fallback</h2>
               <p className="text-sm text-text-secondary mt-0.5">
-                How many active orders make a shop look Low, Medium or High rush to customers.
+                These counts apply while a shop has insufficient recent preparation history. With enough recent activity, rush automatically accounts for job size and the shop’s observed preparation rate. Ready-for-pickup orders do not increase preparation rush. Closed shops show no rush.
               </p>
             </div>
 
             <div className="grid gap-4 sm:grid-cols-2">
               <label className="flex flex-col gap-1">
-                <span className="text-sm font-medium text-text-primary">Low up to</span>
+                <span className="text-sm font-medium text-text-primary">Low: queued orders up to</span>
                 <input
                   type="number"
                   min="0"
@@ -180,7 +180,7 @@ export default function Settings() {
                 />
               </label>
               <label className="flex flex-col gap-1">
-                <span className="text-sm font-medium text-text-primary">Medium up to</span>
+                <span className="text-sm font-medium text-text-primary">Medium: queued orders up to</span>
                 <input
                   type="number"
                   min="0"
@@ -193,7 +193,7 @@ export default function Settings() {
             </div>
 
             <p className="text-xs text-text-muted">
-              Low: 0&ndash;{form.low_max || "?"} active orders · Medium: {Number(form.low_max || 0) + 1}&ndash;
+              Low: 0&ndash;{form.low_max || "?"} queued orders · Medium: {Number(form.low_max || 0) + 1}&ndash;
               {form.medium_max || "?"} · High: anything above {form.medium_max || "?"}.
             </p>
           </section>
@@ -240,7 +240,7 @@ export default function Settings() {
               </span>
             </li>
             <li>
-              Rush thresholds:{" "}
+              Rush count fallback:{" "}
               <span className="font-medium text-text-primary">
                 low ≤ {form?.low_max}, medium ≤ {form?.medium_max}
               </span>

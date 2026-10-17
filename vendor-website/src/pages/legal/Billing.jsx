@@ -30,10 +30,8 @@ export default function Billing() {
     >
       <Section id="methods" number="1" title="Accepted payment methods">
         <P>
-          Payment is taken through Razorpay's checkout, which supports UPI,
-          credit and debit cards, net banking and wallets. The exact set of
-          options shown to you is determined by Razorpay and by your bank, not
-          by Printlly.
+          Printlly accepts UPI payments through Razorpay's checkout. Return to
+          Printlly to check the confirmed payment status before trying again.
         </P>
         <P>All amounts are in Indian rupees (INR).</P>
         <Note>

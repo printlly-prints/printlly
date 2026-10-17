@@ -17,6 +17,8 @@
 // pre-fee amount. If the two ever disagree, this file is the one that is
 // wrong.
 
+import { parseMoney } from "./money.js";
+
 function round2(n) {
   return Math.round(n * 100) / 100;
 }
@@ -35,30 +37,35 @@ function normalizeServiceName(name) {
 export function estimateDocumentTotal(pageCount, settings, shopPricing) {
   if (!shopPricing || !settings) return null;
 
-  const ratePerPage =
-    settings.color_mode === "color" ? shopPricing.rate_per_page_color : shopPricing.rate_per_page_bw;
-  const base = pageCount * settings.copies * (ratePerPage ?? 0);
+  const ratePerPage = parseMoney(settings.color_mode === "color" ? shopPricing.rate_per_page_color : shopPricing.rate_per_page_bw);
+  if (ratePerPage === null || !Number.isInteger(Number(pageCount)) || Number(pageCount) < 1 || !Number.isInteger(Number(settings.copies)) || Number(settings.copies) < 1) return null;
+  const base = pageCount * settings.copies * ratePerPage;
 
-  const paperRate = shopPricing.paper_size_rates?.[settings.paper_size] ?? 0;
+  const paperRate = parseMoney(shopPricing.paper_size_rates?.[settings.paper_size]);
+  if (paperRate === null) return null;
   const paper_charge = pageCount * settings.copies * paperRate;
 
   // A flat amount per page printed, like the paper size charge above -
   // it no longer derives from `base`, so colour mode does not affect it.
+  const sidesRate = settings.sides === "double" ? parseMoney(shopPricing.sides_extra_rate) : 0;
+  if (sidesRate === null) return null;
   const sides_charge =
     settings.sides === "double"
-      ? round2(pageCount * settings.copies * (shopPricing.sides_extra_rate ?? 0))
+      ? round2(pageCount * settings.copies * sidesRate)
       : 0;
 
   // Services are matched by NAME against this shop's own list - the same
   // exact, normalized comparison the backend uses when the order is
   // actually placed (utils/shopServices.js). A name this shop doesn't
-  // offer contributes nothing here; the order itself would be rejected.
+  // offer makes this estimate unavailable; the order itself would be rejected.
   let services_charge = 0;
   for (const requested of settings.services || []) {
     const match = (shopPricing.services || []).find(
       (s) => s.enabled !== false && normalizeServiceName(s.name) === normalizeServiceName(requested)
     );
-    services_charge += match?.rate || 0;
+    const serviceRate = parseMoney(match?.rate);
+    if (serviceRate === null) return null;
+    services_charge += serviceRate;
   }
 
   return {
@@ -90,10 +97,10 @@ export function estimateOrder(uploadedDocs, docSettings, shopPricing, platformFe
   const services_charge = round2(documents.reduce((n, d) => n + d.services_charge, 0));
   const pre_fee_total = round2(base_subtotal + paper_size_charge + sides_charge + services_charge);
 
-  const fee =
-    platformFee?.platform_fee_type === "percentage"
-      ? round2(pre_fee_total * ((platformFee.platform_fee_value ?? 0) / 100))
-      : platformFee?.platform_fee_value ?? null;
+  const feeValue = parseMoney(platformFee?.platform_fee_value);
+  const fee = feeValue === null ? null : platformFee?.platform_fee_type === "percentage"
+    ? round2(pre_fee_total * feeValue / 100)
+    : platformFee?.platform_fee_type === "flat" ? feeValue : null;
 
   return {
     documents,

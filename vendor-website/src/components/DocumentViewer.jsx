@@ -1,5 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import api from "../api/axios";
+import useDialogFocus from "../hooks/useDialogFocus";
+import MascotRecovery from "./MascotRecovery";
 
 // Full-screen viewer for one customer document.
 //
@@ -25,12 +27,17 @@ import api from "../api/axios";
 export default function DocumentViewer({ order, index, label, onClose }) {
   const [blobUrl, setBlobUrl] = useState("");
   const [error, setError] = useState("");
+  const [requestError, setRequestError] = useState(null);
+  const [revision, setRevision] = useState(0);
   const [loading, setLoading] = useState(true);
   const frameRef = useRef(null);
+  const dialogRef = useRef(null);
+  useDialogFocus(dialogRef, onClose);
 
   useEffect(() => {
     let revokeUrl = "";
     let cancelled = false;
+    setLoading(true); setError(""); setRequestError(null); setBlobUrl("");
 
     (async () => {
       try {
@@ -40,8 +47,8 @@ export default function DocumentViewer({ order, index, label, onClose }) {
         if (cancelled) return;
         revokeUrl = URL.createObjectURL(new Blob([data], { type: "application/pdf" }));
         setBlobUrl(revokeUrl);
-      } catch {
-        if (!cancelled) setError("Could not open this document. Try again in a moment.");
+      } catch (failure) {
+        if (!cancelled) { setError("Could not open this document. Try again in a moment."); setRequestError(failure); }
       } finally {
         if (!cancelled) setLoading(false);
       }
@@ -53,16 +60,7 @@ export default function DocumentViewer({ order, index, label, onClose }) {
       // than holding every document opened this session until reload.
       if (revokeUrl) URL.revokeObjectURL(revokeUrl);
     };
-  }, [order._id, index]);
-
-  // Escape closes, like any other modal.
-  useEffect(() => {
-    const onKey = (e) => {
-      if (e.key === "Escape") onClose();
-    };
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
-  }, [onClose]);
+  }, [order._id, index, revision]);
 
   const handlePrint = () => {
     const frame = frameRef.current;
@@ -73,6 +71,8 @@ export default function DocumentViewer({ order, index, label, onClose }) {
 
   return (
     <div
+      ref={dialogRef}
+      tabIndex={-1}
       className="fixed inset-0 z-50 bg-black/60 flex flex-col p-4 sm:p-6"
       role="dialog"
       aria-modal="true"
@@ -107,7 +107,7 @@ export default function DocumentViewer({ order, index, label, onClose }) {
           {loading && (
             <p className="p-8 text-center text-sm text-text-secondary">Loading document...</p>
           )}
-          {error && <p className="p-8 text-center text-sm text-error-text">{error}</p>}
+          {error && <div className="public-content"><MascotRecovery compact headingLevel={2} error={requestError} title={requestError?.response?.status === 410 ? "This document access has ended." : undefined} message={requestError?.response?.status === 410 ? "The document is no longer available. Close this viewer to return to the order." : undefined} onRetry={requestError?.response?.status === 410 ? onClose : () => setRevision(value => value + 1)} primaryLabel={requestError?.response?.status === 410 ? "Return to order" : "Try again"} /></div>}
           {blobUrl && (
             <iframe
               ref={frameRef}

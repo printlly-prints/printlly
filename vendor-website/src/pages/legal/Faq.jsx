@@ -143,9 +143,8 @@ export default function Faq() {
         <Group>
           <Q q="How do I pay?">
             <p>
-              Online through Razorpay, which supports UPI, cards, net banking
-              and wallets. Printlly never sees or stores your card or UPI
-              details.
+              Pay online by UPI through Razorpay. Printlly never sees or stores
+              your UPI PIN. Return to Printlly to check the payment status.
             </p>
           </Q>
           <Q q="Is cash on pickup possible?">

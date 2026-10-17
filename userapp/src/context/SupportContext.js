@@ -12,6 +12,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { io } from "socket.io-client";
 import api from "../api/client";
 import { useAuth } from "./AuthContext";
+import { mergeSupportMessages } from "../utils/supportMessages";
 
 const SupportContext = createContext(null);
 
@@ -41,18 +42,14 @@ export function SupportProvider({ children }) {
   const [oldestAt, setOldestAt] = useState(null);
 
   const socketRef = useRef(null);
+  const seenMessageIds = useRef(new Set()), unreadRevision = useRef(0), refreshRevision = useRef(0), accountGeneration = useRef(0);
+  useEffect(() => { accountGeneration.current += 1; refreshRevision.current += 1; seenMessageIds.current = new Set(); setMessages([]); setUnreadCount(0); setLoaded(false); setLoading(false); }, [token]);
   const appState = useRef(AppState.currentState);
 
   // A message can arrive twice: once over the socket and once in a
   // history fetch that raced it. Deduped by _id, and kept in send order
   // so a slow arrival can't jump the thread.
-  const mergeMessages = useCallback((existing, incoming) => {
-    const byId = new Map(existing.map((m) => [String(m._id), m]));
-    for (const message of incoming) byId.set(String(message._id), message);
-    return [...byId.values()].sort(
-      (a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
-    );
-  }, []);
+  const mergeMessages = useCallback(mergeSupportMessages, []);
 
   // GET /support/conversation get-or-creates, so this is also what
   // brings a first-time customer's thread into existence - there is no
@@ -65,10 +62,13 @@ export function SupportProvider({ children }) {
       return;
     }
     setLoading(true);
+    const requestRevision = ++refreshRevision.current, unreadAtRequest = unreadRevision.current, generation = accountGeneration.current;
     try {
       const { data } = await api.get("/support/conversation");
-      setMessages(data.messages || []);
-      setUnreadCount(data.conversation?.unread_by_customer || 0);
+      if (generation !== accountGeneration.current || requestRevision !== refreshRevision.current) return;
+      for (const message of data.messages || []) seenMessageIds.current.add(String(message._id));
+      setMessages((current) => mergeMessages(current, data.messages || []));
+      if (unreadAtRequest === unreadRevision.current) setUnreadCount(data.conversation?.unread_by_customer || 0);
       setHasMore(Boolean(data.has_more));
       setOldestAt(data.oldest_created_at || null);
       setLoaded(true);
@@ -77,9 +77,9 @@ export function SupportProvider({ children }) {
       // thread or drop the unread dot - both are better slightly stale
       // than gone.
     } finally {
-      setLoading(false);
+      if (generation === accountGeneration.current && requestRevision === refreshRevision.current) setLoading(false);
     }
-  }, [isAuthenticated]);
+  }, [isAuthenticated, mergeMessages]);
 
   // Older pages, for "Load earlier messages". Keyed on the oldest
   // message's timestamp rather than an offset, matching the backend -
@@ -87,8 +87,11 @@ export function SupportProvider({ children }) {
   // everything down one and the reader sees a duplicate.
   const loadOlder = useCallback(async () => {
     if (!hasMore || !oldestAt) return;
+    const generation = accountGeneration.current;
     try {
       const { data } = await api.get("/support/conversation", { params: { before: oldestAt } });
+      if (generation !== accountGeneration.current) return;
+      for (const message of data.messages || []) seenMessageIds.current.add(String(message._id));
       setMessages((current) => mergeMessages(current, data.messages || []));
       setHasMore(Boolean(data.has_more));
       setOldestAt(data.oldest_created_at || null);
@@ -128,12 +131,16 @@ export function SupportProvider({ children }) {
       socket.on("connect_error", () => setConnected(false));
 
       socket.on("support:message", (message) => {
+        if (cancelled || !message?._id) return;
+        const id = String(message._id), duplicate = seenMessageIds.current.has(id);
+        seenMessageIds.current.add(id);
         setMessages((current) => mergeMessages(current, [message]));
         // Only an ADMIN's message is unread - the customer's own message
         // comes back over the same room (one rendering path for both
         // sides), and counting it would light the dot for something they
         // just typed themselves.
-        if (message.sender_role === "admin") {
+        if (message.sender_role === "admin" && !duplicate) {
+          unreadRevision.current += 1;
           setUnreadCount((count) => count + 1);
         }
       });
@@ -176,6 +183,7 @@ export function SupportProvider({ children }) {
   // usually a customer whose day is already going badly.
   const sendMessage = useCallback(
     async (text, orderContext) => {
+      const generation = accountGeneration.current;
       const body = String(text || "").trim();
       if (!body) return { ok: false, message: "Message is empty" };
 
@@ -188,6 +196,7 @@ export function SupportProvider({ children }) {
             resolve(response);
           });
         });
+        if (generation !== accountGeneration.current) return { ok: false, message: "Your account changed. Open support again to continue." };
 
         if (ack?.ok) return { ok: true };
         // A refusal (too long, an order that isn't theirs) is the
@@ -213,6 +222,8 @@ export function SupportProvider({ children }) {
           text: body,
           order_context: orderContext,
         });
+        if (generation !== accountGeneration.current) return { ok: false, message: "Your account changed. Open support again to continue." };
+        if (data?._id) seenMessageIds.current.add(String(data._id));
         // No broadcast reaches this client when it has no socket, so the
         // message has to be placed into the thread here. Over the socket
         // path it arrives through 'support:message' instead, which is
@@ -234,6 +245,7 @@ export function SupportProvider({ children }) {
   // locally even if the write didn't land - and the next refresh will
   // re-read whatever the server actually has.
   const markRead = useCallback(async () => {
+    unreadRevision.current += 1;
     setUnreadCount(0);
     const socket = socketRef.current;
     if (socket?.connected) {

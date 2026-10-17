@@ -173,15 +173,11 @@ export function shopPerformance(orders) {
   };
 }
 
-// The pipeline strip. "Printing" is not a backend status - an order goes
-// pending -> accepted -> ready_for_pickup - and accepted is precisely the
-// state where the shop has taken the job and is printing it. So the step
-// is labelled for what the vendor is doing while it carries the real
-// status underneath, rather than adding a stage the database cannot ever
-// report.
+// The pipeline follows confirmed backend states. Accepting an order does
+// not tell us whether printing has started.
 export const PIPELINE = [
   { key: "pending", label: "New", hint: "Needs accepting" },
-  { key: "accepted", label: "Printing", hint: "Accepted — printing now" },
+  { key: "accepted", label: "Accepted", hint: "Accepted by your shop" },
   { key: "ready_for_pickup", label: "Ready", hint: "Waiting for pickup" },
   { key: "completed", label: "Collected", hint: "Handed over" },
 ];

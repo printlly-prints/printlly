@@ -5,7 +5,10 @@ import DocumentSettingsCard from "../components/DocumentSettingsCard";
 import api from "../api/client";
 import { defaultDocumentSettings } from "../utils/documentSettings";
 import { estimateOrder } from "../utils/estimatePricing";
-import { colors, typography, spacing, radius } from "../theme";
+import { typography, spacing, radius } from "../theme";
+import ScreenFrame from "../components/ScreenFrame";
+import { useTheme, useThemedStyles } from "../context/ThemeContext";
+import { useOrderDraft } from "../context/OrderDraftContext";
 
 // Step 2 of the order flow. Every uploaded document is configured
 // SEPARATELY - colour mode, copies, paper size, sides and services are
@@ -17,15 +20,20 @@ import { colors, typography, spacing, radius } from "../theme";
 // /orders has always accepted, and stays order-wide: it is a message to
 // the shop, not a print setting.
 export default function PrintPreferencesScreen({ route, navigation }) {
+  const { colors } = useTheme(), styles = useThemedStyles(createStyles), { getDraft, setDraft } = useOrderDraft();
   const { uploadedDocs, preselectedShop } = route.params;
 
   // One settings object per uploaded document, positionally matched to
   // uploadedDocs - the same array shape the rest of the flow and the API
   // both expect.
   const [docSettings, setDocSettings] = useState(() =>
-    uploadedDocs.map(() => defaultDocumentSettings())
+    uploadedDocs.map((doc) => {
+      const draft = getDraft(), index = draft?.uploadedDocs?.findIndex((entry) => entry.upload_id === doc.upload_id);
+      return index >= 0 && draft.docSettings?.[index] ? { ...draft.docSettings[index], services: [...draft.docSettings[index].services] } : defaultDocumentSettings();
+    })
   );
-  const [notes, setNotes] = useState("");
+  const [notes, setNotes] = useState(route.params.restoredNotes || getDraft()?.notes || "");
+  useEffect(() => { setDraft({ ...getDraft(), uploadedDocs, docSettings, notes, preselectedShop }); }, [uploadedDocs, docSettings, notes, preselectedShop, getDraft, setDraft]);
   // Only the first card starts open - see DocumentSettingsCard's comment.
   const [expandedIndex, setExpandedIndex] = useState(0);
 
@@ -98,8 +106,8 @@ export default function PrintPreferencesScreen({ route, navigation }) {
   const multiple = uploadedDocs.length > 1;
 
   return (
-    <ScrollView style={styles.screen} contentContainerStyle={styles.content}>
-      <Text style={styles.title}>Print preferences</Text>
+    <ScreenFrame title="Print options" onBack={() => navigation.goBack()} footer={<Button title={preselectedShop ? "Continue" : "Find print shops"} onPress={handleContinue} />}>
+      <Text style={styles.title}>{multiple ? "Your files, your way." : "One document, your way."}</Text>
       <Text style={styles.subtitle}>
         {multiple
           ? "Set these separately for each document — tap one to open it."
@@ -125,7 +133,7 @@ export default function PrintPreferencesScreen({ route, navigation }) {
 
       {!shopPricing ? (
         <Text style={styles.servicesNote}>
-          Finishing services (binding, lamination and so on) vary by shop &mdash; you&apos;ll be able to
+          Finishing services (binding, lamination and so on) vary by shop — you'll be able to
           add them once you&apos;ve chosen one.
         </Text>
       ) : null}
@@ -179,13 +187,11 @@ export default function PrintPreferencesScreen({ route, navigation }) {
         </Text>
       )}
 
-      <View style={styles.spacer} />
-      <Button title="Continue" onPress={handleContinue} />
-    </ScrollView>
+    </ScreenFrame>
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = ({ colors }) => ({
   screen: { flex: 1, backgroundColor: colors.background },
   content: { padding: spacing.lg, paddingBottom: 48 },
   title: { ...typography.h1, color: colors.textPrimary },

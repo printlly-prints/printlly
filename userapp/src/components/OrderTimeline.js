@@ -1,6 +1,8 @@
-import { StyleSheet, Text, View } from "react-native";
+import { Text, View } from "react-native";
 import Ionicons from "@expo/vector-icons/Ionicons";
-import { colors, typography, spacing, fonts } from "../theme";
+import { useTheme, useThemedStyles } from "../context/ThemeContext";
+import { typography, spacing, fonts } from "../theme";
+import { ORDER_STEPS, completedOrderStepCount } from "../utils/orderState";
 
 // The vertical status timeline.
 //
@@ -11,59 +13,27 @@ import { colors, typography, spacing, fonts } from "../theme";
 // tick against something that never happened. The shop accepting the job
 // is the real event at that point in the flow, and it is what is shown.
 //
-// "Printing" likewise has no status of its own - the backend goes
-// straight from accepted to ready_for_pickup. It is kept as a step
-// because it is the truthful description of what the shop is doing after
-// accepting, and it becomes a distinct state for free if the backend ever
-// adds one. Until then accepted lights both, which is honest: the shop
-// has the job and is working on it.
-const STEPS = [
-  { key: "placed", label: "Order placed", pending: "Waiting for the shop to accept." },
-  { key: "accepted", label: "Shop accepted", pending: "The shop will confirm shortly." },
-  { key: "printing", label: "Printing in progress", pending: "Your files are queued." },
-  { key: "ready", label: "Ready for pickup", pending: "We'll notify you once it's ready." },
-  { key: "completed", label: "Collected", pending: "Show your OTP at the counter." },
-];
-
-// How many steps are DONE for a given backend status. The active step is
-// the one after them.
-function completedCount(status) {
-  switch (status) {
-    case "pending":
-      return 1; // placed
-    case "accepted":
-      // Accepted and printing are the same backend state - see above.
-      return 3;
-    case "ready_for_pickup":
-      return 4;
-    case "completed":
-      return 5;
-    default:
-      return 1;
-  }
-}
-
 export default function OrderTimeline({ status, placedAt, acceptedAt, readyAt, completedAt }) {
-  const done = completedCount(status);
+  const { colors } = useTheme(), styles = useThemedStyles(createStyles);
+  const done = completedOrderStepCount(status);
 
   // Only timestamps the order actually carries. A step with no recorded
   // time shows its description instead of a made-up one - Order stores
   // createdAt and updatedAt, not a stamp per transition, so most of these
   // are genuinely unknown.
   const timestamps = {
-    placed: placedAt,
+    pending: placedAt,
     accepted: acceptedAt,
-    printing: null,
-    ready: readyAt,
+    ready_for_pickup: readyAt,
     completed: completedAt,
   };
 
   return (
     <View>
-      {STEPS.map((step, i) => {
+      {ORDER_STEPS.map((step, i) => {
         const isDone = i < done;
         const isActive = i === done - 1;
-        const isLast = i === STEPS.length - 1;
+        const isLast = i === ORDER_STEPS.length - 1;
         const stamp = timestamps[step.key];
 
         return (
@@ -77,7 +47,7 @@ export default function OrderTimeline({ status, placedAt, acceptedAt, readyAt, c
                 ]}
               >
                 {isDone && !isActive ? (
-                  <Ionicons name="checkmark" size={13} color={colors.surface} />
+                  <Ionicons name="checkmark" size={13} color={colors.onAction} />
                 ) : isActive ? (
                   <View style={styles.activeCore} />
                 ) : null}
@@ -116,7 +86,7 @@ function formatStamp(value) {
 
 const DOT = 26;
 
-const styles = StyleSheet.create({
+const createStyles = ({ colors }) => ({
   row: { flexDirection: "row", gap: spacing.md },
   rail: { alignItems: "center", width: DOT },
   dot: {
@@ -133,7 +103,7 @@ const styles = StyleSheet.create({
   // brand teal, so "where am I" is the single most prominent thing.
   dotDone: { backgroundColor: colors.success, borderColor: colors.success },
   dotActive: { backgroundColor: colors.primary, borderColor: colors.primary },
-  activeCore: { width: 9, height: 9, borderRadius: 5, backgroundColor: colors.surface },
+  activeCore: { width: 9, height: 9, borderRadius: 5, backgroundColor: colors.onAction },
   line: { flex: 1, width: 2, backgroundColor: colors.border, minHeight: 22 },
   lineDone: { backgroundColor: colors.success },
 

@@ -8,10 +8,6 @@
 const STATUS_STYLES = {
   pending: "bg-status-pending-bg text-status-pending-text",
   accepted: "bg-status-active-bg text-status-active-text",
-  // No backend status emits "printing" yet - orders go accepted ->
-  // ready_for_pickup. Mapped here so the badge is correct the day the
-  // backend adds it; nothing renders it today.
-  printing: "bg-status-active-bg text-status-active-text",
   ready_for_pickup: "bg-status-ready-bg text-status-ready-text",
   completed: "bg-status-done-bg text-status-done-text",
   cancelled: "bg-error-bg text-error-text",
@@ -23,7 +19,6 @@ const STATUS_STYLES = {
 const STATUS_LABELS = {
   pending: "Pending",
   accepted: "Accepted",
-  printing: "Printing",
   ready_for_pickup: "Ready for pickup",
   completed: "Completed",
   cancelled: "Cancelled",

@@ -4,15 +4,17 @@
     "slug": "printlly",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/icon.png",
-    "userInterfaceStyle": "light",
+    "icon": "./assets/printlly-folded-emblem.png",
+    "userInterfaceStyle": "automatic",
     "ios": {
       "supportsTablet": true
     },
     "android": {
+      "package": "com.printlly.customer",
+      "softwareKeyboardLayoutMode": "resize",
       "adaptiveIcon": {
-        "backgroundColor": "#FFFFFF",
-        "foregroundImage": "./assets/android-icon-foreground.png",
+        "backgroundColor": "#311434",
+        "foregroundImage": "./assets/printlly-folded-emblem.png",
         "monochromeImage": "./assets/android-icon-monochrome.png"
       }
     },
@@ -20,21 +22,82 @@
       "favicon": "./assets/favicon.png"
     },
     "plugins": [
+      "expo-system-ui",
+      "./plugins/withNeutralAndroidSplash.cjs",
       [
         "expo-splash-screen",
         {
-          "image": "./assets/printlly-mark.png",
-          "imageWidth": 180,
-          "resizeMode": "contain",
-          "backgroundColor": "#F7FAFA"
+          "backgroundColor": "#FFF7E8",
+          "dark": {
+            "backgroundColor": "#1F1F25"
+          }
         }
       ],
-      "expo-font",
+      [
+        "expo-font",
+        {
+          "android": {
+            "fonts": [
+              {
+                "fontFamily": "Manrope_600SemiBold",
+                "fontDefinitions": [
+                  {
+                    "path": "./node_modules/@expo-google-fonts/manrope/600SemiBold/Manrope_600SemiBold.ttf",
+                    "weight": 600
+                  }
+                ]
+              },
+              {
+                "fontFamily": "Manrope_700Bold",
+                "fontDefinitions": [
+                  {
+                    "path": "./node_modules/@expo-google-fonts/manrope/700Bold/Manrope_700Bold.ttf",
+                    "weight": 700
+                  }
+                ]
+              },
+              {
+                "fontFamily": "Manrope_800ExtraBold",
+                "fontDefinitions": [
+                  {
+                    "path": "./node_modules/@expo-google-fonts/manrope/800ExtraBold/Manrope_800ExtraBold.ttf",
+                    "weight": 800
+                  }
+                ]
+              },
+              {
+                "fontFamily": "Inter_400Regular",
+                "fontDefinitions": [
+                  {
+                    "path": "./node_modules/@expo-google-fonts/inter/400Regular/Inter_400Regular.ttf",
+                    "weight": 400
+                  }
+                ]
+              },
+              {
+                "fontFamily": "Inter_500Medium",
+                "fontDefinitions": [
+                  {
+                    "path": "./node_modules/@expo-google-fonts/inter/500Medium/Inter_500Medium.ttf",
+                    "weight": 500
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      ],
       [
         "expo-notifications",
         {
           "icon": "./assets/android-icon-monochrome.png",
-          "color": "#087F8C"
+          "color": "#6D35B1",
+          "sounds": [
+            "./assets/event-sounds/notification.mp3",
+            "./assets/event-sounds/order_cancelled.mp3",
+            "./assets/event-sounds/payment_confirmed.mp3",
+            "./assets/event-sounds/ready_for_pickup.mp3"
+          ]
         }
       ],
       [
@@ -42,7 +105,8 @@
         {
           "locationWhenInUsePermission": "Printlly uses your location to show how far each print shop is and list the nearest ones first."
         }
-      ]
+      ],
+      "./plugins/withOpeningAudio.cjs"
     ]
   }
 }

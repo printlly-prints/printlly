@@ -1,7 +1,6 @@
 import { useEffect } from "react";
 import { Link } from "react-router-dom";
-import LandingHeader from "../landing/LandingHeader";
-import LandingFooter from "../landing/LandingFooter";
+import PublicShell from "../PublicShell";
 import { LEGAL_DETAILS_CONFIGURED, POLICY_LAST_UPDATED } from "../../config/legal";
 
 // Shared shell for every legal and information page.
@@ -117,14 +116,14 @@ export function Note({ children }) {
   );
 }
 
-export default function LegalPage({ title, description, intro, toc, children }) {
+export default function LegalPage({ title, description, intro, toc, children, hero }) {
   useDocumentMeta(title, description);
+  const TitleTag = hero ? "h2" : "h1";
 
   return (
-    <div className="min-h-screen bg-background">
-      <LandingHeader />
-
-      <main className="max-w-[760px] mx-auto px-5 sm:px-6 pt-28 pb-20">
+    <PublicShell title={title}>
+      {hero}
+      <article className="legal-article max-w-[760px] w-full mx-auto rounded-card bg-surface p-5 sm:p-6">
         <nav aria-label="Breadcrumb" className="mb-5">
           <ol className="flex items-center gap-2 text-[13px] text-text-muted">
             <li>
@@ -137,9 +136,9 @@ export default function LegalPage({ title, description, intro, toc, children }) 
           </ol>
         </nav>
 
-        <h1 className="font-heading text-[28px] sm:text-[34px] font-extrabold tracking-[-0.02em] text-text-primary">
+        <TitleTag className="font-heading text-[28px] sm:text-[34px] font-extrabold tracking-[-0.02em] text-text-primary">
           {title}
-        </h1>
+        </TitleTag>
         <p className="mt-2 text-[13.5px] text-text-muted">
           Last updated: {POLICY_LAST_UPDATED}
         </p>
@@ -174,9 +173,7 @@ export default function LegalPage({ title, description, intro, toc, children }) 
         ) : null}
 
         <article>{children}</article>
-      </main>
-
-      <LandingFooter />
-    </div>
+      </article>
+    </PublicShell>
   );
 }
