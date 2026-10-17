@@ -58,7 +58,7 @@ export default function HelpSupportScreen({ navigation }) {
   </ScreenFrame>;
 }
 const createStyles = ({ colors }) => ({
-  introduction: { flexDirection: "row", alignItems: "center", gap: 12, marginBottom: 16, minHeight: 80 }, headline: { ...typography.h1, color: colors.textPrimary, flex: 1 }, artwork: { width: 54, height: 80 },
+  introduction: { flexDirection: "row", alignItems: "center", gap: 12, marginBottom: 16, minHeight: 112 }, headline: { ...typography.h1, color: colors.textPrimary, flex: 1 }, artwork: { width: 78, height: 112 },
   topics: { gap: 16 }, answers: { backgroundColor: colors.surface, borderRadius: radius.md, padding: 16, marginTop: 8, gap: 20 }, answer: { gap: 8 },
   question: { ...typography.bodyMedium, color: colors.textPrimary }, body: { ...typography.bodySmall, color: colors.textSecondary },
   contacts: { marginTop: 24, gap: 16 }, sectionTitle: { ...typography.h3, color: colors.textPrimary }, error: { ...typography.bodySmall, color: colors.error, marginTop: 16 },

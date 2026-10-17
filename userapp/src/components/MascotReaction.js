@@ -13,7 +13,7 @@ const art = {
   shop_unavailable: () => require("../../assets/mascot-reactions/shop_unavailable.png"),
 };
 /** Static decorative artwork; the adjacent text conveys the state. */
-export function MascotReaction({ reaction, size = 96, style }) {
+export function MascotReaction({ reaction, size = 120, style }) {
   const source = art[reaction];
   if (!source) return null;
   return <Image source={source()} resizeMode="contain" accessible={false} accessibilityElementsHidden importantForAccessibility="no-hide-descendants" style={[{ width: size, height: size, flexShrink: 0 }, style]} />;
