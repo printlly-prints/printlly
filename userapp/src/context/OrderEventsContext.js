@@ -1,12 +1,27 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
 import { AppState, Platform } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import * as Notifications from "expo-notifications";
 import Constants from "expo-constants";
+import { isRunningInExpoGo } from "expo";
 import { io } from "socket.io-client";
 import api from "../api/client";
 import { useAuth } from "./AuthContext";
 import { useNotifications } from "./NotificationsContext";
+
+// In Expo SDK 53+, expo-notifications removed remote push notification support in Expo Go on Android.
+// Importing expo-notifications in Expo Go on Android throws an immediate runtime crash.
+let Notifications = null;
+const isExpoGoOnAndroid =
+  Platform.OS === "android" &&
+  (Boolean(isRunningInExpoGo?.()) || Constants.appOwnership === "expo" || Constants.executionEnvironment === "storeClient");
+
+if (!isExpoGoOnAndroid) {
+  try {
+    Notifications = require("expo-notifications");
+  } catch (error) {
+    console.log(`[push] expo-notifications unavailable: ${error.message}`);
+  }
+}
 
 // Realtime order events, plus push-token registration.
 //
@@ -27,14 +42,16 @@ const OrderEventsContext = createContext(null);
 // How a notification behaves when one arrives while the app is in the
 // foreground. Without this, Expo shows nothing at all in the foreground, which
 // looks like push being broken.
-Notifications.setNotificationHandler({
-  handleNotification: async () => ({
-    shouldShowBanner: true,
-    shouldShowList: true,
-    shouldPlaySound: false,
-    shouldSetBadge: false,
-  }),
-});
+if (Notifications?.setNotificationHandler) {
+  Notifications.setNotificationHandler({
+    handleNotification: async () => ({
+      shouldShowBanner: true,
+      shouldShowList: true,
+      shouldPlaySound: false,
+      shouldSetBadge: false,
+    }),
+  });
+}
 
 // Asks for permission and registers this device's Expo push token with the
 // backend.
@@ -46,9 +63,8 @@ Notifications.setNotificationHandler({
 // just get no background notifications.
 async function registerForPush() {
   try {
-    // Push is not available on a simulator/emulator at all, so asking would
-    // only produce a confusing permission prompt.
-    if (!Constants.isDevice) return null;
+    // Push is not available on Expo Go on Android or emulator/simulator.
+    if (!Notifications || isExpoGoOnAndroid || !Constants.isDevice) return null;
 
     const existing = await Notifications.getPermissionsAsync();
     let status = existing.status;

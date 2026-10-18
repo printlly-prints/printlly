@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import { useFocusEffect } from "@react-navigation/native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import {
   ActivityIndicator,
   Image,
@@ -60,6 +61,7 @@ export default function HomeScreen({ navigation }) {
   const { unreadCount } = useNotifications();
   const { coords, ensureLocation } = useLocation();
   const { width } = useWindowDimensions();
+  const insets = useSafeAreaInsets();
 
   // Derived from the viewport rather than hardcoded, so the peek holds at
   // 320px and at 430px alike.
@@ -144,7 +146,10 @@ export default function HomeScreen({ navigation }) {
     <ScreenBackground>
       <ScrollView
         style={styles.scroll}
-        contentContainerStyle={styles.content}
+        contentContainerStyle={[
+          styles.content,
+          { paddingTop: Math.max(insets.top, spacing.md) + spacing.sm },
+        ]}
         showsVerticalScrollIndicator={false}
       >
         {/* --- brand row ---------------------------------------------- */}

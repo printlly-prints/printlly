@@ -1,4 +1,5 @@
 import { Alert, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import Avatar from "../components/Avatar";
 import Button from "../components/Button";
@@ -9,6 +10,7 @@ import { colors, typography, spacing, radius } from "../theme";
 const stub = (feature) => () => Alert.alert(feature, "This isn't available yet.");
 
 export default function ProfileScreen({ navigation }) {
+  const insets = useSafeAreaInsets();
   const { user, logout } = useAuth();
   // Unread admin replies, kept live by the support socket (see
   // SupportContext) rather than polled - a reply that arrives while the
@@ -16,7 +18,13 @@ export default function ProfileScreen({ navigation }) {
   const { unreadCount } = useSupport() || {};
 
   return (
-    <ScrollView style={styles.screen} contentContainerStyle={styles.content}>
+    <ScrollView
+      style={styles.screen}
+      contentContainerStyle={[
+        styles.content,
+        { paddingTop: Math.max(insets.top, spacing.md) + spacing.sm },
+      ]}
+    >
       <View style={styles.identity}>
         <Avatar name={user?.name} size={72} />
         <Text style={styles.name}>{user?.name || "Customer"}</Text>
