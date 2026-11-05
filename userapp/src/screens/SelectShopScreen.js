@@ -1,16 +1,20 @@
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { ActivityIndicator, FlatList, Pressable, StyleSheet, Text, View } from "react-native";
 import { useFocusEffect } from "@react-navigation/native";
 import Button from "../components/Button";
+import RecoveryState from "../components/RecoveryState";
+import { recoveryForError } from "../utils/requestRecovery";
 import RushBadge from "../components/RushBadge";
+import { shopRushLevel } from "../utils/shopRush";
 import ShopPhoto from "../components/ShopPhoto";
-import { shopImageSource } from "../utils/shopImages";
 import api from "../api/client";
 import { useLocation } from "../context/LocationContext";
 import useOpenStatusRefresh from "../hooks/useOpenStatusRefresh";
 import { toComparePricingDocuments } from "../utils/documentSettings";
 import { formatDistance } from "../utils/distance";
-import { colors, typography, spacing, radius, shadows } from "../theme";
+import { typography, spacing, radius, shadows } from "../theme";
+import ScreenFrame from "../components/ScreenFrame";
+import { useTheme, useThemedStyles } from "../context/ThemeContext";
 
 const RUSH_RANK = { low: 0, medium: 1, high: 2 };
 
@@ -20,18 +24,24 @@ const RUSH_RANK = { low: 0, medium: 1, high: 2 };
 // excludes any shop that can't fulfil a requested service and sorts by
 // total_amount ascending, so this screen mainly renders what comes back.
 export default function SelectShopScreen({ route, navigation }) {
+  const { colors } = useTheme(), styles = useThemedStyles(createStyles);
   const { uploadedDocs, docSettings, notes, preselectedShop } = route.params;
 
   const [results, setResults] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [failure, setFailure] = useState(null);
   const [sortBy, setSortBy] = useState("price"); // "price" | "rush" | "distance"
+  const [selectedId, setSelectedId] = useState(preselectedShop?._id || null);
   // Not prompted here - by this point Home/Shops already asked. Used only
   // to add distance_km to results and offer a "Distance" sort; price stays
   // the default order either way.
   const { coords } = useLocation();
+  const request = useRef(0), mounted = useRef(true);
+  useEffect(() => { mounted.current = true; return () => { mounted.current = false; request.current += 1; }; }, []);
 
   const loadPrices = useCallback(async ({ silent } = {}) => {
+    const id = ++request.current;
     if (!silent) setLoading(true);
     try {
       // Each document is priced on its own settings and the totals are
@@ -40,12 +50,16 @@ export default function SelectShopScreen({ route, navigation }) {
         documents: toComparePricingDocuments(uploadedDocs, docSettings),
         ...(coords ? { lat: coords.lat, lng: coords.lng } : {}),
       });
+      if (!mounted.current || id !== request.current) return;
       setResults(data);
-      setError("");
+      setSelectedId((current) => data.some((item) => item.shop_id === current && item.shop_status !== "closed" && item.is_currently_open !== false) ? current : data.find((item) => item.shop_status !== "closed" && item.is_currently_open !== false)?.shop_id || null);
+      setError(""); setFailure(null);
     } catch (err) {
+      if (!mounted.current || id !== request.current) return;
+      setFailure(err);
       setError(err.response?.data?.message || "Could not load shop prices. Check your connection.");
     } finally {
-      setLoading(false);
+      if (mounted.current && id === request.current) setLoading(false);
     }
     // uploadedDocs/docSettings are stable for the lifetime of this screen
     // (set once on PrintPreferencesScreen, not edited here). coords is the
@@ -82,12 +96,14 @@ export default function SelectShopScreen({ route, navigation }) {
       return a.total_amount - b.total_amount;
     }
     if (sortBy === "rush") {
-      const rankA = RUSH_RANK[a.queue?.rush_level] ?? 3;
-      const rankB = RUSH_RANK[b.queue?.rush_level] ?? 3;
+      const rankA = RUSH_RANK[shopRushLevel(a)] ?? 3;
+      const rankB = RUSH_RANK[shopRushLevel(b)] ?? 3;
       if (rankA !== rankB) return rankA - rankB;
       // Same rush bucket - break the tie by the finer-grained live count
       // rather than leaving it arbitrary.
-      return (a.queue?.active_orders_count ?? 0) - (b.queue?.active_orders_count ?? 0);
+      const countA = typeof a.queue?.active_orders_count === 'number' && Number.isFinite(a.queue.active_orders_count) ? a.queue.active_orders_count : Infinity;
+      const countB = typeof b.queue?.active_orders_count === 'number' && Number.isFinite(b.queue.active_orders_count) ? b.queue.active_orders_count : Infinity;
+      return countA === countB ? 0 : countA - countB;
     }
     return a.total_amount - b.total_amount;
   });
@@ -125,23 +141,25 @@ export default function SelectShopScreen({ route, navigation }) {
 
   if (loading) {
     return (
-      <View style={styles.center}>
+      <ScreenFrame title="Compare prices" onBack={() => navigation.goBack()}><View style={styles.center}>
         <ActivityIndicator size="large" color={colors.primaryBright} />
-      </View>
+      </View></ScreenFrame>
     );
   }
 
+  const selectedShop = results.find((item) => item.shop_id === selectedId);
   return (
-    <View style={styles.screen}>
+    <ScreenFrame title="Compare shops" onBack={() => navigation.goBack()} scroll={false} contentStyle={{ padding: 0 }}
+      footer={<Button title={selectedShop ? `Choose ${selectedShop.shop_name}` : "Choose a shop"} disabled={!selectedShop || selectedShop.shop_status === "closed" || selectedShop.is_currently_open === false || Boolean(error)} onPress={() => selectedShop && handleSelect(selectedShop)} />}>
       <FlatList
         contentContainerStyle={styles.listContent}
         data={sortedResults}
         keyExtractor={(item) => item.shop_id}
         ListHeaderComponent={
           <>
-            <Text style={styles.title}>Compare prices</Text>
-            <Text style={styles.subtitle}>Priced for your exact order - pick the shop that works for you.</Text>
-            {error ? <Text style={styles.error}>{error}</Text> : null}
+            <Text style={styles.title}>Compare your print.</Text>
+            <Text style={styles.subtitle}>{uploadedDocs.length} files · same print options</Text>
+            {error ? <RecoveryState compact {...recoveryForError(failure)} retryKey={failure} primaryLabel="Try again" onPrimary={loadPrices} loading={loading} /> : null}
             {!error && results.length > 0 ? (
               <View style={styles.sortRow}>
                 <Text style={styles.sortLabel}>Sort by</Text>
@@ -162,9 +180,7 @@ export default function SelectShopScreen({ route, navigation }) {
         }
         ListEmptyComponent={
           !error ? (
-            <Text style={styles.empty}>
-              No shops currently support this exact order. Try changing your preferences and going back.
-            </Text>
+            <RecoveryState reaction="not_found" title="No matching shops." message="No shops currently support these print options. Your files are kept; change the options to try again." primaryLabel="Change print options" onPrimary={() => navigation.goBack()} />
           ) : null
         }
         renderItem={({ item }) => {
@@ -174,42 +190,37 @@ export default function SelectShopScreen({ route, navigation }) {
           // an order there right now would just be rejected by the
           // server anyway (see ReviewCheckoutScreen's closed-shop
           // handling for the case where it closes AFTER being selected).
-          const closed = item.is_currently_open === false;
+          const closed = item.shop_status === "closed" || item.is_currently_open === false;
           const distanceLabel = formatDistance(item.distance_km);
           return (
-            <View style={[styles.card, isPreselected && styles.cardHighlighted, closed && styles.cardClosed]}>
-              <ShopPhoto source={shopImageSource(item)} shopName={item.shop_name} style={styles.photo} closed={closed} />
-              {isPreselected ? (
-                <View style={styles.pickBadge}>
-                  <Text style={styles.pickBadgeText}>Your pick</Text>
-                </View>
-              ) : null}
-
-              <Text style={styles.shopName} numberOfLines={1}>
+            <Pressable accessibilityRole="radio" accessibilityState={{ selected: item.shop_id === selectedId, disabled: closed }} disabled={closed} onPress={() => setSelectedId(item.shop_id)} style={[styles.card, item.shop_id === selectedId && styles.cardHighlighted, closed && styles.cardClosed]}>
+              <View style={{ flexDirection: "row", alignItems: "center", gap: 12 }}><ShopPhoto source={item.shop_photo_url ? { uri: item.shop_photo_url } : null} shopName={item.shop_name} style={styles.photo} closed={closed} /><View style={{ flex: 1 }}>
+              <Text style={styles.shopName} numberOfLines={2}>
                 {item.shop_name}
               </Text>
               <Text style={styles.address} numberOfLines={2}>
                 {item.address}
               </Text>
               {distanceLabel ? <Text style={styles.distance}>{distanceLabel}</Text> : null}
-              {item.queue?.rush_level ? <RushBadge level={item.queue.rush_level} style={styles.rushBadge} /> : null}
+              </View></View>
+              {shopRushLevel(item) ? <RushBadge shop={item} style={styles.rushBadge} /> : null}
 
               <View style={styles.priceRow}>
                 <Text style={styles.priceLabel}>Total for this order</Text>
                 <Text style={styles.priceValue}>₹{item.total_amount}</Text>
               </View>
 
-              <Button title="Select" onPress={() => handleSelect(item)} disabled={closed} />
               {closed ? <Text style={styles.closedNote}>Currently closed</Text> : null}
-            </View>
+            </Pressable>
           );
         }}
       />
-    </View>
+    </ScreenFrame>
   );
 }
 
 function SortOption({ label, selected, onPress }) {
+  const styles = useThemedStyles(createStyles);
   return (
     <Pressable style={[styles.sortOption, selected && styles.sortOptionSelected]} onPress={onPress}>
       <Text style={[styles.sortOptionLabel, selected && styles.sortOptionLabelSelected]}>{label}</Text>
@@ -217,7 +228,7 @@ function SortOption({ label, selected, onPress }) {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = ({ colors }) => ({
   screen: { flex: 1, backgroundColor: colors.background },
   listContent: { padding: spacing.lg, paddingBottom: spacing.xl },
   center: { flex: 1, alignItems: "center", justifyContent: "center", backgroundColor: colors.background },
@@ -236,7 +247,7 @@ const styles = StyleSheet.create({
     borderRadius: radius.pill,
     padding: 3,
   },
-  sortOption: { paddingHorizontal: spacing.md, paddingVertical: spacing.xs, borderRadius: radius.pill },
+  sortOption: { minHeight: 48, justifyContent: "center", paddingHorizontal: spacing.md, paddingVertical: spacing.xs, borderRadius: radius.pill },
   // Same light-lift shadow as shadows.card, scaled down by its own small
   // shadowRadius - reused rather than inventing a one-off for this pill.
   sortOptionSelected: { backgroundColor: colors.surface, ...shadows.card },
@@ -246,18 +257,18 @@ const styles = StyleSheet.create({
     position: "relative",
     backgroundColor: colors.surface,
     borderRadius: radius.md,
-    padding: spacing.xl,
+    padding: 16,
     marginBottom: spacing.md,
     borderWidth: 1,
-    borderColor: colors.border,
+    borderColor: colors.divider,
   },
-  cardHighlighted: { borderColor: colors.primary },
+  cardHighlighted: { borderColor: colors.controlBorder, backgroundColor: colors.selection },
   // Dimmed, not disabled - the card (and its price) stays visible so the
   // customer can still note it for later. Only the "Select" button itself
   // is disabled, above.
   cardClosed: { opacity: 0.6 },
   closedNote: { ...typography.caption, color: colors.textMuted, textAlign: "center", marginTop: spacing.sm },
-  photo: { height: 120, marginBottom: spacing.md },
+  photo: { width: 48, height: 48, borderRadius: 24 },
   pickBadge: {
     position: "absolute",
     top: spacing.xl + spacing.xs,
@@ -267,9 +278,9 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.sm,
     paddingVertical: 3,
   },
-  pickBadgeText: { ...typography.caption, color: colors.surface, fontWeight: "600" },
-  shopName: { ...typography.h2, color: colors.textPrimary },
-  address: { ...typography.body, color: colors.textSecondary, marginTop: spacing.sm },
+  pickBadgeText: { ...typography.caption, color: colors.onAction, fontWeight: "600" },
+  shopName: { ...typography.label, color: colors.textPrimary },
+  address: { ...typography.bodySmall, color: colors.textSecondary, marginTop: 4 },
   distance: { ...typography.labelSmall, color: colors.primaryDeep, marginTop: spacing.xs },
   rushBadge: { marginTop: spacing.md },
   priceRow: {

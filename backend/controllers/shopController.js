@@ -245,7 +245,7 @@ const getActiveShops = async (req, res) => {
       point,
     });
 
-    const queueByShopId = await getQueueInfoForShops(entries.map(({ shop }) => shop._id));
+    const queueByShopId = await getQueueInfoForShops(entries.map(({ shop }) => shop));
 
     // .toObject() first: a Mongoose document only serializes its schema
     // paths, so setting `.queue` directly on the document instance would
@@ -282,16 +282,14 @@ const getShopQueue = async (req, res) => {
   try {
     const { shopId } = req.params;
 
-    // Only the two gate flags are needed - this never reads the shop's
-    // pricing, photos or kyc, so there's no reason to pull the whole
-    // document (including that kyc sub-object) into memory to answer a
-    // queue count.
-    const shop = await Shop.findById(shopId).select("is_active verification_status");
+    // Include availability inputs so a closed shop cannot advertise rush.
+    // No pricing, photos or KYC are needed for these numeric summaries.
+    const shop = await Shop.findById(shopId).select(`is_active verification_status ${AVAILABILITY_FIELDS}`);
     if (!shop || !shop.is_active || shop.verification_status !== "approved") {
       return res.status(404).json({ message: "Shop not found" });
     }
 
-    const queue = await getShopQueueInfo(shop._id);
+    const queue = await getShopQueueInfo(shop);
     res.status(200).json(queue);
   } catch (error) {
     console.error(`Failed to fetch shop queue: ${error.message}`);
@@ -334,6 +332,7 @@ const getMyShop = async (req, res) => {
     const { status, prep_minutes } = computeShopAvailability(plain);
     plain.effective_status = status;
     plain.effective_prep_minutes = prep_minutes;
+    plain.queue = await getShopQueueInfo(shop);
 
     res.status(200).json(plain);
   } catch (error) {
@@ -1128,9 +1127,9 @@ const comparePricing = async (req, res) => {
 
     const eligibleShops = eligible.map(({ shop }) => shop);
 
-    // Batched, same as GET /shops - one aggregation for every eligible
+    // Batched, same as GET /shops - two aggregations for every eligible
     // shop's queue info rather than one query per shop.
-    const queueByShopId = await getQueueInfoForShops(eligibleShops.map((shop) => shop._id));
+    const queueByShopId = await getQueueInfoForShops(eligibleShops);
     const settings = await getPricingSettings();
 
     const results = eligible.map(({ shop, resolvedPerDocument }) => {
@@ -1253,7 +1252,7 @@ const getShopById = async (req, res) => {
       };
     }
 
-    plain.queue = await getShopQueueInfo(shop._id);
+    plain.queue = await getShopQueueInfo(shop);
     if (point) plain.distance_km = distanceKmTo(point, plain);
 
     res.status(200).json(plain);

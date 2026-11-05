@@ -2,6 +2,8 @@ import { Suspense, lazy } from "react";
 import { Navigate, Route, Routes } from "react-router-dom";
 import ProtectedRoute from "./components/ProtectedRoute";
 import { useAuth } from "./context/AuthContext";
+import PublicShell from "./components/PublicShell";
+import MascotRecovery from "./components/MascotRecovery";
 
 // Every page is code-split. Two distinct audiences never need each
 // other's code: a visitor landing on "/" gets the marketing page without
@@ -18,6 +20,7 @@ const LandingPage = lazy(() => import("./pages/LandingPage"));
 const AuthEntry = lazy(() => import("./pages/AuthEntry"));
 const GetApp = lazy(() => import("./pages/GetApp"));
 const Login = lazy(() => import("./pages/Login"));
+const PartnerRegistration = lazy(() => import("./pages/PartnerRegistration"));
 const AuthCallback = lazy(() => import("./pages/AuthCallback"));
 const ShopRegistration = lazy(() => import("./pages/ShopRegistration"));
 const ShopProfile = lazy(() => import("./pages/ShopProfile"));
@@ -25,7 +28,10 @@ const OrdersDashboard = lazy(() => import("./pages/OrdersDashboard"));
 const Dashboard = lazy(() => import("./pages/Dashboard"));
 const PricingPage = lazy(() => import("./pages/PricingPage"));
 const Earnings = lazy(() => import("./pages/Earnings"));
-const ComingSoon = lazy(() => import("./pages/ComingSoon"));
+const Availability = lazy(() => import("./pages/Availability"));
+const Settings = lazy(() => import("./pages/Settings"));
+const Help = lazy(() => import("./pages/Help"));
+const RecoveryPage = lazy(() => import("./pages/RecoveryPage"));
 
 // Legal and information pages. Public, unauthenticated, and lazy like the
 // rest - a customer reading the refund policy should not be made to download
@@ -47,19 +53,22 @@ const VendorTerms = lazy(() => import("./pages/legal/VendorTerms"));
 // shop, otherwise the shop registration form. This is the authenticated
 // entry point ("/app"), separate from "/" which is the public marketing
 // page. Lands on "/dashboard", which is now the real overview: what
-// needs accepting, what is printing, what is waiting and what today has
+// needs accepting, what is accepted, what is waiting and what today has
 // earned.
 function AppEntry() {
-  const { shop, shopLoading } = useAuth();
+  const { shop, shopLoading, shopError, shopRequestError, refreshShop } = useAuth();
 
   if (shopLoading) {
     return <div className="p-8 text-center text-text-secondary">Loading...</div>;
   }
+  if (shopError) return <PublicShell footer={false}><div className="recovery-page"><MascotRecovery error={shopRequestError} onRetry={refreshShop} /></div></PublicShell>;
   return <Navigate to={shop ? "/dashboard" : "/register-shop"} replace />;
 }
 
 export default function App() {
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, sessionError } = useAuth();
+
+  if (sessionError) return <Suspense fallback={<p role="status">Loading…</p>}><RecoveryPage requestError={sessionError} /></Suspense>;
 
   return (
     // One Suspense boundary around the whole route table: only ever one
@@ -88,6 +97,8 @@ export default function App() {
           element={isAuthenticated ? <Navigate to="/app" replace /> : <Login />}
         />
 
+        <Route path="/auth/vendor/register" element={isAuthenticated ? <Navigate to="/app" replace /> : <PartnerRegistration />} />
+
         {/* Public: lands here straight from the Google OAuth redirect, so it
             must not be gated behind ProtectedRoute (there's no session yet). */}
         <Route path="/auth/callback" element={<AuthCallback />} />
@@ -113,8 +124,7 @@ export default function App() {
         />
 
         {/* Every route below requires login AND a registered shop, and
-            shares the Sidebar/DashboardLayout nav (see Sidebar.jsx). Only
-            Settings is still a deliberate placeholder (ComingSoon). */}
+            shares the Sidebar/DashboardLayout navigation. */}
         <Route
           path="/dashboard"
           element={
@@ -147,8 +157,9 @@ export default function App() {
             </ProtectedRoute>
           }
         />
+        <Route path="/availability" element={<ProtectedRoute requireShop><Availability /></ProtectedRoute>} />
 
-        {/* What the shop is owed and what has already been paid out.
+        {/* What the shop is owed and what has already been recorded as paid.
             Reads GET /shops/me/settlements, which is scoped to the
             logged-in owner's own shop. */}
         <Route
@@ -176,7 +187,7 @@ export default function App() {
           path="/settings"
           element={
             <ProtectedRoute requireShop>
-              <ComingSoon title="Settings" description="Account and shop preferences aren't built yet." />
+              <Settings />
             </ProtectedRoute>
           }
         />
@@ -188,6 +199,7 @@ export default function App() {
         <Route path="/about" element={<About />} />
         <Route path="/contact" element={<Contact />} />
         <Route path="/faq" element={<Faq />} />
+        <Route path="/help" element={<Help />} />
         <Route path="/terms" element={<Terms />} />
         <Route path="/privacy" element={<Privacy />} />
         <Route path="/refund-policy" element={<Refunds />} />
@@ -198,7 +210,9 @@ export default function App() {
         <Route path="/payment-billing" element={<Billing />} />
         <Route path="/vendor-terms" element={<VendorTerms />} />
 
-        <Route path="*" element={<Navigate to="/" replace />} />
+        <Route path="/offline" element={<RecoveryPage reaction="offline" />} />
+        <Route path="/service-unavailable" element={<RecoveryPage reaction="service_unavailable" />} />
+        <Route path="*" element={<RecoveryPage reaction="not_found" />} />
       </Routes>
     </Suspense>
   );

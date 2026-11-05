@@ -1,7 +1,8 @@
 import { memo, useCallback, useEffect, useRef, useState } from "react";
 import { Image, StyleSheet, Text, View } from "react-native";
 import Ionicons from "@expo/vector-icons/Ionicons";
-import { colors, fonts, radius } from "../theme";
+import { fonts, radius } from "../theme";
+import { useTheme, useThemedStyles } from "../context/ThemeContext";
 
 // A shop's photo (shop_photo_url - from GET /shops, GET /shops/:id, POST
 // /shops/compare-pricing, GET /saved-shops, and everywhere else a shop is
@@ -33,6 +34,8 @@ const MAX_RETRIES = 2;
 const RETRY_DELAY_MS = 1500;
 
 function ShopPhoto({ uri, source, style, iconSize = 28, closed = false, shopName }) {
+  const { colors } = useTheme(), styles = useThemedStyles(createStyles);
+  const compact = StyleSheet.flatten(style)?.height < 80;
   const imageSource = source || (uri ? { uri } : null);
   const remoteUri = imageSource && typeof imageSource === "object" ? imageSource.uri : null;
 
@@ -117,10 +120,11 @@ function ShopPhoto({ uri, source, style, iconSize = 28, closed = false, shopName
         //     icon; there is nothing to report.
         //   - a URL that would not load: say so, because the shop DOES
         //     have a photo and the customer is not seeing it.
-        <View style={[styles.fill, styles.placeholder]}>
-          <Ionicons name="storefront-outline" size={iconSize} color={colors.textMuted} />
-          {failed ? <Text style={styles.placeholderText}>Shop image unavailable</Text> : null}
-          {failed && __DEV__ ? (
+        <View style={styles.placeholder}>
+          <Ionicons name="storefront-outline" size={iconSize} color={colors.textMuted}
+            style={[styles.placeholderIcon, { width: iconSize, height: iconSize, lineHeight: iconSize }]} />
+          {failed && !compact ? <Text style={styles.placeholderText}>Shop image unavailable</Text> : null}
+          {failed && !compact && __DEV__ ? (
             <Text style={styles.debugText} numberOfLines={2}>
               {reason}
             </Text>
@@ -138,7 +142,7 @@ function ShopPhoto({ uri, source, style, iconSize = 28, closed = false, shopName
 
 export default memo(ShopPhoto);
 
-const styles = StyleSheet.create({
+const createStyles = ({ colors }) => ({
   box: {
     width: "100%",
     height: 110,
@@ -148,6 +152,8 @@ const styles = StyleSheet.create({
   },
   fill: { ...StyleSheet.absoluteFillObject },
   placeholder: {
+    width: "100%",
+    height: "100%",
     alignItems: "center",
     justifyContent: "center",
     paddingHorizontal: 8,
@@ -159,6 +165,9 @@ const styles = StyleSheet.create({
     color: colors.textMuted,
     textAlign: "center",
   },
+  // Icon fonts otherwise retain Android text baseline padding, which shifts
+  // the storefront downward inside compact circular shop photos.
+  placeholderIcon: { includeFontPadding: false, textAlign: "center", textAlignVertical: "center" },
   // Development only - the actual native error, so a failure on a real
   // device can be identified without attaching a debugger.
   debugText: {

@@ -7,6 +7,7 @@ const { createCode, consumeCode } = require("../utils/oauthCodeStore");
 const { validatePassword } = require("../utils/passwordPolicy");
 const { sendTransactionalEmail } = require("../utils/email");
 const { trackEvent, EVENTS } = require("../utils/analytics");
+const { publicUser, validateProfileDetails } = require("../utils/profileDetails");
 
 const TOKEN_TTL_DAYS = 7;
 // Unchanged from what every existing hash in the database was created with
@@ -62,17 +63,6 @@ const revokeAllSessionsForUser = async (userId, reason) => {
   return result.modifiedCount || 0;
 };
 
-// The public shape of a user. One definition, so a field cannot start
-// appearing in one auth response and not another - and so password_hash
-// cannot be added to it by accident.
-const publicUser = (user) => ({
-  id: user._id,
-  name: user.name,
-  email: user.email,
-  phone: user.phone,
-  role: user.role,
-});
-
 // Names the field that actually clashed, rather than making someone
 // guess which of the two it was - they may well have forgotten an old
 // account under one of them. Deliberately says only "another account",
@@ -101,6 +91,9 @@ const register = async (req, res) => {
       return res.status(400).json({ message: "All fields are required" });
     }
 
+    const profile = validateProfileDetails(req.body, { allowOtherFields: true });
+    if (profile.error) return res.status(400).json({ message: profile.error });
+
     // Checked before the duplicate lookup and before bcrypt: a password that
     // will be refused should not cost a database round trip or a hash.
     const policy = validatePassword(password);
@@ -128,6 +121,7 @@ const register = async (req, res) => {
       email,
       password_hash,
       role: role === "shop_owner" ? "shop_owner" : "customer",
+      ...profile.updates,
     });
 
     const token = await issueToken(user);

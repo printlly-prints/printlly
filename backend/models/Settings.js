@@ -56,8 +56,9 @@ const settingsSchema = new mongoose.Schema(
     },
     // Thresholds for the live shop rush/queue indicator - see
     // utils/queue.js and GET /shops/:shopId/queue. A shop's count of
-    // active (paid, not yet completed) orders maps to "Low" at 0..low_max,
-    // "Medium" at low_max+1..medium_max, and "High" above that.
+    // paid pending/accepted orders maps to "Low" at 0..low_max,
+    // "Medium" at low_max+1..medium_max, and "High" above that. These are
+    // the fallback while reliable recent ready throughput is unavailable.
     rush_thresholds: {
       low_max: { type: Number, required: true, default: 2 },
       medium_max: { type: Number, required: true, default: 6 },

@@ -1,696 +1,101 @@
-import { useCallback, useEffect, useState } from "react";
-import { trackEvent, EVENTS } from "../lib/analytics";
-import {
-  ActivityIndicator,
-  Image,
-  Linking,
-  Platform,
-  Pressable,
-  ScrollView,
-  StyleSheet,
-  Text,
-  View,
-} from "react-native";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { LinearGradient } from "expo-linear-gradient";
-import { WebView } from "react-native-webview";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { ActivityIndicator, Image, Linking, Platform, Pressable, Text, View } from "react-native";
 import Ionicons from "@expo/vector-icons/Ionicons";
+import ScreenFrame from "../components/ScreenFrame";
+import ShopBrowseCard from "../components/ShopBrowseCard";
 import Button from "../components/Button";
-import RushBadge from "../components/RushBadge";
-import SavedShopHeart from "../components/SavedShopHeart";
-import ShopPhoto from "../components/ShopPhoto";
-import { shopImageSource } from "../utils/shopImages";
+import RecoveryState from "../components/RecoveryState";
+import { recoveryForError } from "../utils/requestRecovery";
+import { AccountRow } from "./ProfileScreen";
 import api from "../api/client";
 import { geoParams, useLocation } from "../context/LocationContext";
-import { formatDistance } from "../utils/distance";
-import { shopAvailability } from "../utils/shopAvailability";
+import { useSavedShops } from "../context/SavedShopsContext";
+import { useTheme, useThemedStyles } from "../context/ThemeContext";
 import useOpenStatusRefresh from "../hooks/useOpenStatusRefresh";
-import { colors, typography, fonts, spacing, radius, shadows, availabilityColors } from "../theme";
+import { shopAvailability } from "../utils/shopAvailability";
+import { trackEvent, EVENTS } from "../lib/analytics";
+import { typography, radius } from "../theme";
 
-// Tapping a shop card used to jump straight into "Add documents", which
-// gave a customer no way to look at a shop before committing to it. This
-// is that missing step: the shop's own photograph, where it is, what it
-// charges, whether it's open and how busy - with "Print here" pinned to
-// the bottom continuing into the upload flow exactly as the card used to.
-//
-// Everything here comes from GET /shops/:shopId rather than the shop
-// object the card was rendered from: that one is the LISTING projection,
-// which deliberately carries no pricing. The list's copy is still used as
-// an immediate placeholder (see `shop` below) so the screen opens with a
-// name and photo rather than a spinner.
-//
-// The rates shown are the shop's own advertised prices, not a quote - the
-// real total for a real order (platform fee included) still comes from
-// POST /shops/compare-pricing at the Select-shop step.
-
-const HERO_HEIGHT = 240;
-
-// A small bounding box around the pin, rendered by OpenStreetMap's own
-// embed page - no API key and no map SDK. Same source the vendor
-// dashboard uses for its location preview, so both surfaces draw the same
-// map from the same coordinates.
-// The backing colour is the card surface token rather than a literal, so the
-// gap before the map tiles load matches the card the WebView sits in instead
-// of flashing a pale panel on a dark screen. The TILES themselves are
-// OpenStreetMap's own imagery and are left exactly as served - no filter, no
-// recolouring.
-function osmEmbedHtml(lat, lng) {
-  const d = 0.004;
-  const bbox = [lng - d, lat - d, lng + d, lat + d].map((n) => n.toFixed(6)).join(",");
-  const src = `https://www.openstreetmap.org/export/embed.html?bbox=${bbox}&layer=mapnik&marker=${lat},${lng}`;
-  return `<!doctype html><html><head><meta name="viewport" content="width=device-width,initial-scale=1">
-<style>html,body{margin:0;padding:0;height:100%;background:${colors.surface}}iframe{border:0;width:100%;height:100%}</style>
-</head><body><iframe src="${src}" loading="lazy"></iframe></body></html>`;
-}
-
+// M15/M15p/M15g compose in this existing route; prices come from the
+// detail projection, and only actual vendor photos appear in the gallery.
 export default function ShopDetailsScreen({ navigation, route }) {
-  const { shop: initialShop } = route.params;
-  const { coords } = useLocation();
-  const insets = useSafeAreaInsets();
-
-  const [shop, setShop] = useState(initialShop);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
-
+  const initialShop = route.params?.shop;
+  const { coords } = useLocation(), { isSaved, toggleSaved } = useSavedShops();
+  const { colors } = useTheme(), styles = useThemedStyles(createStyles);
+  const [shop, setShop] = useState(initialShop), [loading, setLoading] = useState(true), [error, setError] = useState("");
+  const [failure, setFailure] = useState(null);
+  const [available, setAvailable] = useState(false), [section, setSection] = useState(null), [saving, setSaving] = useState(false), [linkError, setLinkError] = useState("");
+  const requestId = useRef(0), mounted = useRef(true), saveInFlight = useRef(false);
+  useEffect(() => { mounted.current = true; return () => { mounted.current = false; requestId.current += 1; }; }, []);
   const load = useCallback(async () => {
+    const id = ++requestId.current;
+    setLoading(true);
+    if (!initialShop?._id) { setLoading(false); setAvailable(false); setError("This shop is unavailable."); return; }
     try {
       const { data } = await api.get(`/shops/${initialShop._id}`, { params: geoParams(coords) });
-      setShop(data);
-      setError("");
+      if (!mounted.current || id !== requestId.current) return;
+      setShop(data); setAvailable(true); setError(""); setFailure(null);
     } catch (err) {
-      setError(
-        err.response?.status === 404
-          ? "This shop is no longer available."
-          : err.response?.data?.message || "Couldn't load this shop. Check your connection."
-      );
-    } finally {
-      setLoading(false);
-    }
-  }, [initialShop._id, coords]);
-
-  useEffect(() => {
-    load();
-  }, [load]);
-
-  // shop_viewed - the step between browsing and starting an order, and the
-  // one the server cannot see: opening a shop's page is not an API call it
-  // can distinguish from a list refresh.
-  //
-  // Keyed on the shop id so it fires once per shop rather than on every
-  // one-a-minute status refresh. The shop NAME is deliberately not sent -
-  // shop_id is enough to segment by shop, and a trading name is the vendor's
-  // commercial identity.
-  useEffect(() => {
-    trackEvent(EVENTS.SHOP_VIEWED, { shop_id: String(initialShop._id) });
-  }, [initialShop._id]);
-
-  // Same once-a-minute refresh the shop lists use. This screen is where a
-  // customer lingers before ordering, so a vendor flipping to Busy (or a
-  // timed Busy lapsing) needs to reach it here too, not only on the list
-  // they arrived from.
+      if (!mounted.current || id !== requestId.current) return;
+      setFailure(err);
+      if (err.response?.status === 404) setAvailable(false);
+      setError(err.response?.status === 404 ? "This shop is no longer available." : err.response?.data?.message || "Could not refresh this shop. Check your connection.");
+    } finally { if (mounted.current && id === requestId.current) setLoading(false); }
+  }, [initialShop?._id, coords]);
+  useEffect(() => { setShop(initialShop); setAvailable(false); setLoading(true); load(); }, [initialShop, load]);
+  useEffect(() => { if (initialShop?._id) trackEvent(EVENTS.SHOP_VIEWED, { shop_id: String(initialShop._id) }); }, [initialShop?._id]);
   useOpenStatusRefresh(load);
-
-  // Open / Busy / Closed, from the backend's single computed answer -
-  // the same resolver Home, Find Shops and Checkout read.
-  const availability = shopAvailability(shop);
-  const closed = availability.isClosed;
-  const distanceLabel = formatDistance(shop.distance_km);
-  const pricing = shop.pricing;
-  // Whatever THIS shop offers, under its own names - there is no fixed
-  // set of services any more. A disabled one isn't orderable, so it isn't
-  // shown.
-  const enabledServices = (pricing?.services || []).filter((s) => s.enabled !== false);
-
-  const [lng, lat] = shop.location?.coordinates || [];
-  const hasPin = Number.isFinite(lat) && Number.isFinite(lng);
-
-  const openInMaps = () => {
-    if (!hasPin) return;
-    const label = encodeURIComponent(shop.shop_name || "Print shop");
-    // Each platform's own handler, so this opens the real Maps app rather
-    // than a browser tab.
-    const url = Platform.select({
-      ios: `maps://?q=${label}&ll=${lat},${lng}`,
-      android: `geo:${lat},${lng}?q=${lat},${lng}(${label})`,
-      default: `https://www.openstreetmap.org/?mlat=${lat}&mlon=${lng}#map=17/${lat}/${lng}`,
-    });
-    Linking.openURL(url).catch(() =>
-      Linking.openURL(`https://www.openstreetmap.org/?mlat=${lat}&mlon=${lng}#map=17/${lat}/${lng}`)
-    );
+  const link = async (url) => { try { await Linking.openURL(url); setLinkError(""); } catch { setLinkError("Could not open this app. Try again or use the shop address below."); } };
+  const directions = () => {
+    const [lng, lat] = shop.location?.coordinates || [];
+    const query = Number.isFinite(lat) && Number.isFinite(lng) ? `${lat},${lng}` : encodeURIComponent([shop.shop_name, shop.address].filter(Boolean).join(" "));
+    link(Platform.select({ ios: `maps://?q=${query}`, android: `geo:0,0?q=${query}`, default: `https://maps.google.com/?q=${query}` }));
   };
-
-  const call = () => shop.contact && Linking.openURL(`tel:${shop.contact}`);
-
-  return (
-    <View style={styles.screen}>
-      <ScrollView
-        style={styles.scroll}
-        contentContainerStyle={[
-          styles.content,
-          // Clears the sticky footer AND the home indicator, so the last
-          // price row is never trapped underneath either.
-          { paddingBottom: FOOTER_BASE + insets.bottom + spacing.lg },
-        ]}
-        showsVerticalScrollIndicator={false}
-      >
-        {/* --- hero ---------------------------------------------------- */}
-        <View style={styles.hero}>
-          <ShopPhoto
-            source={shopImageSource(shop)}
-            shopName={shop.shop_name}
-            style={styles.heroPhoto}
-            iconSize={44}
-          />
-
-          {/* Darkens only the lower band, so the chips sitting on it stay
-              legible over a bright storefront without dulling the photo. */}
-          <LinearGradient
-            colors={["transparent", "rgba(18,51,38,0.55)"]}
-            style={styles.heroScrim}
-            pointerEvents="none"
-          />
-
-          {/* Chips over the photo, not a separate row below it - this is
-              the first thing to know about a shop and it belongs on the
-              picture of it. */}
-          <View style={styles.heroChips}>
-            <View
-              style={[
-                styles.chip,
-                { backgroundColor: availability.colors.bg, borderColor: availability.colors.border },
-              ]}
-            >
-              <View style={[styles.dot, { backgroundColor: availability.colors.dot }]} />
-              <Text style={[styles.chipText, { color: availability.colors.text }]}>
-                {availability.isBusy
-                  ? "Busy right now"
-                  : closed
-                  ? "Closed"
-                  : "Open now"}
-              </Text>
-            </View>
-            {/* While busy the vendor's own estimate is the more specific
-                thing to say, so the generic queue reading stands down. */}
-            {!availability.isBusy && shop.queue?.rush_level ? (
-              <RushBadge level={shop.queue.rush_level} />
-            ) : null}
-          </View>
-        </View>
-
-        {/* Floating controls. The back button and the heart are the only
-            things drawn over the photo - nothing else belongs there. */}
-        <View style={[styles.heroControls, { top: insets.top + spacing.sm }]} pointerEvents="box-none">
-          <Pressable
-            onPress={() => navigation.goBack()}
-            accessibilityRole="button"
-            accessibilityLabel="Go back"
-            style={({ pressed }) => [styles.circleButton, pressed && styles.pressed]}
-          >
-            <Ionicons name="chevron-back" size={20} color={colors.textPrimary} />
-          </Pressable>
-          <SavedShopHeart shop={shop} overlay />
-        </View>
-
-        {/* --- identity ------------------------------------------------ */}
-        <View style={styles.body}>
-          <Text style={styles.name}>{shop.shop_name}</Text>
-
-          {/* Only what the API actually sends. There is no rating field on
-              a shop anywhere in this backend, so no stars are drawn -
-              inventing one would be a made-up endorsement of a real
-              business. Distance appears once location is shared. */}
-          <View style={styles.metaRow}>
-            {distanceLabel ? (
-              <>
-                <Ionicons name="navigate-outline" size={13} color={colors.primaryDeep} />
-                {/* formatDistance already ends in "away" ("0.1 km away"),
-                    so nothing is appended here - doing so printed
-                    "0.1 km away away". */}
-                <Text style={styles.metaStrong}>{distanceLabel}</Text>
-                <Text style={styles.metaDot}>·</Text>
-              </>
-            ) : null}
-            <Ionicons name="location-outline" size={13} color={colors.textMuted} />
-            <Text style={styles.meta} numberOfLines={2}>
-              {shop.locality || shop.address}
-            </Text>
-          </View>
-
-          {/* Short, and never an error: busy means this shop is open
-              for business and working through a queue. Stated once,
-              here, where a customer reads the shop's name. */}
-          {availability.isBusy ? (
-            <View style={styles.busyNote}>
-              <View style={[styles.dot, { backgroundColor: availability.colors.dot }]} />
-              <Text style={styles.busyText}>
-                <Text style={styles.busyStrong}>Busy right now. </Text>
-                High order volume. Your print may take around {availability.prepMinutes} min.
-              </Text>
-            </View>
-          ) : null}
-
-          {error ? <Text style={styles.error}>{error}</Text> : null}
-
-          {/* --- quick actions ---------------------------------------- */}
-          <View style={styles.actionRow}>
-            <ActionButton
-              icon="map-outline"
-              label="View on map"
-              onPress={openInMaps}
-              disabled={!hasPin}
-            />
-            <ActionButton
-              icon="call-outline"
-              label="Call"
-              onPress={call}
-              disabled={!shop.contact}
-            />
-          </View>
-
-          {/* --- hours ------------------------------------------------- */}
-          <Card style={styles.tightCard}>
-            <View style={styles.hoursRow}>
-              <View style={styles.iconDisc}>
-                <Ionicons name="time-outline" size={18} color={colors.primaryBright} />
-              </View>
-              <View style={styles.hoursText}>
-                {/* business_hours is sent by GET /shops/:id only when the
-                    shop actually runs a schedule. No schedule means the
-                    owner opens and closes by hand, and saying so is the
-                    truth - inventing "9 to 9" would not be. */}
-                <Text style={styles.cardTitle}>
-                  {shop.business_hours ? "Open today" : "Opening hours"}
-                </Text>
-                <Text style={styles.cardSub}>
-                  {shop.business_hours
-                    ? `${shop.business_hours.open_time} – ${shop.business_hours.close_time}`
-                    : "This shop opens and closes manually — check the status above."}
-                </Text>
-              </View>
-              <View
-                style={[
-                  styles.statusPill,
-                  { backgroundColor: availability.colors.bg, borderColor: availability.colors.border },
-                ]}
-              >
-                <View style={[styles.dot, { backgroundColor: availability.colors.dot }]} />
-                <Text style={[styles.chipText, { color: availability.colors.text }]}>
-                  {availability.label}
-                </Text>
-              </View>
-            </View>
-          </Card>
-
-          {/* --- owner ------------------------------------------------- */}
-          {/* One compact row, not a panel: it is a reassurance, not a
-              section. Shown only when the vendor actually uploaded a
-              photo of themselves. */}
-          {shop.owner_photo_url ? (
-            <Card style={styles.tightCard}>
-              <View style={styles.ownerRow}>
-                <Image source={{ uri: shop.owner_photo_url }} style={styles.ownerPhoto} />
-                <View style={styles.hoursText}>
-                  <Text style={styles.cardTitle}>Shop owner</Text>
-                  <Text style={styles.cardSub}>Ask for them at the counter when you collect.</Text>
-                </View>
-              </View>
-            </Card>
-          ) : null}
-
-          {/* --- where to find it -------------------------------------- */}
-          <Text style={styles.sectionTitle}>Where to find it</Text>
-          <Card>
-            <View style={styles.addressRow}>
-              <Ionicons name="location-outline" size={16} color={colors.primaryDeep} />
-              <Text style={styles.addressText}>{shop.address}</Text>
-            </View>
-
-            {hasPin ? (
-              <>
-                {/* A real map of the real coordinates, drawn by
-                    OpenStreetMap's embed - no API key, no map SDK, and
-                    the same source the vendor dashboard uses. Not
-                    interactive on purpose: tapping opens the device's own
-                    Maps app, which is where someone actually navigates. */}
-                <View style={styles.mapBox} pointerEvents="none">
-                  <WebView
-                    source={{ html: osmEmbedHtml(lat, lng) }}
-                    style={styles.map}
-                    scrollEnabled={false}
-                    originWhitelist={["*"]}
-                    androidLayerType="software"
-                  />
-                </View>
-                <Button
-                  title="View in Maps"
-                  variant="secondary"
-                  icon="open-outline"
-                  onPress={openInMaps}
-                  style={styles.mapButton}
-                />
-              </>
-            ) : (
-              <Text style={styles.emptyNote}>This shop hasn&apos;t pinned its exact location yet.</Text>
-            )}
-          </Card>
-
-          {/* --- pricing ------------------------------------------------ */}
-          {pricing ? (
-            <>
-              <Text style={styles.sectionTitle}>What they charge</Text>
-              <Card>
-                <PriceRow label="Black & white" value={`₹${pricing.rate_per_page_bw}`} unit="/ page" />
-                <PriceRow label="Colour" value={`₹${pricing.rate_per_page_color}`} unit="/ page" />
-                {pricing.paper_size_rates?.A3 > 0 ? (
-                  <PriceRow label="A3 paper" value={`+₹${pricing.paper_size_rates.A3}`} unit="/ page" />
-                ) : null}
-                {pricing.sides_extra_rate > 0 ? (
-                  // Reads the same way as the A3 row above: a rupee amount
-                  // per page, not a percentage the customer would have to
-                  // apply to a subtotal they cannot see yet.
-                  <PriceRow label="Double-sided" value={`+₹${pricing.sides_extra_rate}`} unit="/ page" />
-                ) : null}
-
-                {/* Said plainly rather than shown as a total, because it
-                    isn't one - the platform fee and the real maths land
-                    at checkout. */}
-                <Text style={styles.priceNote}>
-                  These are this shop&apos;s rates. Your final total, including the platform fee, is
-                  shown before you pay.
-                </Text>
-              </Card>
-
-              <Text style={styles.sectionTitle}>Additional services</Text>
-              <Card>
-                {enabledServices.length > 0 ? (
-                  enabledServices.map((service, i) => (
-                    <PriceRow
-                      key={service._id}
-                      label={service.name}
-                      value={`₹${service.rate}`}
-                      unit="/ document"
-                      first={i === 0}
-                    />
-                  ))
-                ) : (
-                  <Text style={styles.emptyNote}>
-                    This shop doesn&apos;t offer additional finishing.
-                  </Text>
-                )}
-              </Card>
-            </>
-          ) : loading ? (
-            <ActivityIndicator color={colors.primaryBright} style={styles.sectionLoading} />
-          ) : null}
-
-          {/* --- lead-in to the CTA ------------------------------------- */}
-          <View style={styles.ctaNote}>
-            <Text style={styles.ctaTitle}>Need to print something?</Text>
-            <Text style={styles.ctaSub}>
-              Upload your document and choose your print preferences.
-            </Text>
-          </View>
-        </View>
-      </ScrollView>
-
-      {/* Sticky, and lifted by the device's own bottom inset so it clears
-          the home indicator instead of sitting under it. */}
-      <View style={[styles.footer, { paddingBottom: spacing.md + insets.bottom }]}>
-        <Button
-          title={closed ? "Shop is closed right now" : "Print here"}
-          icon={closed ? undefined : "arrow-forward"}
-          disabled={closed}
-          onPress={() => navigation.navigate("UploadDocuments", { preselectedShop: shop })}
-        />
-      </View>
+  const save = async () => { if (saveInFlight.current) return; saveInFlight.current = true; setSaving(true); try { await toggleSaved(shop); } finally { saveInFlight.current = false; if (mounted.current) setSaving(false); } };
+  if (!shop) return <ScreenFrame title="Shop details" onBack={() => navigation.goBack()}><RecoveryState reaction="shop_unavailable" title="This shop is unavailable." message="Choose another available print shop." primaryLabel="Find another shop" onPrimary={() => navigation.navigate("MainTabs", { screen: "Shops" })} /></ScreenFrame>;
+  const availability = shopAvailability(shop), pricing = shop.pricing;
+  const services = (pricing?.services || []).filter(service => service.enabled !== false);
+  const gallery = [shop.shop_photo_url && { url: shop.shop_photo_url, label: "Shop" }, shop.owner_photo_url && { url: shop.owner_photo_url, label: "Shop owner" }].filter(Boolean);
+  const toggle = value => setSection(section === value ? null : value);
+  return <ScreenFrame title={shop.shop_name || "Shop details"} onBack={() => navigation.goBack()}
+    footer={<Button title={availability.isClosed || (!available && !loading) ? "Find another shop" : "Use this shop"} disabled={loading || (!available && !availability.isClosed && failure?.response?.status !== 404)} onPress={() => availability.isClosed || !available ? navigation.navigate("MainTabs", { screen: "Shops" }) : navigation.navigate("UploadDocuments", { preselectedShop: shop })} />}>
+    <ShopBrowseCard shop={shop} />
+    {error ? <RecoveryState compact {...recoveryForError(failure, { notFound: "shop_unavailable" })} retryKey={failure} primaryLabel="Refresh shop" onPrimary={load} loading={loading} /> : availability.isClosed ? <RecoveryState compact reaction="shop_unavailable" title="This shop is closed." message="Choose another available shop for your print. Opening hours are shown below." /> : loading ? <ActivityIndicator color={colors.action} style={styles.loading} /> : null}
+    <View style={styles.actions}>
+      <Button title={isSaved(shop._id) ? "Saved shop" : "Save shop"} variant="secondary" loading={saving} onPress={save} style={styles.action} />
+      <Button title="Directions" variant="secondary" onPress={directions} style={styles.action} />
     </View>
-  );
-}
-
-// Enough room for the button plus its padding; the inset is added on top
-// at both ends (footer padding and scroll clearance) so the two can never
-// drift apart.
-const FOOTER_BASE = 84;
-
-function Card({ children, style }) {
-  return <View style={[styles.card, style]}>{children}</View>;
-}
-
-function ActionButton({ icon, label, onPress, disabled }) {
-  return (
-    <Pressable
-      onPress={onPress}
-      disabled={disabled}
-      accessibilityRole="button"
-      accessibilityLabel={label}
-      accessibilityState={{ disabled: !!disabled }}
-      style={({ pressed }) => [
-        styles.actionButton,
-        disabled && styles.actionDisabled,
-        pressed && !disabled && styles.pressed,
-      ]}
-    >
-      <Ionicons name={icon} size={17} color={disabled ? colors.textMuted : colors.primaryBright} />
-      <Text style={[styles.actionLabel, disabled && styles.actionLabelDisabled]} numberOfLines={1}>
-        {label}
-      </Text>
-    </Pressable>
-  );
-}
-
-// Label left, price right, with the unit set quieter than the amount so a
-// column of prices scans as numbers rather than sentences.
-function PriceRow({ label, value, unit, first }) {
-  return (
-    <View style={[styles.priceRow, !first && styles.priceRowBorder]}>
-      <Text style={styles.priceLabel} numberOfLines={1}>
-        {label}
-      </Text>
-      <Text style={styles.priceValue}>
-        {value}
-        <Text style={styles.priceUnit}> {unit}</Text>
-      </Text>
+    {linkError ? <Text style={styles.error} accessibilityLiveRegion="polite">{linkError}</Text> : null}
+    <View style={styles.visit}><Text style={styles.heading}>Visit the shop</Text>{shop.address ? <Text style={styles.detail}>{shop.address}</Text> : null}
+      {shop.business_hours?.open_time && shop.business_hours?.close_time ? <Text style={styles.note}>Opening hours: {shop.business_hours.open_time}–{shop.business_hours.close_time}</Text> : null}
+      {shop.contact ? <Pressable style={styles.call} onPress={() => link(`tel:${String(shop.contact).replace(/\s/g, "")}`)} accessibilityRole="button" accessibilityLabel={`Call ${shop.shop_name}`}><Ionicons name="call-outline" size={18} color={colors.action} /><Text style={styles.callText}>{shop.contact}</Text></Pressable> : null}
     </View>
-  );
+    <View style={styles.rows}>
+      <AccountRow title="Services & prices" detail="Printing rates set by this shop" onPress={() => toggle("prices")} expanded={section === "prices"} />
+      {section === "prices" ? <View style={styles.expanded}>{pricing ? <>
+        <PriceRow label="Black & white" rate={pricing.rate_per_page_bw} unit="per page" />
+        <PriceRow label="Colour" rate={pricing.rate_per_page_color} unit="per page" />
+        {pricing.paper_size_rates?.A4 > 0 ? <PriceRow label="A4 paper surcharge" rate={pricing.paper_size_rates.A4} unit="per page" /> : null}
+        {pricing.paper_size_rates?.A3 > 0 ? <PriceRow label="A3 paper surcharge" rate={pricing.paper_size_rates.A3} unit="per page" /> : null}
+        {pricing.sides_extra_rate > 0 ? <PriceRow label="Double-sided surcharge" rate={pricing.sides_extra_rate} unit="per page" /> : null}
+        <Text style={styles.note}>Your itemized total, including the platform fee, appears before payment.</Text>
+      </> : <Text style={styles.note}>{loading ? "Loading prices…" : "Prices are unavailable. Refresh the shop to try again."}</Text>}</View> : null}
+      <AccountRow title="Finishing for your print" detail="Options offered by this shop" onPress={() => toggle("finishing")} expanded={section === "finishing"} />
+      {section === "finishing" ? <View style={styles.expanded}>{services.length ? services.map(service => <PriceRow key={service._id || service.name} label={service.name} rate={service.rate} unit="per document" />) : <Text style={styles.note}>{loading ? "Loading options…" : pricing ? "This shop has no additional finishing options." : "Finishing options are unavailable."}</Text>}<Text style={styles.note}>Choose finishing for each file in your print preferences.</Text></View> : null}
+      <AccountRow title="Shop photos" detail={gallery.length ? "View the shop and owner photos" : "No photos added by this shop"} onPress={() => toggle("photos")} expanded={section === "photos"} />
+      {section === "photos" ? <View style={styles.expanded}>{gallery.length ? gallery.map(photo => <View key={photo.url}><Image source={{ uri: photo.url }} style={styles.galleryImage} resizeMode="contain" accessibilityLabel={photo.label} /><Text style={styles.note}>{photo.label}</Text></View>) : <Text style={styles.note}>This shop has not added a photo.</Text>}</View> : null}
+    </View>
+  </ScreenFrame>;
 }
-
-const styles = StyleSheet.create({
-  screen: { flex: 1, backgroundColor: colors.background },
-  scroll: { flex: 1 },
-  content: { paddingBottom: spacing.xxl },
-
-  // --- hero ---------------------------------------------------------
-  hero: { height: HERO_HEIGHT, width: "100%" },
-  // Square top, rounded bottom: the photo runs to the very top of the
-  // screen and curves into the content below it.
-  heroPhoto: {
-    height: HERO_HEIGHT,
-    borderRadius: 0,
-    borderBottomLeftRadius: 24,
-    borderBottomRightRadius: 24,
-  },
-  heroScrim: {
-    position: "absolute",
-    left: 0,
-    right: 0,
-    bottom: 0,
-    height: 110,
-    borderBottomLeftRadius: 24,
-    borderBottomRightRadius: 24,
-  },
-  heroChips: {
-    position: "absolute",
-    left: spacing.lg,
-    bottom: spacing.lg,
-    flexDirection: "row",
-    alignItems: "center",
-    gap: spacing.sm,
-  },
-  heroControls: {
-    position: "absolute",
-    left: spacing.lg,
-    right: spacing.lg,
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-  },
-  circleButton: {
-    width: 38,
-    height: 38,
-    borderRadius: radius.pill,
-    // Dark rather than translucent white - see SavedShopHeart. The icon
-    // inside is colors.textPrimary, which is light now, so a white pill
-    // would have hidden it completely.
-    backgroundColor: "rgba(6,22,18,0.78)",
-    borderWidth: 1,
-    borderColor: "rgba(230,242,236,0.22)",
-    alignItems: "center",
-    justifyContent: "center",
-    ...shadows.card,
-  },
-  pressed: { opacity: 0.7 },
-
-  chip: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 6,
-    paddingHorizontal: spacing.md,
-    paddingVertical: 6,
-    borderRadius: radius.pill,
-    // borderWidth is load-bearing on a dark card - see StatusBadge.
-    borderWidth: 1,
-  },
-  // Background and text colour come inline from shopAvailability() -
-  // open, busy and closed each have their own, and busy is amber rather
-  // than red because a busy shop is trading normally.
-  chipText: { fontFamily: fonts.headingBold, fontSize: 11.5 },
-  // Informational, not a warning: a soft amber field with no border and
-  // no icon, sitting inline under the shop's name.
-  busyNote: {
-    flexDirection: "row",
-    alignItems: "flex-start",
-    gap: spacing.sm,
-    backgroundColor: availabilityColors.busy.bg,
-    borderRadius: radius.sm,
-    paddingVertical: spacing.sm + 2,
-    paddingHorizontal: spacing.md,
-    marginTop: spacing.md,
-  },
-  busyText: { flex: 1, minWidth: 0, ...typography.caption, color: availabilityColors.busy.text },
-  busyStrong: { fontFamily: fonts.headingBold },
-  dot: { width: 7, height: 7, borderRadius: radius.pill },
-
-
-  // --- body ---------------------------------------------------------
-  body: { padding: spacing.lg, paddingTop: spacing.lg },
-  name: { ...typography.h1, color: colors.textPrimary },
-  metaRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    flexWrap: "wrap",
-    gap: 4,
-    marginTop: spacing.xs,
-  },
-  metaStrong: { ...typography.bodySmall, color: colors.primaryDeep },
-  metaDot: { ...typography.bodySmall, color: colors.textMuted },
-  meta: { ...typography.bodySmall, color: colors.textSecondary, flexShrink: 1 },
-  error: {
-    ...typography.bodySmall,
-    color: colors.danger,
-    backgroundColor: colors.dangerBg,
-    padding: spacing.md,
-    borderRadius: radius.md,
-    marginTop: spacing.md,
-  },
-
-  actionRow: { flexDirection: "row", gap: spacing.sm, marginTop: spacing.lg },
-  actionButton: {
-    flex: 1,
-    minWidth: 0,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: 6,
-    height: 42,
-    paddingHorizontal: spacing.sm,
-    borderRadius: radius.md,
-    backgroundColor: colors.surface,
-    borderWidth: 1,
-    borderColor: colors.border,
-  },
-  actionDisabled: { opacity: 0.5 },
-  actionLabel: { fontFamily: fonts.bodyMedium, fontSize: 13, color: colors.primaryBright },
-  actionLabelDisabled: { color: colors.textMuted },
-
-  // --- cards ---------------------------------------------------------
-  card: {
-    backgroundColor: colors.surface,
-    borderRadius: 18,
-    borderWidth: 1,
-    borderColor: colors.border,
-    padding: spacing.lg,
-    ...shadows.card,
-  },
-  tightCard: { marginTop: spacing.md, padding: spacing.md },
-  sectionTitle: {
-    ...typography.h3,
-    color: colors.textPrimary,
-    marginTop: spacing.xl,
-    marginBottom: spacing.sm,
-  },
-  sectionLoading: { marginTop: spacing.xl },
-  cardTitle: { ...typography.labelSmall, color: colors.textPrimary },
-  cardSub: { ...typography.caption, color: colors.textSecondary, marginTop: 1 },
-
-  hoursRow: { flexDirection: "row", alignItems: "center", gap: spacing.md },
-  hoursText: { flex: 1, minWidth: 0 },
-  iconDisc: {
-    width: 36,
-    height: 36,
-    borderRadius: radius.pill,
-    backgroundColor: colors.primaryWash,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  statusPill: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 5,
-    paddingHorizontal: spacing.sm,
-    paddingVertical: 4,
-    borderRadius: radius.pill,
-    // borderWidth is load-bearing on a dark card - see StatusBadge.
-    borderWidth: 1,
-  },
-
-  ownerRow: { flexDirection: "row", alignItems: "center", gap: spacing.md },
-  ownerPhoto: { width: 40, height: 40, borderRadius: 20, backgroundColor: colors.primaryWash },
-
-  addressRow: { flexDirection: "row", alignItems: "flex-start", gap: spacing.sm },
-  addressText: { ...typography.bodySmall, color: colors.textSecondary, flex: 1 },
-  mapBox: {
-    height: 150,
-    borderRadius: radius.md,
-    overflow: "hidden",
-    marginTop: spacing.md,
-    backgroundColor: colors.leafSoft,
-    borderWidth: 1,
-    borderColor: colors.border,
-  },
-  map: { flex: 1, backgroundColor: colors.leafSoft },
-  mapButton: { marginTop: spacing.md },
-  emptyNote: { ...typography.bodySmall, color: colors.textMuted },
-
-  priceRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    gap: spacing.md,
-    paddingVertical: spacing.sm,
-  },
-  priceRowBorder: { borderTopWidth: 1, borderTopColor: colors.border },
-  priceLabel: { ...typography.bodySmall, color: colors.textSecondary, flex: 1 },
-  priceValue: { fontFamily: fonts.headingBold, fontSize: 15, color: colors.textPrimary },
-  priceUnit: { fontFamily: fonts.bodyRegular, fontSize: 11.5, color: colors.textMuted },
-  priceNote: {
-    ...typography.caption,
-    color: colors.textMuted,
-    marginTop: spacing.sm,
-    paddingTop: spacing.sm,
-    borderTopWidth: 1,
-    borderTopColor: colors.border,
-  },
-
-  ctaNote: { marginTop: spacing.xl },
-  ctaTitle: { ...typography.label, color: colors.textPrimary },
-  ctaSub: { ...typography.bodySmall, color: colors.textSecondary, marginTop: 2 },
-
-  footer: {
-    paddingHorizontal: spacing.lg,
-    paddingTop: spacing.md,
-    backgroundColor: colors.surface,
-    borderTopWidth: 1,
-    borderTopColor: colors.border,
-    ...shadows.sheet,
-  },
+function PriceRow({ label, rate, unit }) {
+  const styles = useThemedStyles(createStyles);
+  if (!Number.isFinite(rate)) return null;
+  return <View style={styles.priceRow}><Text style={styles.priceLabel}>{label}</Text><Text style={styles.price}>₹{rate}<Text style={styles.note}> {unit}</Text></Text></View>;
+}
+const createStyles = ({ colors }) => ({
+  note: { ...typography.caption, color: colors.textSecondary, marginTop: 4 }, detail: { ...typography.bodySmall, color: colors.textSecondary, marginTop: 8 }, heading: { ...typography.h3, color: colors.textPrimary },
+  actions: { flexDirection: "row", gap: 8, marginVertical: 16 }, action: { flex: 1 }, visit: { backgroundColor: colors.surface, borderRadius: radius.md, padding: 16, marginBottom: 16 }, rows: { gap: 16 },
+  expanded: { padding: 16, borderRadius: radius.md, backgroundColor: colors.surface, gap: 12 }, priceRow: { flexDirection: "row", flexWrap: "wrap", justifyContent: "space-between", alignItems: "center", gap: 8 }, priceLabel: { ...typography.bodySmall, color: colors.textPrimary, flexGrow: 1, flexShrink: 1 }, price: { ...typography.bodyMedium, color: colors.textPrimary, flexShrink: 1 },
+  galleryImage: { width: "100%", height: 220, backgroundColor: colors.subtle, borderRadius: radius.md }, call: { flexDirection: "row", alignItems: "center", minHeight: 48, gap: 8, marginTop: 8 }, callText: { ...typography.bodySmall, color: colors.action, flexShrink: 1 },
+  loading: { marginTop: 16 }, error: { ...typography.bodySmall, color: colors.error }, errorBox: { padding: 16, backgroundColor: colors.errorSurface, borderRadius: radius.md, gap: 12, marginTop: 16 },
 });

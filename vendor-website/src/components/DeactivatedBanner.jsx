@@ -39,7 +39,7 @@ export default function DeactivatedBanner() {
   };
 
   return (
-    <div role="alert" className="bg-error text-white">
+    <div role="alert" className="bg-error-bg text-error-text">
       <div className="px-4 sm:px-6 md:px-8 py-3 flex flex-col sm:flex-row sm:items-center gap-3 justify-between">
         <div className="min-w-0">
           <p className="text-sm font-semibold">
@@ -48,19 +48,19 @@ export default function DeactivatedBanner() {
               : "Your shop is deactivated and not visible to customers."}
           </p>
           {byAdmin && (
-            <p className="text-sm mt-1 text-white/90">
+            <p className="text-sm mt-1 text-error-text">
               You can&rsquo;t reactivate it yourself. Please contact support to review the decision. Orders
               already placed can still be completed.
             </p>
           )}
-          {error && <p className="text-sm mt-1 text-white/90">{error}</p>}
+          {error && <p className="text-sm mt-1 text-error-text">{error}</p>}
         </div>
         {!byAdmin && (
           <button
             type="button"
             onClick={handleReactivate}
             disabled={loading}
-            className="shrink-0 px-4 py-2 rounded-control bg-white text-error text-sm font-semibold hover:bg-white/90 disabled:opacity-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-white/60"
+            className="shrink-0 px-4 min-h-12 rounded-control bg-primary text-white text-sm font-semibold hover:bg-primary-deep disabled:opacity-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/60"
           >
             {loading ? "Reactivating..." : "Reactivate my shop"}
           </button>

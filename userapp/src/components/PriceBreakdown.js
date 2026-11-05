@@ -1,5 +1,8 @@
 import { StyleSheet, Text, View } from "react-native";
-import { colors, typography, spacing, fonts } from "../theme";
+import { typography, spacing, fonts } from "../theme";
+import { useThemedStyles } from "../context/ThemeContext";
+import { formatRupees } from "../utils/money";
+export { formatRupees } from "../utils/money";
 
 // The bill, and the one component allowed to render money.
 //
@@ -12,6 +15,7 @@ import { colors, typography, spacing, fonts } from "../theme";
 // `rows` is [{ label, value, note, free }] and `total` is the figure the
 // customer is agreeing to.
 export default function PriceBreakdown({ rows, total, totalLabel = "Total", compact }) {
+  const styles = useThemedStyles(createStyles);
   return (
     <View>
       {rows.filter(Boolean).map((row) => (
@@ -42,12 +46,8 @@ export default function PriceBreakdown({ rows, total, totalLabel = "Total", comp
 // Indian digit grouping, and decimals only when the amount actually has
 // them - a flat per-page rate can produce ₹0.60, but ₹274.00 reads as
 // noise next to ₹274.
-export function formatRupees(value) {
-  const n = Number(value) || 0;
-  return `₹${n.toLocaleString("en-IN", { maximumFractionDigits: 2 })}`;
-}
 
-const styles = StyleSheet.create({
+const createStyles = ({ colors }) => ({
   row: {
     flexDirection: "row",
     alignItems: "flex-start",

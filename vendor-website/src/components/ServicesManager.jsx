@@ -104,7 +104,7 @@ export default function ServicesManager() {
   return (
     <Panel className="p-5">
       <PanelHeader
-        title="Add-on services"
+        title="Finishing options"
         subtitle="Whatever finishing you offer, named however you like. Customers can only request a service listed here, and each is charged once per document."
         className="mb-4"
         action={

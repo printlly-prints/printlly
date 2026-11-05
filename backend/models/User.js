@@ -1,4 +1,5 @@
 const mongoose = require("mongoose");
+const { validateProfileDetails } = require("../utils/profileDetails");
 
 // A User can either be a customer placing print orders, or a shop_owner
 // who manages a shop and fulfills orders. auth_provider distinguishes
@@ -36,6 +37,24 @@ const userSchema = new mongoose.Schema(
       unique: true,
       lowercase: true,
       trim: true,
+    },
+    // Optional contact email is not a credential or a verified address.
+    contact_email: {
+      type: String,
+      default: null,
+      lowercase: true,
+      trim: true,
+      maxlength: 254,
+      validate: { validator: (value) => value == null || /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value), message: "Invalid contact email" },
+    },
+    // Calendar date, stored without timezone conversion.
+    date_of_birth: {
+      type: String,
+      default: null,
+      validate: {
+        validator: (value) => !validateProfileDetails({ date_of_birth: value }).error,
+        message: "Invalid date of birth",
+      },
     },
     password_hash: {
       type: String,

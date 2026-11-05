@@ -1,105 +1,65 @@
-import { useCallback } from "react";
-import { ActivityIndicator, FlatList, RefreshControl, StyleSheet, Text, View } from "react-native";
+import { useCallback, useRef, useState } from "react";
+import { useFocusEffect } from "@react-navigation/native";
+import { ActivityIndicator, FlatList, Pressable, RefreshControl, Text, View } from "react-native";
+import Ionicons from "@expo/vector-icons/Ionicons";
+import ScreenFrame from "../components/ScreenFrame";
 import Button from "../components/Button";
-import SavedShopHeart from "../components/SavedShopHeart";
 import ShopPhoto from "../components/ShopPhoto";
-import { shopImageSource } from "../utils/shopImages";
 import { useSavedShops } from "../context/SavedShopsContext";
+import { useTheme, useThemedStyles } from "../context/ThemeContext";
 import useOpenStatusRefresh from "../hooks/useOpenStatusRefresh";
+import { shopAvailability } from "../utils/shopAvailability";
 import { formatDistance } from "../utils/distance";
-import { colors, typography, spacing, radius } from "../theme";
+import { typography, radius } from "../theme";
 
-// Reached from the Profile menu. Lists shops the customer has hearted
-// elsewhere (Shops tab, Home's nearby list) - the list itself comes from
-// the shared SavedShopsContext cache, so unsaving here or on any other
-// screen stays in sync everywhere without a refetch.
 export default function SavedShopsScreen({ navigation }) {
-  const { savedShops, loading, refresh } = useSavedShops();
-
-  // Saved shops are dimmed and marked "Closed" off is_currently_open,
-  // computed server-side per request - so keep it current while this
-  // screen is open rather than showing the status from whenever the
-  // shared cache last loaded.
+  const { savedShops, loading, refresh, toggleSaved } = useSavedShops();
+  const { colors } = useTheme(), styles = useThemedStyles(createStyles);
+  const [removingId, setRemovingId] = useState(null);
+  const removing = useRef(false);
   const refreshOpenStatus = useCallback(() => refresh({ silent: true }), [refresh]);
   useOpenStatusRefresh(refreshOpenStatus);
-
-  if (loading && savedShops.length === 0) {
-    return (
-      <View style={styles.center}>
-        <ActivityIndicator size="large" color={colors.primaryBright} />
-      </View>
-    );
-  }
-
-  return (
-    <FlatList
-      style={styles.list}
-      contentContainerStyle={styles.listContent}
-      data={savedShops}
-      keyExtractor={(item) => item._id}
-      refreshControl={<RefreshControl refreshing={loading} onRefresh={refresh} tintColor={colors.primaryBright} />}
-      ListEmptyComponent={
-        <Text style={styles.empty}>No saved shops yet — tap the heart on any shop to save it here.</Text>
-      }
+  useFocusEffect(useCallback(() => { refreshOpenStatus(); }, [refreshOpenStatus]));
+  const removeShop = async (shop) => {
+    if (removing.current) return;
+    removing.current = true;
+    setRemovingId(shop._id);
+    try { await toggleSaved(shop); } finally { removing.current = false; setRemovingId(null); }
+  };
+  return <ScreenFrame title="Saved shops" onBack={() => navigation.goBack()} scroll={false} contentStyle={styles.frameContent}>
+    <FlatList style={styles.list} contentContainerStyle={styles.listContent} data={savedShops.filter((entry) => entry.shop_id)} keyExtractor={(entry) => String(entry._id)}
+      refreshControl={<RefreshControl refreshing={loading && savedShops.length > 0} onRefresh={() => refresh()} tintColor={colors.action} />}
+      ListEmptyComponent={loading ? <View style={styles.empty}><ActivityIndicator color={colors.action} /><Text style={styles.note}>Loading saved shops…</Text></View> :
+        <View style={styles.empty}><Ionicons name="heart-outline" size={32} color={colors.action} /><Text style={styles.emptyTitle}>Your favourites, right here.</Text><Text style={styles.note}>Save a shop to find it easily next time.</Text><Button title="Find a shop" onPress={() => navigation.navigate("MainTabs", { screen: "Shops" })} style={styles.emptyButton} /></View>}
       renderItem={({ item }) => {
-        const shop = item.shop_id;
-        if (!shop) return null;
-        // Dimmed and marked, not disabled - the point of saving a closed
-        // shop is often exactly to order from it later. "Order Now" still
-        // works; the actual shop picked at SelectShopScreen's price
-        // comparison is what gets a disabled "Select" if still closed by
-        // then (and POST /orders itself is the final, authoritative gate).
-        const closed = shop.is_currently_open === false;
-        const distanceLabel = formatDistance(shop.distance_km);
-        return (
-          <View style={[styles.card, closed && styles.cardClosed]}>
-            <ShopPhoto source={shopImageSource(shop)} shopName={shop.shop_name} style={styles.photo} closed={closed} />
-            <SavedShopHeart shop={shop} overlay style={styles.heartCorner} />
-            <Text style={styles.shopName} numberOfLines={1}>
-              {shop.shop_name}
-            </Text>
-            <Text style={styles.address}>{shop.address}</Text>
-            {distanceLabel ? <Text style={styles.distance}>{distanceLabel}</Text> : null}
-            {shop.contact ? <Text style={styles.contact}>{shop.contact}</Text> : null}
-            <View style={styles.orderButton}>
-              <Button
-                title="Order Now"
-                onPress={() => navigation.navigate("UploadDocuments", { preselectedShop: shop })}
-              />
-            </View>
+        const shop = item.shop_id, availability = shopAvailability(shop), distance = formatDistance(shop.distance_km);
+        const statusColor = availability.isClosed ? colors.error : availability.isBusy ? colors.info : colors.success;
+        const statusSurface = availability.isClosed ? colors.errorSurface : availability.isBusy ? colors.infoSurface : colors.successSurface;
+        return <View style={styles.card}>
+          <View style={styles.heading}>
+            <Pressable onPress={() => navigation.navigate("ShopDetails", { shop })} accessibilityRole="button" accessibilityLabel={`View ${shop.shop_name}`} style={styles.shopLink}>
+              <ShopPhoto source={shop.shop_photo_url ? { uri: shop.shop_photo_url } : null} shopName={shop.shop_name} style={styles.photo} closed={availability.isClosed} />
+              <View style={styles.copy}><Text style={styles.shopName}>{shop.shop_name}</Text>{distance ? <Text style={styles.note}>{distance}</Text> : null}</View>
+            </Pressable>
+            <Pressable onPress={() => removeShop(shop)} disabled={Boolean(removingId)} accessibilityRole="button" accessibilityLabel={`Remove ${shop.shop_name} from saved shops`} accessibilityState={{ disabled: Boolean(removingId), busy: removingId === shop._id }} style={styles.heart}>
+              {removingId === shop._id ? <ActivityIndicator size="small" color={colors.action} /> : <Ionicons name="heart" size={22} color={colors.action} />}
+            </Pressable>
           </View>
-        );
-      }}
-    />
-  );
+          <Text style={styles.address}>{shop.address}</Text>
+          {typeof shop.is_currently_open === "boolean" || shop.shop_status ? <View style={[styles.status, { backgroundColor: statusSurface }]}><Text style={[styles.statusLabel, { color: statusColor }]}>{availability.label}</Text></View> : null}
+          {availability.isBusy && shop.busy_prep_minutes ? <Text style={styles.note}>Preparation estimate: about {shop.busy_prep_minutes} minutes.</Text> : null}
+          <Button title={availability.isClosed ? "View shop" : "Print here"} variant="secondary" style={styles.action}
+            onPress={() => availability.isClosed ? navigation.navigate("ShopDetails", { shop }) : navigation.navigate("UploadDocuments", { preselectedShop: shop })} />
+        </View>;
+      }} />
+  </ScreenFrame>;
 }
-
-const styles = StyleSheet.create({
-  list: { flex: 1, backgroundColor: colors.background },
-  listContent: { padding: spacing.lg, flexGrow: 1 },
-  center: { flex: 1, alignItems: "center", justifyContent: "center", backgroundColor: colors.background },
-  card: {
-    position: "relative",
-    backgroundColor: colors.surface,
-    borderRadius: radius.md,
-    padding: spacing.xl,
-    marginBottom: spacing.md,
-    borderWidth: 1,
-    borderColor: colors.border,
-  },
-  photo: { height: 120, marginBottom: spacing.md },
-  cardClosed: { opacity: 0.6 },
-  heartCorner: { position: "absolute", top: spacing.xl + spacing.xs, right: spacing.xl + spacing.xs },
-  shopName: { ...typography.h2, color: colors.textPrimary },
-  address: { ...typography.body, color: colors.textSecondary, marginTop: spacing.sm },
-  contact: { ...typography.bodySmall, color: colors.textSecondary, marginTop: spacing.xs },
-  distance: { ...typography.labelSmall, color: colors.primaryDeep, marginTop: spacing.xs },
-  orderButton: { marginTop: spacing.lg },
-  empty: {
-    textAlign: "center",
-    ...typography.body,
-    color: colors.textSecondary,
-    marginTop: 40,
-    paddingHorizontal: spacing.xl,
-  },
+const createStyles = ({ colors }) => ({
+  frameContent: { padding: 0 }, list: { flex: 1 }, listContent: { padding: 24, flexGrow: 1, gap: 16 },
+  card: { backgroundColor: colors.surface, borderRadius: radius.md, padding: 16, gap: 10 }, heading: { flexDirection: "row", gap: 8, alignItems: "flex-start" },
+  shopLink: { flex: 1, flexDirection: "row", alignItems: "center", gap: 12, minHeight: 52 }, copy: { flex: 1 }, photo: { width: 52, height: 52, borderRadius: 12 },
+  heart: { minWidth: 48, minHeight: 48, alignItems: "center", justifyContent: "center" }, shopName: { ...typography.h3, color: colors.textPrimary }, address: { ...typography.bodySmall, color: colors.textSecondary },
+  note: { ...typography.caption, color: colors.textSecondary, marginTop: 4 }, status: { alignSelf: "flex-start", paddingVertical: 4, paddingHorizontal: 10, borderRadius: 12 }, statusLabel: { ...typography.caption },
+  action: { marginTop: 4 }, empty: { flex: 1, alignItems: "center", justifyContent: "center", paddingVertical: 32, gap: 12 },
+  emptyTitle: { ...typography.h3, color: colors.textPrimary, textAlign: "center" }, emptyButton: { marginTop: 12, alignSelf: "stretch" },
 });

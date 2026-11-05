@@ -14,6 +14,7 @@ export default function VerificationBanner({ shop }) {
   if (!shop || shop.verification_status === "approved") return null;
 
   const isRejected = shop.verification_status === "rejected";
+  const submitted = Boolean(shop.kyc?.id_proof_type);
 
   return (
     <div
@@ -24,23 +25,23 @@ export default function VerificationBanner({ shop }) {
     >
       <div>
         <p className={`text-sm font-semibold ${isRejected ? "text-error-text" : "text-status-pending-text"}`}>
-          {isRejected ? "Verification rejected" : "Pending verification"}
+          {isRejected ? "Verification rejected" : submitted ? "Verification pending" : "Verification required"}
         </p>
         <p className={`text-sm mt-0.5 ${isRejected ? "text-error-text" : "text-status-pending-text"}`}>
           {isRejected && shop.rejection_reason ? `${shop.rejection_reason} ` : ""}
           {isRejected
             ? "Please resubmit your documents. "
-            : "We're reviewing your shop details and documents. "}
+            : submitted ? "We're reviewing your shop details and documents. " : "Add your shop details and verification documents. "}
           Your shop won&rsquo;t appear to customers until it&rsquo;s approved.
         </p>
       </div>
 
-      {isRejected && (
+      {(isRejected || !submitted) && (
         <Link
           to="/shop-profile"
-          className="shrink-0 px-4 py-2 rounded-control bg-error text-white text-sm font-medium hover:opacity-90 text-center focus:outline-none focus-visible:ring-2 focus-visible:ring-error/40"
+          className="shrink-0 px-4 min-h-12 flex items-center justify-center rounded-control bg-primary text-white text-sm font-medium hover:bg-primary-deep text-center focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
         >
-          Resubmit KYC
+          {isRejected ? "Resubmit verification" : "Complete verification"}
         </Link>
       )}
     </div>

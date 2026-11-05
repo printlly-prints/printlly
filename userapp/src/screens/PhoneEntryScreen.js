@@ -1,92 +1,28 @@
 import { useState } from "react";
-import {
-  KeyboardAvoidingView,
-  Platform,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TextInput,
-  View,
-} from "react-native";
+import { Pressable, Text } from "react-native";
+import Ionicons from "@expo/vector-icons/Ionicons";
+import ScreenFrame from "../components/ScreenFrame";
+import LoginComposition from "../components/LoginComposition";
+import FormField from "../components/FormField";
 import Button from "../components/Button";
-import { colors, typography, spacing, radius } from "../theme";
+import { useTheme } from "../context/ThemeContext";
+import { typography } from "../theme";
 
-// Step 1 of the demo login: collect a phone number, move to OtpScreen.
-// See constants/demoAuth.js for why this flow is a placeholder rather
-// than a real SMS OTP integration.
 export default function PhoneEntryScreen({ navigation }) {
-  const [phone, setPhone] = useState("");
-  const [error, setError] = useState("");
-
-  const handleContinue = () => {
+  const { colors } = useTheme();
+  const [phone, setPhone] = useState(""), [error, setError] = useState("");
+  const continueLogin = () => {
     const digits = phone.replace(/\D/g, "");
-    if (digits.length !== 10) {
-      setError("Enter a valid 10-digit phone number.");
-      return;
-    }
-    setError("");
-    navigation.navigate("Otp", { phone: digits });
+    if (digits.length !== 10) { setError("Enter a valid 10-digit phone number."); return; }
+    setError(""); navigation.navigate("Otp", { phone: digits });
   };
-
-  return (
-    <KeyboardAvoidingView
-      style={styles.flex}
-      behavior={Platform.OS === "ios" ? "padding" : undefined}
-    >
-      <ScrollView contentContainerStyle={styles.container} keyboardShouldPersistTaps="handled">
-        <Text style={styles.title}>Welcome</Text>
-        <Text style={styles.subtitle}>Enter your phone number to get started.</Text>
-
-        <View style={styles.field}>
-          <Text style={styles.fieldLabel}>Phone number</Text>
-          <View style={styles.phoneRow}>
-            <Text style={styles.prefix}>+91</Text>
-            <TextInput
-              style={styles.phoneInput}
-              value={phone}
-              onChangeText={setPhone}
-              keyboardType="number-pad"
-              maxLength={10}
-              placeholder="10-digit mobile number"
-              placeholderTextColor={colors.textMuted}
-              autoFocus
-            />
-          </View>
-        </View>
-
-        {error ? <Text style={styles.error}>{error}</Text> : null}
-
-        <Button title="Continue" onPress={handleContinue} />
-      </ScrollView>
-    </KeyboardAvoidingView>
-  );
+  return <ScreenFrame accessory={<Pressable onPress={() => navigation.navigate("SignInHelp")} accessibilityRole="button" accessibilityLabel="Sign-in help"
+    style={{ minWidth: 48, minHeight: 48, alignItems: "center", justifyContent: "center", marginRight: -8 }}><Ionicons name="help-circle-outline" size={24} color={colors.textPrimary} /></Pressable>}
+    footer={<Button title="Continue" onPress={continueLogin} />}>
+    <LoginComposition />
+    <FormField label="Phone number" prefix="+91" value={phone} onChangeText={(value) => setPhone(value.replace(/\D/g, ""))}
+      keyboardType="phone-pad" autoComplete="tel-national" maxLength={10} placeholder="Enter mobile number" error={error} returnKeyType="done" onSubmitEditing={continueLogin} />
+    <Text style={[typography.caption, { color: colors.textSecondary, marginTop: 16, lineHeight: 18 }]}>By continuing, you agree to our Terms and Privacy Policy.</Text>
+    <Text style={[typography.caption, { color: colors.textSecondary, marginTop: 16 }]}>Development preview. No SMS is sent.</Text>
+  </ScreenFrame>;
 }
-
-const styles = StyleSheet.create({
-  flex: { flex: 1, backgroundColor: colors.background },
-  container: { padding: spacing.xl, paddingTop: 80, flexGrow: 1 },
-  title: { ...typography.h1, color: colors.textPrimary },
-  subtitle: { ...typography.body, color: colors.textSecondary, marginTop: spacing.sm, marginBottom: spacing.xl },
-  field: { marginBottom: spacing.lg },
-  fieldLabel: { ...typography.label, color: colors.textPrimary, marginBottom: spacing.sm },
-  phoneRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    minHeight: 56,
-    borderWidth: 1,
-    borderColor: colors.border,
-    backgroundColor: colors.surface,
-    borderRadius: radius.md,
-    paddingHorizontal: spacing.lg,
-  },
-  prefix: { ...typography.bodyMedium, color: colors.textSecondary, marginRight: spacing.sm },
-  phoneInput: { flex: 1, ...typography.bodyMedium, color: colors.textPrimary, paddingVertical: spacing.md },
-  error: {
-    color: colors.danger,
-    backgroundColor: colors.dangerBg,
-    padding: spacing.md,
-    borderRadius: radius.md,
-    marginBottom: spacing.lg,
-    ...typography.bodySmall,
-  },
-});

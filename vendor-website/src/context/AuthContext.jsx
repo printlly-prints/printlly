@@ -1,4 +1,4 @@
-import { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
+import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
 import api from "../api/axios";
 import { identifyUser, clearUser, trackEvent } from "../lib/observability";
 
@@ -15,26 +15,49 @@ export function AuthProvider({ children }) {
   });
   const [shop, setShop] = useState(null);
   const [shopLoading, setShopLoading] = useState(true);
+  const [shopError, setShopError] = useState("");
+  const [shopRequestError, setShopRequestError] = useState(null);
+  const [sessionError, setSessionError] = useState(null);
+  const shopRequest = useRef(0);
+  useEffect(() => {
+    const expired = () => setSessionError({ response: { status: 401 } });
+    window.addEventListener("printlly:session-expired", expired);
+    return () => window.removeEventListener("printlly:session-expired", expired);
+  }, []);
 
   // GET /shops/me returns this owner's shop, or 404 if they haven't
   // registered one yet - a 404 here just means "no shop", not an error.
   // useCallback so the memoized context value below has a stable
   // `refreshShop` identity - without it the value would be rebuilt on
   // every render and the memoization would do nothing.
-  const loadMyShop = useCallback(async () => {
+  const loadMyShop = useCallback(async ({ background = false } = {}) => {
+    const request = ++shopRequest.current;
+    const currentRequest = () => request === shopRequest.current && localStorage.getItem("token") === token;
     if (!token || !user) {
       setShop(null);
+      setShopError("");
+      setShopRequestError(null);
       setShopLoading(false);
       return;
     }
-    setShopLoading(true);
+    if (!background) setShopLoading(true);
+    setShopError("");
+    setShopRequestError(null);
     try {
       const { data } = await api.get("/shops/me");
+      if (!currentRequest()) return;
       setShop(data);
     } catch (err) {
+      if (!currentRequest()) return;
       setShop(null);
+      // Only a 404 proves there is no registered shop. A network/server
+      // failure must not send an existing partner into a creation form.
+      if (err.response?.status !== 404) {
+        setShopError(err.response?.data?.message || "Could not load your shop. Please try again.");
+        setShopRequestError(err);
+      }
     } finally {
-      setShopLoading(false);
+      if (currentRequest()) setShopLoading(false);
     }
   }, [token, user]);
 
@@ -57,6 +80,14 @@ export function AuthProvider({ children }) {
   // Shared by both login paths so a JWT always lands in localStorage and
   // state the same way, regardless of how it was obtained.
   const persistSession = useCallback((newToken, newUser) => {
+    shopRequest.current += 1;
+    setSessionError(null);
+    // AppEntry must wait for this session's authoritative shop read.
+    // Otherwise the unauthenticated "not loading" state can redirect an
+    // existing partner into registration before the new-token effect runs.
+    setShop(null);
+    setShopLoading(true);
+    setShopError("");
     localStorage.setItem("token", newToken);
     localStorage.setItem("user", JSON.stringify(newUser));
     setToken(newToken);
@@ -76,6 +107,13 @@ export function AuthProvider({ children }) {
     [persistSession]
   );
 
+  // Existing registration contract: customer and partner accounts share
+  // this endpoint; this website registers the shop_owner role only.
+  const registerPartner = useCallback(async ({ name, phone, email, password }) => {
+    const { data } = await api.post("/auth/register", { name, phone, email, password, role: "shop_owner" });
+    persistSession(data.token, data.user);
+  }, [persistSession]);
+
   // Used by the /auth/callback page after Google redirects back with a
   // one-time code. Exchanges it for the real JWT via the backend, which
   // deletes the code on first use - so this must only ever be called once
@@ -89,11 +127,14 @@ export function AuthProvider({ children }) {
   );
 
   const logout = useCallback(() => {
+    shopRequest.current += 1;
+    setSessionError(null);
     localStorage.removeItem("token");
     localStorage.removeItem("user");
     setToken(null);
     setUser(null);
     setShop(null);
+    setShopError("");
     // Detaches the identity, so an error on the login page after signing out
     // is not attributed to the vendor who just left - which matters most on a
     // shared machine in a shop.
@@ -116,13 +157,17 @@ export function AuthProvider({ children }) {
       isAuthenticated: !!token,
       shop,
       shopLoading,
+      shopError,
+      shopRequestError,
+      sessionError,
       login,
+      registerPartner,
       completeGoogleLogin,
       logout,
       registerShop,
       refreshShop: loadMyShop,
     }),
-    [token, user, shop, shopLoading, login, completeGoogleLogin, logout, registerShop, loadMyShop]
+    [token, user, shop, shopLoading, shopError, shopRequestError, sessionError, login, registerPartner, completeGoogleLogin, logout, registerShop, loadMyShop]
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

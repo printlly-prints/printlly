@@ -10,6 +10,11 @@ const {
 } = require("../controllers/authController");
 const { passport, isGoogleConfigured } = require("../config/passport");
 const { verifyToken } = require("../middleware/auth");
+const { getProfile, updateProfile } = require("../controllers/profileController");
+
+// Only the authenticated caller's optional contact details are editable.
+router.get("/profile", verifyToken, getProfile);
+router.patch("/profile", verifyToken, updateProfile);
 
 // --- Existing customer/shop-owner email+password auth (unchanged) ---
 

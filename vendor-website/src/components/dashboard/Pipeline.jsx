@@ -1,14 +1,13 @@
 import { useNavigate } from "react-router-dom";
 import { pipelineCounts } from "../../utils/dashboardStats";
 
-// The vendor's whole day in one strip: what has arrived, what is on the
-// printer, what is waiting on the counter, what has gone. Each step is a
+// The vendor's whole day in one strip: what has arrived, what is accepted,
+// what is waiting on the counter, what has gone. Each step is a
 // button that opens the Orders page already filtered to that status, so
 // the summary is also the way in.
 //
-// The steps are the backend's real statuses. See PIPELINE in
-// dashboardStats.js for why "Printing" is the accepted state rather than
-// a stage of its own.
+// The steps are the backend's real statuses, defined by PIPELINE in
+// dashboardStats.js.
 export default function Pipeline({ orders }) {
   const navigate = useNavigate();
   const steps = pipelineCounts(orders);

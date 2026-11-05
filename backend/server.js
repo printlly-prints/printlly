@@ -134,7 +134,12 @@ app.use(passport.initialize());
 // The limiters read user identity straight from the JWT, so mounting them
 // out here - ahead of each router's own verifyToken - still buckets per
 // user rather than per IP.
-app.use("/auth", authLimiter, authRoutes);
+// Profile reads/edits are normal authenticated activity, not sign-in attempts.
+// They must not consume the much smaller login budget for the shared IP.
+app.use("/auth", (req, res, next) => {
+  const isProfile = /^\/profile\/?$/i.test(req.path) && ["GET", "HEAD", "PATCH"].includes(req.method);
+  return (isProfile ? generalLimiter : authLimiter)(req, res, next);
+}, authRoutes);
 app.use("/shops", generalLimiter, shopRoutes);
 app.use("/orders", orderLimiter, orderRoutes);
 app.use("/payments", orderLimiter, paymentRoutes);

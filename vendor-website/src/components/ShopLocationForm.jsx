@@ -244,7 +244,7 @@ export default function ShopLocationForm() {
                 {/* The embed draws its own marker; this is the readable
                     label over it, since that pin is small and unlabelled. */}
                 <span className="absolute left-3 bottom-3 flex items-center gap-1.5 px-2.5 py-1.5 rounded-full bg-surface/95 border border-border shadow-card text-xs font-semibold text-text-primary">
-                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#087F8C" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                     <path d="M12 21s7-6.2 7-11a7 7 0 1 0-14 0c0 4.8 7 11 7 11z" />
                     <circle cx="12" cy="10" r="2.5" />
                   </svg>

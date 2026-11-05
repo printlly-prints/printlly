@@ -1,7 +1,10 @@
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { Alert, Pressable, RefreshControl, ScrollView, Share, StyleSheet, Text, View } from "react-native";
 import Ionicons from "@expo/vector-icons/Ionicons";
+import { useFocusEffect } from "@react-navigation/native";
 import Button from "../components/Button";
+import RecoveryState from "../components/RecoveryState";
+import { recoveryForError } from "../utils/requestRecovery";
 import Card, { CardHeader } from "../components/Card";
 import CartItem from "../components/CartItem";
 import OrderTimeline from "../components/OrderTimeline";
@@ -12,64 +15,80 @@ import ShopCard from "../components/ShopCard";
 import api from "../api/client";
 import useFocusedPoll from "../hooks/useFocusedPoll";
 import { orderRef } from "../utils/orderRef";
-import { colors, typography, spacing, radius } from "../theme";
+import { pickupCodeForOrder } from "../utils/orderState";
+import { typography, spacing, radius } from "../theme";
+import ScreenFrame from "../components/ScreenFrame";
+import { useTheme, useThemedStyles } from "../context/ThemeContext";
+import { navigateToOrder } from "../utils/orderNavigation";
 
 const ORDER_POLL_MS = 20 * 1000;
 
 // Status label + colour for the badge beside the title. Driven entirely
 // by the backend's own status values - no state is invented here.
-const STATUS_META = {
-  pending: { label: "In progress", bg: colors.primaryWash, text: colors.primaryDeep },
-  accepted: { label: "In progress", bg: colors.primaryWash, text: colors.primaryDeep },
+const statusMetadata = (colors) => ({
+  pending: { label: "Awaiting acceptance", bg: colors.primaryWash, text: colors.primaryDeep },
+  accepted: { label: "Shop accepted", bg: colors.primaryWash, text: colors.primaryDeep },
   ready_for_pickup: { label: "Ready for pickup", bg: colors.successBg, text: colors.success },
   completed: { label: "Completed", bg: colors.successBg, text: colors.success },
   cancelled: { label: "Cancelled", bg: colors.dangerBg, text: colors.danger },
   expired: { label: "Expired", bg: colors.backgroundSoft, text: colors.textSecondary },
-};
+});
 
 // One screen for the whole life of an order: tracking while it is live,
 // and the completed-order / history view once it is not. They share a
 // summary, a bill and a shop card, so splitting them into two screens
 // would mean maintaining the same thing twice.
 export default function OrderTrackingScreen({ route, navigation }) {
+  const { colors } = useTheme(), styles = useThemedStyles(createStyles), STATUS_META = statusMetadata(colors);
   const { order: initialOrder } = route.params;
   const [order, setOrder] = useState(initialOrder);
   const [refreshing, setRefreshing] = useState(false);
+  const [connectionError, setConnectionError] = useState(null);
+  const mounted = useRef(true);
+  const requestId = useRef(0);
+  useEffect(() => { mounted.current = true; return () => { mounted.current = false; requestId.current += 1; }; }, []);
 
   const status = order.status;
   const isClosed = status === "cancelled" || status === "expired";
   const isCompleted = status === "completed";
-  const meta = STATUS_META[status] || STATUS_META.pending;
-  const otpStillNeeded = !isClosed && !isCompleted && order.otp;
+  const meta = !isClosed && !isCompleted && order.payment_status !== "paid" ? { ...STATUS_META.pending, label: "Payment pending" } : STATUS_META[status] || STATUS_META.pending;
+  const pickupCode = pickupCodeForOrder(order);
 
   const showQueuePosition =
     (status === "pending" || status === "accepted") && typeof order.queue_position === "number";
 
   const shareDetails = () => {
-    Share.share({ message: `My Printlly order\nOrder: ${orderRef(order)}\nPickup OTP: ${order.otp}` });
+    if (!pickupCode) return;
+    Share.share({ message: `My Printlly order\nOrder: ${orderRef(order)}\nPickup OTP: ${pickupCode}` });
   };
 
   const onRefresh = async ({ silent } = {}) => {
+    const id = ++requestId.current;
     if (!silent) setRefreshing(true);
     try {
       const { data } = await api.get("/orders/customer");
+      if (!mounted.current || id !== requestId.current) return;
+      setConnectionError(null);
       const updated = data.find((o) => o._id === order._id);
+      if (!updated) { navigation.replace("NotFound"); return; }
       if (updated) {
         const wasReady = order.status === "ready_for_pickup";
-        if (!wasReady && updated.status === "ready_for_pickup") {
+        if (!wasReady && updated.status === "ready_for_pickup" && pickupCodeForOrder(updated)) {
           navigation.replace("PickupOtp", { order: updated });
           return;
         }
         setOrder(updated);
       }
-    } catch {
-      // Silent - a failed refresh leaves the last known status shown.
+    } catch (error) {
+      if (mounted.current && id === requestId.current) setConnectionError(error);
     } finally {
-      if (!silent) setRefreshing(false);
+      if (mounted.current && id === requestId.current) setRefreshing(false);
     }
   };
 
   const isLive = ["pending", "accepted", "ready_for_pickup"].includes(status);
+  const refreshRef = useRef(onRefresh); refreshRef.current = onRefresh;
+  useFocusEffect(useCallback(() => { refreshRef.current({ silent: true }); }, [order._id]));
   const pollStatus = useCallback(() => onRefresh({ silent: true }), [order._id, order.status]);
   useFocusedPoll(isLive ? pollStatus : null, ORDER_POLL_MS);
 
@@ -93,26 +112,22 @@ export default function OrderTrackingScreen({ route, navigation }) {
   };
 
   const priceRows = [
-    { label: "Subtotal", value: order.base_subtotal ?? 0 },
+    { label: "Subtotal", value: order.base_subtotal },
     order.paper_size_charge > 0 ? { label: "Paper size", value: order.paper_size_charge } : null,
     order.sides_charge > 0 ? { label: "Double-sided", value: order.sides_charge } : null,
     order.services_charge > 0 ? { label: "Additional services", value: order.services_charge } : null,
-    { label: "Platform fee", value: order.platform_fee ?? 0 },
+    { label: "Platform fee", value: order.platform_fee },
     { label: "Pickup", free: true },
   ];
 
   return (
-    <ScreenBackground>
-      <ScrollView
-        style={styles.scroll}
-        contentContainerStyle={styles.content}
-        refreshControl={
-          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.primaryBright} />
-        }
-      >
+    <ScreenFrame title="Order status" onBack={() => navigation.canGoBack() ? navigation.goBack() : navigation.navigate("MainTabs", { screen: "Orders" })}
+      refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.action} />}
+      footer={pickupCode ? <Button title="View pickup code" onPress={() => navigation.navigate("PickupOtp", { order })} /> : !isClosed && !isCompleted && order.payment_status !== "paid" ? <Button title="Complete UPI payment" onPress={() => navigateToOrder(navigation, order)} /> : undefined}>
+        {connectionError ? <RecoveryState compact {...recoveryForError(connectionError)} retryKey={connectionError} message="Showing the last confirmed order status. Retry to get the latest update." primaryLabel="Reconnect" onPrimary={onRefresh} loading={refreshing} /> : null}
         <View style={styles.headerRow}>
           <View style={styles.headerText}>
-            <Text style={styles.title}>{isCompleted ? "Order details" : "Track your order"}</Text>
+            <Text style={styles.title}>{isCompleted ? "Order collected." : status === "accepted" ? "The shop accepted your order." : status === "ready_for_pickup" ? "Your print is ready." : isClosed ? "Order closed." : order.payment_status !== "paid" ? "Payment is pending." : "Your order is placed."}</Text>
             <Text style={styles.ref}>Order {orderRef(order)}</Text>
           </View>
           <View style={[styles.badge, { backgroundColor: meta.bg }]}>
@@ -121,13 +136,7 @@ export default function OrderTrackingScreen({ route, navigation }) {
         </View>
 
         {isClosed ? (
-          <Card style={styles.card}>
-            <Text style={styles.closedText}>
-              {status === "expired"
-                ? "This order expired because it wasn't completed in time. Its documents were automatically deleted — upload again to place a new order."
-                : "This order was cancelled."}
-            </Text>
-          </Card>
+          <RecoveryState compact reaction="cancelled" title={status === "expired" ? "This order has expired." : "This order was cancelled."} message={status === "expired" ? "Upload your files again to start a new order with current shop availability." : "You can choose another shop for a new order, or get help with this one."} primaryLabel="Find a print shop" onPrimary={() => navigation.navigate("MainTabs", { screen: "Shops" })} />
         ) : (
           <Card style={styles.card}>
             <OrderTimeline
@@ -155,7 +164,6 @@ export default function OrderTrackingScreen({ route, navigation }) {
           </View>
         ) : null}
 
-        {otpStillNeeded ? <OtpCard otp={order.otp} /> : null}
 
         <View style={styles.card}>
           <Text style={styles.sectionLabel}>Print shop</Text>
@@ -178,7 +186,7 @@ export default function OrderTrackingScreen({ route, navigation }) {
             </View>
           ))}
           <View style={styles.summaryFooter}>
-            <PriceBreakdown rows={priceRows} total={order.total_amount ?? 0} totalLabel="Total paid" compact />
+            <PriceBreakdown rows={priceRows} total={order.total_amount} totalLabel={order.payment_status === "paid" ? "Total paid" : "Order total"} compact />
           </View>
         </Card>
 
@@ -208,7 +216,7 @@ export default function OrderTrackingScreen({ route, navigation }) {
           <Ionicons name="chevron-forward" size={16} color={colors.primaryBright} />
         </Pressable>
 
-        {otpStillNeeded ? (
+        {pickupCode ? (
           <Button title="Share OTP" variant="secondary" onPress={shareDetails} style={styles.action} />
         ) : null}
 
@@ -217,12 +225,12 @@ export default function OrderTrackingScreen({ route, navigation }) {
             <Button title="Reorder" onPress={reorder} />
           </View>
         ) : null}
-      </ScrollView>
-    </ScreenBackground>
+    </ScreenFrame>
   );
 }
 
 function InfoRow({ label, value }) {
+  const styles = useThemedStyles(createStyles);
   return (
     <View style={styles.infoRow}>
       <Text style={styles.infoLabel}>{label}</Text>
@@ -233,14 +241,14 @@ function InfoRow({ label, value }) {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = ({ colors }) => ({
   scroll: { flex: 1 },
   content: { padding: spacing.lg, paddingBottom: spacing.xxl },
-  headerRow: { flexDirection: "row", alignItems: "flex-start", gap: spacing.md, marginBottom: spacing.lg },
-  headerText: { flex: 1 },
+  headerRow: { flexDirection: "column-reverse", alignItems: "stretch", gap: spacing.md, marginBottom: spacing.lg },
+  headerText: {},
   title: { ...typography.h1, color: colors.textPrimary },
   ref: { ...typography.bodySmall, color: colors.textSecondary, marginTop: 2 },
-  badge: { borderRadius: radius.pill, paddingVertical: 5, paddingHorizontal: spacing.md, marginTop: 6 },
+  badge: { borderRadius: 16, paddingVertical: 12, paddingHorizontal: spacing.md },
   badgeText: { ...typography.labelSmall },
 
   card: { marginBottom: spacing.md },

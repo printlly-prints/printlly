@@ -1,270 +1,105 @@
-import { useState } from "react";
-import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import { useEffect, useRef, useState } from "react";
+import { ActivityIndicator, Image, Pressable, Text, View } from "react-native";
+import Ionicons from "@expo/vector-icons/Ionicons";
 import * as DocumentPicker from "expo-document-picker";
 import { trackEvent, EVENTS } from "../lib/analytics";
 import Button from "../components/Button";
+import RecoveryState from "../components/RecoveryState";
+import ScreenFrame from "../components/ScreenFrame";
 import { uploadDocuments } from "../api/client";
-import { colors, typography, spacing, radius } from "../theme";
-
+import { prepareUploadAsset, discardConvertedAsset } from "../utils/uploadAssets";
+import { MAX_DOCUMENT_BYTES } from "../utils/imagePdf";
+import { successfulDocuments, retryableFiles, patchUploadItem } from "../utils/uploadRecovery";
+import { typography } from "../theme";
+import { defaultDocumentSettings } from "../utils/documentSettings";
+import { useTheme, useThemedStyles } from "../context/ThemeContext";
+import { useOrderDraft } from "../context/OrderDraftContext";
 const MAX_FILES = 10;
 
-// Step 1 of the order flow (Upload -> Preferences -> Select shop ->
-// Review & pay). Pick up to 10 PDFs, upload them, and only then move on -
-// the real page count for pricing always comes back from the server here,
-// never guessed client-side.
-//
-// route.params.preselectedShop carries a shop forward when this flow was
-// started by tapping a shop directly (Shops tab / Home's nearby list),
-// so the customer doesn't have to pick it again at the Select Shop step.
 export default function UploadDocumentsScreen({ route, navigation }) {
-  const preselectedShop = route.params?.preselectedShop || null;
+  const { colors } = useTheme(), styles = useThemedStyles(createStyles), { getDraft, setDraft } = useOrderDraft();
+  const restored = useRef(getDraft()), preselectedShop = route.params?.preselectedShop || restored.current?.preselectedShop || null;
+  const [items, setItems] = useState(() => (route.params?.uploadedDocs || restored.current?.uploadedDocs || []).map((doc) => ({ id: doc.upload_id, doc, status: "uploaded" })));
+  const [busy, setBusy] = useState(false), [choosing, setChoosing] = useState(false), [error, setError] = useState("");
+  const mounted = useRef(true), working = useRef(false), picking = useRef(false), controller = useRef(null), itemsRef = useRef(items);
+  itemsRef.current = items;
+  useEffect(() => { mounted.current = true; return () => { mounted.current = false; controller.current?.abort(); }; }, []);
+  const uploadedDocs = successfulDocuments(items);
+  const failed = items.some((item) => item.status === "failed");
+  useEffect(() => {
+    const previous = getDraft();
+    const docSettings = uploadedDocs.map((doc) => { const index = previous?.uploadedDocs?.findIndex((entry) => entry.upload_id === doc.upload_id); return index >= 0 && previous.docSettings?.[index] ? previous.docSettings[index] : defaultDocumentSettings(); });
+    setDraft({ ...previous, uploadedDocs, docSettings, preselectedShop });
+  }, [items, preselectedShop, getDraft, setDraft]);
+  const patch = (id, changes) => { if (mounted.current) setItems((previous) => patchUploadItem(previous, id, changes)); };
 
-  const [pendingFiles, setPendingFiles] = useState([]);
-  // Files the server has accepted: { upload_id, file_url, page_count, original_name }
-  const [uploadedDocs, setUploadedDocs] = useState([]);
-  // Files the server rejected: { original_name, error, asset }
-  const [failedUploads, setFailedUploads] = useState([]);
-
-  const [uploading, setUploading] = useState(false);
-  const [retryingName, setRetryingName] = useState(null);
-  const [error, setError] = useState("");
-
-  const totalSlotsUsed = pendingFiles.length + uploadedDocs.length + failedUploads.length;
-  const canProceed = uploadedDocs.length > 0 && pendingFiles.length === 0 && failedUploads.length === 0;
-
-  const addFiles = async () => {
-    setError("");
-    const room = MAX_FILES - totalSlotsUsed;
-    if (room <= 0) {
-      setError(`You can add up to ${MAX_FILES} documents per order.`);
-      return;
+  const upload = async (selected) => {
+    if (working.current) return;
+    working.current = true; setBusy(true); controller.current = new AbortController();
+    // Each upload has its own client identity; duplicate filenames cannot
+    // assign a failed result to another file. Only server counts are used.
+    for (const item of selected) {
+      if (!mounted.current) break;
+      let prepared;
+      try {
+        patch(item.id, { status: "preparing", error: "" });
+        prepared = await prepareUploadAsset(item.asset);
+        if (!mounted.current) break;
+        patch(item.id, { status: "uploading" });
+        const result = await uploadDocuments([prepared], { signal: controller.current.signal });
+        const doc = result.succeeded?.[0];
+        if (!doc?.upload_id || !Number.isInteger(doc.page_count) || doc.page_count < 1) throw new Error(result.failed?.[0]?.error || "The server could not confirm this file. Retry or remove it.");
+        patch(item.id, { status: "uploaded", doc, asset: null, converted: prepared.converted });
+      } catch (failure) {
+        patch(item.id, { status: "failed", error: failure.response?.data?.message || failure.message || "Upload failed. Please try again." });
+      } finally { discardConvertedAsset(prepared); }
     }
-
-    const result = await DocumentPicker.getDocumentAsync({
-      type: "application/pdf",
-      multiple: true,
-      copyToCacheDirectory: true,
-    });
-    if (result.canceled) return;
-
-    // document_upload_started - emitted after the customer has actually
-    // chosen files, not when the screen opened. That placement is the whole
-    // value of the event: paired with the backend's
-    // document_upload_completed it measures how often an upload that was
-    // genuinely attempted failed to land, which is the top of the order
-    // funnel and the one step that depends on a third party (Cloudinary).
-    //
-    // Count only. Filenames are never sent: a filename is frequently the
-    // sensitive part of a document before anyone opens it.
-    trackEvent(EVENTS.DOCUMENT_UPLOAD_STARTED, { file_count: result.assets.length });
-
-    const picked = result.assets.slice(0, room);
-    if (result.assets.length > room) {
-      setError(`Only ${room} more document(s) could be added (${MAX_FILES} max per order).`);
-    }
-    setPendingFiles((prev) => [...prev, ...picked]);
+    working.current = false;
+    if (mounted.current) setBusy(false);
   };
-
-  const removePendingFile = (uri) => {
-    setPendingFiles((prev) => prev.filter((f) => f.uri !== uri));
-  };
-
-  const removeUploadedDoc = (uploadId) => {
-    setUploadedDocs((prev) => prev.filter((d) => d.upload_id !== uploadId));
-  };
-
-  const removeFailed = (originalName) => {
-    setFailedUploads((prev) => prev.filter((f) => f.original_name !== originalName));
-  };
-
-  const handleUpload = async () => {
-    if (pendingFiles.length === 0) return;
+  const chooseFiles = async () => {
+    if (working.current || picking.current) return;
+    picking.current = true; setChoosing(true);
     setError("");
-    setUploading(true);
+    if (itemsRef.current.length >= MAX_FILES) { setError("You can add up to 10 documents per order."); picking.current = false; setChoosing(false); return; }
     try {
-      const result = await uploadDocuments(pendingFiles);
-      setUploadedDocs((prev) => [...prev, ...result.succeeded]);
-      if (result.failed.length > 0) {
-        // Matched back to the original asset by filename so "Retry" can
-        // resubmit the exact same bytes. Two same-named files in one
-        // batch would both match the first found - an accepted edge case.
-        const withAssets = result.failed.map((f) => ({
-          ...f,
-          asset: pendingFiles.find((p) => (p.name || "document.pdf") === f.original_name),
-        }));
-        setFailedUploads((prev) => [...prev, ...withAssets]);
-      }
-      setPendingFiles([]);
-    } catch (err) {
-      setError(err.response?.data?.message || "Could not upload your documents. Please try again.");
-    } finally {
-      setUploading(false);
-    }
+      const result = await DocumentPicker.getDocumentAsync({ type: ["application/pdf", "image/jpeg", "image/png"], multiple: true, copyToCacheDirectory: true });
+      if (result.canceled || !mounted.current) return;
+      const room = Math.max(0, MAX_FILES - itemsRef.current.length);
+      const selected = result.assets.slice(0, room).map((asset, index) => ({ id: `file-${Date.now()}-${index}-${Math.random()}`, asset, status: asset.size > MAX_DOCUMENT_BYTES ? "failed" : "queued", error: asset.size > MAX_DOCUMENT_BYTES ? "Each file must be 10 MB or smaller." : "" }));
+      itemsRef.current = [...itemsRef.current, ...selected]; setItems(itemsRef.current);
+      if (result.assets.length > room) setError(`Added ${room} files. An order can contain up to 10 documents.`);
+      trackEvent(EVENTS.DOCUMENT_UPLOAD_STARTED, { file_count: selected.length });
+      await upload(selected.filter((item) => item.status !== "failed"));
+    } catch (failure) { if (mounted.current) setError(failure.message || "Could not choose files. Please try again."); }
+    finally { picking.current = false; if (mounted.current) setChoosing(false); }
   };
-
-  // Re-attempts a single failed file with its original bytes - useful for
-  // a transient storage failure. A "wrong file type" or "corrupted PDF"
-  // rejection will fail again with the same message either way.
-  const retryFailed = async (failedItem) => {
-    if (!failedItem.asset) {
-      setError(`Couldn't find the original file for "${failedItem.original_name}" - remove it and add it again.`);
-      return;
-    }
-    setError("");
-    setRetryingName(failedItem.original_name);
-    try {
-      const result = await uploadDocuments([failedItem.asset]);
-      setFailedUploads((prev) => prev.filter((f) => f.original_name !== failedItem.original_name));
-      if (result.succeeded.length > 0) {
-        setUploadedDocs((prev) => [...prev, ...result.succeeded]);
-      }
-      if (result.failed.length > 0) {
-        setFailedUploads((prev) => [...prev, { ...result.failed[0], asset: failedItem.asset }]);
-      }
-    } catch (err) {
-      setError(err.response?.data?.message || "Retry failed. Please try again.");
-    } finally {
-      setRetryingName(null);
-    }
+  const proceed = () => {
+    if (busy || !uploadedDocs.length) return;
+    // Failed files remain visibly excluded; continuing never pretends that
+    // they uploaded. The explicit CTA makes partial success reviewable.
+    navigation.navigate("PrintPreferences", { uploadedDocs, preselectedShop, restoredSettings: getDraft()?.docSettings, restoredNotes: getDraft()?.notes });
   };
-
-  const handleContinue = () => {
-    if (!canProceed) return;
-    navigation.navigate("PrintPreferences", { uploadedDocs, preselectedShop });
-  };
-
-  return (
-    <ScrollView style={styles.screen} contentContainerStyle={styles.content}>
-      <Text style={styles.title}>Add your documents</Text>
-      <Text style={styles.subtitle}>PDFs only - we'll count the pages for you.</Text>
-
-      {uploadedDocs.map((doc) => (
-        <View key={doc.upload_id} style={styles.docRow}>
-          <View style={styles.docInfo}>
-            <Text style={styles.docName} numberOfLines={1}>
-              {doc.original_name}
-            </Text>
-            <Text style={styles.docMeta}>
-              {doc.page_count} page{doc.page_count > 1 ? "s" : ""} · uploaded
-            </Text>
-          </View>
-          <Pressable onPress={() => removeUploadedDoc(doc.upload_id)} hitSlop={10}>
-            <Text style={styles.removeX}>×</Text>
-          </Pressable>
-        </View>
-      ))}
-
-      {failedUploads.map((f) => (
-        <View key={f.original_name} style={[styles.docRow, styles.docRowFailed]}>
-          <View style={styles.docInfo}>
-            <Text style={styles.docName} numberOfLines={1}>
-              {f.original_name}
-            </Text>
-            <Text style={styles.docError}>{f.error}</Text>
-          </View>
-          <View style={styles.failedActions}>
-            <Pressable onPress={() => retryFailed(f)} disabled={retryingName === f.original_name}>
-              <Text style={styles.retryText}>
-                {retryingName === f.original_name ? "Retrying..." : "Retry"}
-              </Text>
-            </Pressable>
-            <Pressable onPress={() => removeFailed(f.original_name)} hitSlop={10}>
-              <Text style={styles.removeX}>×</Text>
-            </Pressable>
-          </View>
-        </View>
-      ))}
-
-      {pendingFiles.map((f) => (
-        <View key={f.uri} style={styles.docRow}>
-          <View style={styles.docInfo}>
-            <Text style={styles.docName} numberOfLines={1}>
-              {f.name}
-            </Text>
-            <Text style={styles.docMeta}>Ready to upload</Text>
-          </View>
-          <Pressable onPress={() => removePendingFile(f.uri)} hitSlop={10}>
-            <Text style={styles.removeX}>×</Text>
-          </Pressable>
-        </View>
-      ))}
-
-      <Pressable style={styles.filePicker} onPress={addFiles}>
-        <Text style={styles.filePickerText}>
-          + Add PDF document{totalSlotsUsed > 0 ? "s" : ""}
-        </Text>
-        <Text style={styles.filePickerHint}>Up to {MAX_FILES} documents per order</Text>
-      </Pressable>
-
-      {pendingFiles.length > 0 && (
-        <Button
-          title={`Upload ${pendingFiles.length} document${pendingFiles.length > 1 ? "s" : ""}`}
-          onPress={handleUpload}
-          loading={uploading}
-        />
-      )}
-
-      {error ? <Text style={styles.error}>{error}</Text> : null}
-
-      <View style={styles.spacer} />
-      <Button title="Continue" onPress={handleContinue} disabled={!canProceed} />
-      {pendingFiles.length > 0 && (
-        <Text style={styles.note}>Upload your documents above before continuing.</Text>
-      )}
-      {failedUploads.length > 0 && (
-        <Text style={styles.note}>Retry or remove the failed document(s) above.</Text>
-      )}
-    </ScrollView>
-  );
+  const footer = items.length ? <>
+    {failed && !busy ? <Button title="Retry failed files" variant="secondary" disabled={choosing} onPress={() => upload(retryableFiles(itemsRef.current))} /> : null}
+    <Button title={busy ? "Uploading files…" : failed ? "Continue with uploaded files" : "Set print options"} loading={busy} disabled={!uploadedDocs.length || busy} onPress={proceed} />
+    {!busy && items.length < MAX_FILES ? <Button title="Choose files" variant="secondary" disabled={choosing} onPress={chooseFiles} /> : null}
+  </> : <Button title="Choose files" disabled={choosing} onPress={chooseFiles} />;
+  return <ScreenFrame title="Upload files" onBack={() => navigation.goBack()} footer={footer}>
+    {!failed ? <Text style={styles.title}>{items.length ? busy ? "Bringing your files in." : uploadedDocs.length ? "Your files are here." : "Let's try that again." : "Bring your files."}</Text> : null}
+    {!failed ? <Text style={styles.subtitle}>{items.length ? "Only uploaded files will be included in your order." : "Add the documents you'd like printed."}</Text> : null}
+    {!items.length ? <View style={styles.hero}><View style={{ flex: 1 }}><Text style={styles.heroTitle}>PDFs + images</Text><Text style={styles.meta}>Set print options for each file.</Text></View><Image source={require("../../assets/artwork/customer_pdf_image_compact.png")} style={{ width: 104, height: 104 }} resizeMode="contain" /></View> : null}
+    {failed ? <RecoveryState compact reaction="upload_failed" title={uploadedDocs.length ? "Some files need another try." : "Let’s try those files again."} message={uploadedDocs.length ? "Your uploaded files are kept. Retry only the files below that failed, or continue with the successful files." : "Choose another PDF or image, or retry the affected file below."} /> : null}
+    {items.map((item) => <View key={item.id} style={[styles.row, item.status === "failed" && styles.failed]}>
+      <View style={styles.fileIcon}><Ionicons name="document-outline" size={24} color={colors.action} /></View>
+      <View style={{ flex: 1, minWidth: 0 }}><Text style={styles.name} numberOfLines={2}>{item.doc?.original_name || item.asset?.name || "Document"}</Text>
+        <Text style={[styles.meta, item.status === "failed" && { color: colors.error }]}>{item.status === "uploaded" ? `${item.doc.page_count} page${item.doc.page_count === 1 ? "" : "s"} · uploaded${item.converted ? " · image converted to PDF" : ""}` : item.status === "failed" ? item.error : item.status === "preparing" ? "Preparing file…" : "Uploading…"}</Text>
+        {item.status === "failed" ? <Pressable accessibilityRole="button" accessibilityLabel={`Retry ${item.asset?.name || "this file"}`} accessibilityState={{ disabled: busy }} disabled={busy} style={styles.retry} onPress={() => upload([item])}><Text style={styles.retryText}>Retry this file</Text></Pressable> : null}
+      </View>
+      {busy ? <ActivityIndicator color={colors.action} /> : <Pressable style={styles.remove} accessibilityRole="button" accessibilityLabel={`Remove ${item.doc?.original_name || item.asset?.name || "file"}`} onPress={() => setItems((previous) => previous.filter((entry) => entry.id !== item.id))}><Ionicons name="close" size={22} color={colors.textSecondary} /></Pressable>}
+    </View>)}
+    <Text style={styles.helper}>PDF, JPG and PNG · up to 10 files · 10 MB each. Images become one-page PDFs without cropping.</Text>
+    {error ? <Text style={styles.error} accessibilityRole="alert">{error}</Text> : null}
+  </ScreenFrame>;
 }
-
-const styles = StyleSheet.create({
-  screen: { flex: 1, backgroundColor: colors.background },
-  content: { padding: spacing.lg, paddingBottom: 48 },
-  title: { ...typography.h1, color: colors.textPrimary },
-  subtitle: { ...typography.body, color: colors.textSecondary, marginTop: spacing.xs, marginBottom: spacing.xl },
-  docRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    backgroundColor: colors.surface,
-    borderWidth: 1,
-    borderColor: colors.border,
-    borderRadius: radius.md,
-    paddingVertical: spacing.sm,
-    paddingHorizontal: spacing.md,
-    marginBottom: spacing.sm,
-  },
-  docRowFailed: { borderColor: colors.danger, backgroundColor: colors.dangerBg },
-  docInfo: { flex: 1, marginRight: spacing.md },
-  docName: { ...typography.bodyMedium, color: colors.textPrimary },
-  docMeta: { ...typography.caption, color: colors.textSecondary, marginTop: 2 },
-  docError: { ...typography.caption, color: colors.danger, marginTop: 2 },
-  failedActions: { flexDirection: "row", alignItems: "center", gap: spacing.md },
-  retryText: { ...typography.labelSmall, color: colors.primaryBright },
-  removeX: { fontSize: 22, color: colors.textSecondary, lineHeight: 24 },
-  filePicker: {
-    minHeight: 72,
-    borderRadius: radius.lg,
-    borderWidth: 2,
-    borderStyle: "dashed",
-    borderColor: colors.primary,
-    backgroundColor: colors.surface,
-    alignItems: "center",
-    justifyContent: "center",
-    padding: spacing.lg,
-    marginBottom: spacing.lg,
-  },
-  filePickerText: { ...typography.bodyMedium, color: colors.primaryBright, textAlign: "center" },
-  filePickerHint: { ...typography.caption, color: colors.textSecondary, marginTop: spacing.xs },
-  error: {
-    color: colors.danger,
-    backgroundColor: colors.dangerBg,
-    padding: spacing.md,
-    borderRadius: radius.md,
-    marginTop: spacing.md,
-    ...typography.bodySmall,
-  },
-  spacer: { height: spacing.md },
-  note: { textAlign: "center", color: colors.textSecondary, marginTop: spacing.md, ...typography.bodySmall },
-});
+const createStyles = ({ colors }) => ({ title: { ...typography.h1, color: colors.textPrimary }, subtitle: { ...typography.body, color: colors.textSecondary, marginTop: 12, marginBottom: 16 }, hero: { padding: 16, minHeight: 136, backgroundColor: colors.surface, borderRadius: 24, flexDirection: "row", alignItems: "center", gap: 16 }, heroTitle: { ...typography.h3, color: colors.textPrimary, marginBottom: 8 }, meta: { ...typography.bodySmall, color: colors.textSecondary, marginTop: 4 }, helper: { ...typography.caption, color: colors.textMuted, marginTop: 16 }, row: { flexDirection: "row", alignItems: "center", gap: 12, padding: 12, backgroundColor: colors.surface, borderRadius: 16, marginBottom: 12 }, failed: { borderWidth: 1, borderColor: colors.error, backgroundColor: colors.errorSurface }, fileIcon: { width: 36, height: 48, alignItems: "center", justifyContent: "center" }, name: { ...typography.bodyMedium, color: colors.textPrimary }, remove: { width: 48, height: 48, alignItems: "center", justifyContent: "center" }, retry: { minHeight: 48, justifyContent: "center" }, retryText: { ...typography.label, color: colors.action }, error: { ...typography.bodySmall, color: colors.error, padding: 16, backgroundColor: colors.errorSurface, borderRadius: 16, marginTop: 16 } });

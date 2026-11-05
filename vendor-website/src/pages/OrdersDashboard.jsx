@@ -1,25 +1,23 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import useOrderEvents from "../hooks/useOrderEvents";
+import { useEventSounds } from "../context/SoundContext";
 import { useSearchParams } from "react-router-dom";
 import DashboardLayout from "../components/DashboardLayout";
-import OrderRow, { ORDER_GRID, orderTags } from "../components/OrderRow";
+import { orderTags } from "../components/OrderRow";
+import OrderSummaryRow from "../components/OrderSummaryRow";
 import OrderDetailPanel from "../components/OrderDetailPanel";
 import VerificationBanner from "../components/VerificationBanner";
 import api from "../api/axios";
 import { useAuth } from "../context/AuthContext";
 import { orderRef } from "../utils/orderRef";
+import MascotRecovery from "../components/MascotRecovery";
 
 // Every order this shop has, in one place - this page absorbed the old
 // "Recent Orders" screen, which was this same table opened on Completed.
 //
 // "All" is first so there is a view that hides nothing; the rest map
-// directly to the backend's own status values. There is no separate
-// "Printing" tab because there is no printing status: an order goes
-// pending -> accepted -> ready_for_pickup, and accepted IS the state
-// where the shop has taken the job and is printing it. A Printing tab
-// would either be permanently empty or a duplicate of Accepted under
-// another name, and the badge on every row would then disagree with the
-// tab that found it.
+// directly to the backend's own status values. Accepted confirms the
+// shop has taken the job; the backend does not report printer activity.
 //
 // "Expired" (set by the abandoned-order cleanup cron) keeps its own tab
 // rather than being mixed into Pending or Completed - it's not something
@@ -30,6 +28,7 @@ const TABS = [
   { key: "accepted", label: "Accepted" },
   { key: "ready_for_pickup", label: "Ready for pickup" },
   { key: "completed", label: "Completed" },
+  { key: "cancelled", label: "Cancelled" },
   { key: "expired", label: "Expired" },
 ];
 
@@ -107,6 +106,7 @@ function withinDateFilter(order, days) {
 // its KPI cards and the old /recent-orders bookmark all land on the right
 // view without a second copy of this table existing anywhere.
 export default function OrdersDashboard() {
+  const { confirm } = useEventSounds();
   const { shop } = useAuth();
   const [searchParams, setSearchParams] = useSearchParams();
   const requestedStatus = searchParams.get("status");
@@ -117,6 +117,7 @@ export default function OrdersDashboard() {
   );
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [requestError, setRequestError] = useState(null);
   const [actionLoading, setActionLoading] = useState(null); // id of order being updated
 
   const [query, setQuery] = useState("");
@@ -133,7 +134,10 @@ export default function OrdersDashboard() {
       const { data } = await api.get(`/orders/shop/${shop._id}`);
       setOrders(data);
       setError("");
+      setRequestError(null);
+      return data;
     } catch (err) {
+      setRequestError(err);
       setError(err.response?.data?.message || "Could not load orders.");
     } finally {
       setLoading(false);
@@ -148,7 +152,11 @@ export default function OrdersDashboard() {
   // waiting for the next poll below. The event is only a trigger - the list
   // still comes from fetchOrders, so there is one source of truth and a
   // missed event costs nothing but the old polling latency.
-  useOrderEvents(fetchOrders);
+  useOrderEvents(async event => {
+    const fetched = await fetchOrders();
+    const order = fetched?.find(order => String(order._id) === String(event.orderId));
+    if (order) await confirm(event, order);
+  });
 
   // Navigating from the dashboard to a different status while already on
   // this page changes the query string without remounting.
@@ -203,8 +211,12 @@ export default function OrdersDashboard() {
     try {
       const { data } = await request();
       setOrders((prev) => prev.map((o) => (o._id === orderId ? data : o)));
+      const event = { accepted: "ORDER_ACCEPTED", ready_for_pickup: "ORDER_READY_FOR_PICKUP", completed: "ORDER_COMPLETED" }[data.status];
+      if (event) await confirm({ orderId: String(data._id), event }, data);
+      return true;
     } catch (err) {
       setError(err.response?.data?.message || "Action failed. Please try again.");
+      return false;
     } finally {
       setActionLoading(null);
     }
@@ -217,8 +229,7 @@ export default function OrdersDashboard() {
     updateOrder(orderId, () => api.patch(`/orders/${orderId}/ready`));
 
   const handleComplete = async (orderId, otp) => {
-    await updateOrder(orderId, () => api.patch(`/orders/${orderId}/complete`, { otp }));
-    setDetail(null);
+    if (await updateOrder(orderId, () => api.patch(`/orders/${orderId}/complete`, { otp }))) setDetail(null);
   };
 
   const countFor = (tab) => orders.filter((o) => matchesTab(o, tab)).length;
@@ -259,6 +270,8 @@ export default function OrdersDashboard() {
   // after an action or a poll, not the snapshot taken when it opened.
   const detailOrder = detail ? orders.find((o) => o._id === detail.id) : null;
 
+  if (requestError && !orders.length) return <DashboardLayout><div className="recovery-page"><MascotRecovery error={requestError} onRetry={fetchOrders} /></div></DashboardLayout>;
+
   return (
     <DashboardLayout>
       <div className="max-w-7xl mx-auto">
@@ -267,7 +280,7 @@ export default function OrdersDashboard() {
         <VerificationBanner shop={shop} />
 
         <div className="flex items-center justify-between">
-          <h1 className="font-heading text-2xl font-bold text-text-primary">Orders</h1>
+          <h1 className="partner-page-title">Your incoming orders</h1>
           <button
             onClick={fetchOrders}
             className="text-sm font-medium text-primary-bright hover:text-primary-deep rounded-control px-3 py-2 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
@@ -294,7 +307,8 @@ export default function OrdersDashboard() {
           ))}
         </div>
 
-        {error && (
+        {requestError && <><MascotRecovery compact headingLevel={2} error={requestError} onRetry={fetchOrders} /><p className="analytics-data-note">Showing the last loaded orders. Their current status could not be checked.</p></>}
+        {error && !requestError && (
           <p
             role="alert"
             className="mt-4 text-sm text-error-text bg-error-bg rounded-control p-3"
@@ -352,22 +366,9 @@ export default function OrdersDashboard() {
             </label>
           </div>
 
-          {/* The columns are fixed-width by design, so narrow screens
-              scroll the table sideways rather than crushing the amount
-              and status columns into two characters each. */}
-          <div className="overflow-x-auto">
-            <div className="min-w-[1100px] px-3 py-3">
-              <div
-                role="row"
-                className={`${ORDER_GRID} px-4 pb-2 text-[11px] font-semibold uppercase tracking-wide text-text-muted`}
-              >
-                {COLUMNS.map((column) => (
-                  <span key={column} className={column === "Action" ? "text-right" : ""}>
-                    {column}
-                  </span>
-                ))}
-              </div>
-
+          {/* The active Figma queue uses rows that wrap at handset widths. */}
+          <div>
+            <div className="px-3 py-3">
               <div className="flex flex-col gap-2">
                 {loading ? (
                   Array.from({ length: 6 }, (_, i) => <RowSkeleton key={i} />)
@@ -382,7 +383,7 @@ export default function OrdersDashboard() {
                   />
                 ) : (
                   visibleOrders.map((order, i) => (
-                    <OrderRow
+                    <OrderSummaryRow
                       key={order._id}
                       order={order}
                       zebra={i % 2 === 1}
@@ -445,6 +446,7 @@ export default function OrdersDashboard() {
 
       {detailOrder && (
         <OrderDetailPanel
+            actionError={error}
           order={detailOrder}
           autoOtp={detail.autoOtp}
           initialViewingIndex={detail.viewIndex ?? null}
@@ -478,7 +480,7 @@ function PagerButton({ disabled, onClick, label, children }) {
 // arrive.
 function RowSkeleton() {
   return (
-    <div className={`${ORDER_GRID} px-4 py-3 rounded-card border border-border bg-surface`}>
+    <div className="order-row-skeleton px-4 py-3 rounded-card border border-border bg-surface">
       <div className="flex items-center gap-2.5">
         <div className="w-9 h-9 rounded-full bg-background-soft animate-pulse" />
         <div className="flex flex-col gap-1.5">
@@ -501,7 +503,7 @@ function EmptyQueue({ label, filtered, onClear }) {
   return (
     <div className="flex flex-col items-center justify-center text-center gap-2 py-14 px-6">
       <div className="w-12 h-12 rounded-full bg-primary-wash flex items-center justify-center">
-        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#087F8C" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
           <path d="M6 3h12v18l-3-2-3 2-3-2-3 2z" />
           <path d="M9.5 8h5M9.5 12h5" />
         </svg>

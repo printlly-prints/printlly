@@ -1,308 +1,170 @@
-import { useEffect, useState } from "react";
-import { ActivityIndicator, ScrollView, StyleSheet, Text, View } from "react-native";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { ActivityIndicator, AppState, Linking, Platform, Text, View } from "react-native";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import { WebView } from "react-native-webview";
 import Button from "../components/Button";
+import Card from "../components/Card";
+import ScreenFrame from "../components/ScreenFrame";
+import RecoveryState from "../components/RecoveryState";
+import { retryAfterSeconds } from "../utils/requestRecovery";
+import { paymentNextStep, paymentRecoveryState } from "../utils/paymentRecovery";
 import api from "../api/client";
 import { useAuth } from "../context/AuthContext";
+import { useTheme, useThemedStyles } from "../context/ThemeContext";
+import { useEventSounds } from "../context/EventSoundsContext";
+import { useOrderDraft } from "../context/OrderDraftContext";
 import { trackEvent, EVENTS } from "../lib/analytics";
-import { colors, typography, spacing, radius } from "../theme";
+import { typography } from "../theme";
+import { createPaymentAttemptGuard } from "../utils/paymentAttempt";
+import { createPaymentProofStore, validVerificationProof } from "../utils/paymentProofStore";
+import { upiCheckoutOptions, upiIntentUrl } from "../utils/razorpayCheckout";
+import { formatRupees } from "../components/PriceBreakdown";
 
-// Razorpay's checkout is loaded inside a WebView rather than through
-// react-native-razorpay, because that package is a native module and does
-// not run in Expo Go.
-//
-// SECURITY: this screen never trusts its own checkout result. By the time
-// it mounts, the Order already exists (created by whoever navigated here
-// - see ReviewCheckoutScreen and utils/orderNavigation.js) with
-// payment_status "created" and no otp. From there:
-//   1. Ask the backend for a Razorpay order (POST /payments/razorpay/
-//      create-order) for that order_id - it returns key_id and the exact
-//      amount Razorpay will charge, both server-computed.
-//   2. Open Razorpay's checkout with THOSE server-provided values.
-//   3. Send the resulting razorpay_payment_id/signature to
-//      POST /payments/razorpay/verify, which recomputes the HMAC itself
-//      and only then marks the order paid and generates the pickup OTP.
-// A modified client can report whatever it likes from its own checkout
-// handler; none of it matters unless step 3's signature check passes.
-function buildCheckoutHtml({ amountInPaise, currency, razorpayOrderId, keyId, user, preferredMethod }) {
-  const options = {
-    key: keyId,
-    amount: amountInPaise,
-    currency,
-    order_id: razorpayOrderId,
-    name: "Printlly",
-    description: "Payment for your print order",
-    prefill: {
-      name: user?.name || "",
-      email: user?.email || "",
-      contact: user?.phone || "",
-      // Whatever was chosen on the checkout screen. A preference only -
-      // Razorpay still shows every method, and the real UPI QR, card
-      // form and wallet list all live inside its own window. This app
-      // never displays a UPI ID or QR of its own: it has no merchant VPA
-      // to show, and printing a plausible-looking one on screen would be
-      // inviting customers to send money into the void.
-      ...(preferredMethod ? { method: preferredMethod } : {}),
-    },
-    theme: { color: colors.primaryBright },
-  };
-
-  // Escaping "<" keeps a stray "</script>" inside any user-supplied
-  // value (e.g. a name) from breaking out of the script tag.
-  const serialized = JSON.stringify(options).replace(/</g, "\\u003c");
-
-  return `<!doctype html>
-<html>
-  <head><meta name="viewport" content="width=device-width, initial-scale=1.0" /></head>
-  <body style="background:${colors.background}">
-    <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
-    <script>
-      function post(payload) {
-        window.ReactNativeWebView.postMessage(JSON.stringify(payload));
-      }
-      var options = ${serialized};
-      options.handler = function (response) { post({ status: "success", payment: response }); };
-      options.modal = { ondismiss: function () { post({ status: "cancelled" }); } };
-      try {
-        var rzp = new Razorpay(options);
-        rzp.on("payment.failed", function (resp) {
-          post({ status: "failed", message: resp.error && resp.error.description });
-        });
-        rzp.open();
-      } catch (e) {
-        post({ status: "failed", message: String(e) });
-      }
-    </script>
-  </body>
-</html>`;
+function buildCheckoutHtml(params) {
+  const serialized = JSON.stringify(upiCheckoutOptions(params)).replace(/</g, "\\u003c");
+  return `<!doctype html><html><head><meta name="viewport" content="width=device-width, initial-scale=1" /></head><body style="background:${params.canvas}">
+  <script src="https://checkout.razorpay.com/v1/checkout.js"></script><script>
+  function post(payload){payload.attemptId=${params.attemptId};window.ReactNativeWebView.postMessage(JSON.stringify(payload));}
+  var options=${serialized};options.handler=function(payment){post({status:'success',payment:payment});};
+  options.modal={ondismiss:function(){post({status:'dismissed'});}};
+  try{var rzp=new Razorpay(options);rzp.on('payment.failed',function(resp){post({status:'failed',message:resp.error&&resp.error.description});});rzp.open();}catch(e){post({status:'failed',message:String(e)});}
+  </script></body></html>`;
 }
-
-// Always reached with an EXISTING order_id - either fresh from
-// ReviewCheckoutScreen (which just called POST /orders) or resumed for a
-// "created"/"failed" order via utils/orderNavigation.js (MyOrdersScreen's
-// "Complete payment" button, or a HomeScreen order card). Either way this
-// screen's only job from here is to get that one order paid.
 export default function PaymentScreen({ route, navigation }) {
-  const { orderId, estimatedAmount, breakdown, preferredMethod } = route.params;
-  const { user } = useAuth();
-
-  // "preparing" (asking the backend for a Razorpay order) -> "checkout"
-  // (WebView open) -> "verifying" -> "error" (retry button).
-  const [phase, setPhase] = useState("preparing");
-  const [error, setError] = useState("");
-  const [checkoutParams, setCheckoutParams] = useState(null);
-
-  // Re-runs on every "Retry payment" tap. Safe to call repeatedly for the
-  // same order_id - POST /payments/razorpay/create-order always issues a
-  // fresh Razorpay order and overwrites the stored one, which is exactly
-  // what's needed after a failed attempt (see paymentController.js).
-  const prepare = async () => {
-    setPhase("preparing");
-    setError("");
+  const { orderId, estimatedAmount } = route.params, { user, token: sessionToken, isCurrentSession } = useAuth(), { colors } = useTheme(), styles = useThemedStyles(createStyles);
+  const { notifyConfirmed } = useEventSounds(), { clearDraft } = useOrderDraft();
+  const [retryUntil, setRetryUntil] = useState(0), [now, setNow] = useState(Date.now());
+  const [recovery, setRecovery] = useState(paymentRecoveryState()), [canContinue, setCanContinue] = useState(false);
+  const [phase, setPhase] = useState("preparing"), [error, setError] = useState(""), [checkout, setCheckout] = useState(null);
+  const guard = useRef(createPaymentAttemptGuard()).current, record = useRef(null), inMemoryProof = useRef(null), restored = useRef(false), phaseRef = useRef(phase), currentAttempt = useRef(null);
+  phaseRef.current = phase;
+  useEffect(() => { if (!retryUntil) return; const timer = setInterval(() => setNow(Date.now()), 1000); return () => clearInterval(timer); }, [retryUntil]);
+  const waitSeconds = Math.max(0, Math.ceil((retryUntil - now) / 1000));
+  const noteFailure = (failure) => { setRetryUntil(Date.now() + retryAfterSeconds(failure?.response?.headers?.["retry-after"]) * 1000); setNow(Date.now()); setRecovery(paymentRecoveryState({ failure })); };
+  const accountId = String(user?.id || user?._id || "");
+  const live = () => isCurrentSession(accountId, sessionToken);
+  const store = useMemo(() => createPaymentProofStore(AsyncStorage, { accountId, orderId: String(orderId) }), [accountId, orderId]);
+  const finish = async (order, attemptId) => {
+    if (!live()) return;
+    if (order.payment_status !== "paid" || String(order._id) !== String(orderId)) throw new Error("Payment has not been confirmed by the server. Check again.");
+    if (!guard.finishVerification(attemptId, true)) return;
+    clearDraft(); inMemoryProof.current = null;
+    // A failed cleanup cannot cause a second charge: every future entry
+    // first reconciles the server's paid order before reading this proof.
+    try { await store.clear(); } catch {}
+    if (!guard.isCurrent(attemptId) || !live()) return;
+    notifyConfirmed({ event: "PAYMENT_CONFIRMED", orderId: order._id }, order);
+    navigation.reset({ index: 1, routes: [{ name: "MainTabs", params: { screen: "Home" } }, { name: ["completed", "cancelled", "expired"].includes(order.status) ? "OrderTracking" : "OrderPlaced", params: { order } }] });
+  };
+  const verify = async (proof, attemptId) => {
+    inMemoryProof.current = proof; setPhase("verifying");
+    let storageWarning = "";
+    try { record.current = await store.save(record.current.checkout, proof); }
+    catch { storageWarning = "Recovery details could not be saved. Keep this screen open while checking payment. "; }
+    if (!guard.isCurrent(attemptId) || !live()) return;
     try {
-      const { data: rzpOrder } = await api.post("/payments/razorpay/create-order", {
-        order_id: orderId,
-      });
-
-      setCheckoutParams({
-        amountInPaise: rzpOrder.amount_in_paise,
-        currency: rzpOrder.currency,
-        razorpayOrderId: rzpOrder.razorpay_order_id,
-        keyId: rzpOrder.key_id,
-      });
-      setPhase("checkout");
-    } catch (err) {
-      setError(err.response?.data?.message || "Could not start payment. Please try again.");
-      setPhase("error");
+      const { data } = await api.post("/payments/razorpay/verify", { order_id: orderId, ...proof });
+      await finish(data.order || {}, attemptId);
+    } catch (failure) {
+      if (!guard.finishVerification(attemptId, false) || !live()) return;
+      noteFailure(failure); setCanContinue(false);
+      setError(storageWarning); setPhase("error");
     }
   };
-
+  const prepare = async (attemptId) => {
+    if (!guard.isCurrent(attemptId) || !live()) return;
+    let params = record.current?.checkout;
+    if (!params) {
+      const { data } = await api.post("/payments/razorpay/create-order", { order_id: orderId });
+      params = { amountInPaise: data.amount_in_paise, currency: data.currency, razorpayOrderId: data.razorpay_order_id, keyId: data.key_id };
+      if (!guard.isCurrent(attemptId) || !live()) return;
+      // Persist the provider ID before opening it, including interrupted
+      // checkouts where an app switch prevents any success callback.
+      record.current = await store.save(params);
+    }
+    if (!guard.open(attemptId)) return;
+    setCheckout({ ...params, attemptId }); setPhase("checkout");
+  };
+  const recover = async (allowCheckout = false) => {
+    if (Date.now() < retryUntil) return;
+    const attemptId = guard.begin(); if (attemptId === null) return;
+    currentAttempt.current = attemptId; setPhase("preparing"); setError(""); setCanContinue(false);
+    try {
+      // Mandatory on FIRST entry and every retry. A response lost after
+      // verification or a late webhook must not replace the original ID.
+      const { data: orders } = await api.get("/orders/customer");
+      if (!guard.isCurrent(attemptId) || !live()) return;
+      const order = orders.find((item) => String(item._id) === String(orderId));
+      const serverAction = paymentNextStep(order);
+      if (serverAction === "missing") throw new Error("Could not find this order.");
+      if (serverAction === "track") { guard.failPreparation(attemptId); try { await store.clear(); } catch {} if (guard.isCurrent(attemptId) && live()) navigation.replace("OrderTracking", { order }); return; }
+      if (serverAction === "confirmed") { guard.open(attemptId); guard.startVerification(attemptId); await finish(order, attemptId); return; }
+      if (!restored.current) { record.current = await store.read(); restored.current = true; }
+      if (!guard.isCurrent(attemptId) || !live()) return;
+      const proof = inMemoryProof.current || record.current?.proof;
+      if (order.payment_status === "failed" && (!allowCheckout || proof)) { guard.failPreparation(attemptId); setRecovery(paymentRecoveryState({ order })); setCanContinue(!proof); setPhase("error"); }
+      else if (proof) { guard.open(attemptId); if (guard.startVerification(attemptId)) await verify(proof, attemptId); }
+      else if (paymentNextStep(order, { allowCheckout }) === "checkout") await prepare(attemptId);
+      else { guard.failPreparation(attemptId); setRecovery(paymentRecoveryState({ order })); setCanContinue(["created", "failed"].includes(order.payment_status)); setPhase("error"); }
+    } catch (failure) {
+      if (!guard.failPreparation(attemptId)) return;
+      if (!live()) return;
+      noteFailure(failure); setError(""); setPhase("error");
+    }
+  };
+  const reconcileOpenCheckout = async () => {
+    if (phaseRef.current !== "checkout") return;
+    const attemptId = currentAttempt.current;
+    try {
+      const { data: orders } = await api.get("/orders/customer");
+      if (phaseRef.current !== "checkout" || !guard.isCurrent(attemptId) || !live()) return;
+      const order = orders.find((item) => String(item._id) === String(orderId));
+      if (order?.payment_status === "paid" && guard.startVerification(attemptId)) { setPhase("verifying"); await finish(order, attemptId); }
+      else if (order && ["cancelled", "expired", "completed"].includes(order.status) && guard.closeCheckout(attemptId)) navigation.replace("OrderTracking", { order });
+    } catch { /* Keep checkout and its original provider ID; retry checks the server. */ }
+  };
+  const resumeCheck = useRef(reconcileOpenCheckout); resumeCheck.current = reconcileOpenCheckout;
   useEffect(() => {
-    prepare();
-    // payment_started - the customer has reached Razorpay's checkout.
-    //
-    // This is a CLIENT event on purpose, and it is the clearest example of
-    // why the client/server split in src/lib/analytics.js matters: the
-    // customer may close the sheet, fail 3-D Secure, or lose signal, and the
-    // server would never hear about any of it. Its pair,
-    // payment_completed, is emitted by the backend from the authoritative
-    // transition in utils/paymentConfirmation.js - so the gap between the two
-    // is the real checkout drop-off rather than a guess.
-    //
-    // No amount, no Razorpay identifiers, no key: the order id is enough to
-    // join this to the server-side event.
-    trackEvent(EVENTS.PAYMENT_STARTED, { order_id: String(orderId) });
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    recover(route.params.startCheckout === true); trackEvent(EVENTS.PAYMENT_STARTED, { order_id: String(orderId) });
+    const subscription = AppState.addEventListener("change", (state) => { if (state === "active") resumeCheck.current(); });
+    const interval = setInterval(() => { if (AppState.currentState === "active") resumeCheck.current(); }, 10000);
+    return () => { subscription.remove(); clearInterval(interval); guard.dispose(); };
   }, []);
-
-  const verifyPayment = async (payment) => {
-    setPhase("verifying");
-    try {
-      const { data } = await api.post("/payments/razorpay/verify", {
-        order_id: orderId,
-        razorpay_order_id: payment.razorpay_order_id,
-        razorpay_payment_id: payment.razorpay_payment_id,
-        razorpay_signature: payment.razorpay_signature,
-      });
-      // The order returned here is the one place otp actually exists -
-      // it was generated server-side by the verify call above.
-      //
-      // reset(), not replace(): replace() only swaps THIS screen out, so
-      // Review -> SelectShop -> PrintPreferences -> UploadDocuments all
-      // stayed underneath and Android back walked straight into a
-      // checkout for an order that has already been paid for. Once money
-      // has changed hands that whole flow is spent - re-entering it could
-      // only produce a second order or a confusing dead end.
-      //
-      // The new stack is Home underneath, the placed order on top: so
-      // back (hardware or gesture) lands on Home, which is exactly what
-      // "Continue Shopping" does. Home is named explicitly rather than
-      // left to whichever tab the customer started from, so back after
-      // paying always means the same thing.
-      navigation.reset({
-        index: 1,
-        routes: [
-          { name: "MainTabs", params: { screen: "Home" } },
-          // The dedicated confirmation screen, which is also where the
-          // two forward actions live. OrderTracking is one tap further
-          // on, from "View order details".
-          { name: "OrderPlaced", params: { order: data.order } },
-        ],
-      });
-    } catch (err) {
-      setError(
-        err.response?.data?.message ||
-          "Payment could not be verified. Please try again or contact support."
-      );
-      setPhase("error");
-    }
-  };
-
   const handleMessage = (event) => {
-    let payload;
-    try {
-      payload = JSON.parse(event.nativeEvent.data);
-    } catch {
-      return;
-    }
-
-    if (payload.status === "success") {
-      verifyPayment(payload.payment);
-    } else if (payload.status === "cancelled") {
-      // The customer backed out of Razorpay's UI without paying - verify
-      // is never called (there's nothing to verify) and this isn't an
-      // error, so no error screen either. The order is left exactly as
-      // it was (payment_status "created"); going back returns to
-      // ReviewCheckoutScreen (or wherever this screen was resumed from),
-      // and the order can still be paid for later from My Orders as long
-      // as it hasn't expired.
-      navigation.goBack();
-    } else {
-      setError(payload.message || "Payment failed. Please try again.");
-      setPhase("error");
+    let payload; try { payload = JSON.parse(event.nativeEvent.data); } catch { return; }
+    if (payload?.status === "success") {
+      if (!live() || !validVerificationProof(payload.payment) || payload.payment.razorpay_order_id !== record.current?.checkout.razorpayOrderId || !guard.startVerification(payload.attemptId)) return;
+      const proof = { razorpay_order_id: payload.payment.razorpay_order_id, razorpay_payment_id: payload.payment.razorpay_payment_id, razorpay_signature: payload.payment.razorpay_signature };
+      verify(proof, payload.attemptId);
+    } else if (live() && ["dismissed", "failed"].includes(payload?.status) && guard.closeCheckout(payload.attemptId)) {
+      setRecovery(paymentRecoveryState({ cancelled: payload.status === "dismissed" })); setCanContinue(false); setError(""); setPhase("error");
     }
   };
-
-  if (phase === "preparing") {
-    return (
-      <View style={styles.center}>
-        <ActivityIndicator size="large" color={colors.primaryBright} />
-        <Text style={styles.centerText}>Preparing secure checkout...</Text>
-      </View>
-    );
-  }
-
-  if (phase === "verifying") {
-    return (
-      <View style={styles.center}>
-        <ActivityIndicator size="large" color={colors.primaryBright} />
-        <Text style={styles.centerText}>Confirming your payment...</Text>
-      </View>
-    );
-  }
-
-  if (phase === "error") {
-    return (
-      <ScrollView contentContainerStyle={styles.fallback}>
-        <Text style={styles.amount}>₹{estimatedAmount}</Text>
-        {breakdown && (
-          <View style={styles.breakdownBox}>
-            <BreakdownRow label="Subtotal" value={breakdown.subtotal} />
-            <BreakdownRow label="Platform fee" value={breakdown.platformFee} />
-            <View style={styles.breakdownDivider} />
-            <BreakdownRow label="Total" value={breakdown.total} emphasized />
-          </View>
-        )}
-        <Text style={styles.error}>{error}</Text>
-        <Button title="Retry payment" onPress={prepare} />
-        <View style={styles.spacer} />
-        <Button title="Go back" variant="secondary" onPress={() => navigation.goBack()} />
-      </ScrollView>
-    );
-  }
-
-  // phase === "checkout"
-  return (
-    <WebView
-      originWhitelist={["*"]}
-      source={{
-        html: buildCheckoutHtml({ ...checkoutParams, user, preferredMethod }),
-        baseUrl: "https://checkout.razorpay.com",
-      }}
-      onMessage={handleMessage}
-      javaScriptEnabled
-      startInLoadingState
-      renderLoading={() => (
-        <View style={styles.center}>
-          <ActivityIndicator size="large" color={colors.primaryBright} />
-          <Text style={styles.centerText}>Opening secure checkout...</Text>
-        </View>
-      )}
-    />
-  );
+  const checkoutUnavailable = () => {
+    if (!live() || !guard.closeCheckout(currentAttempt.current)) return;
+    setRecovery(paymentRecoveryState()); setCanContinue(false); setError(""); setPhase("error");
+  };
+  const allowRequest = (request) => {
+    const intent = upiIntentUrl(request.url);
+    if (intent) {
+      Linking.openURL(intent).catch(() => { setError("No UPI app could be opened. Choose another UPI option in secure checkout."); });
+      return false;
+    }
+    return /^(https:\/\/|about:blank|data:)/.test(request.url);
+  };
+  const pending = phase === "preparing" || phase === "verifying";
+  const footer = phase === "error" ? <><Button title={waitSeconds ? `Check status in ${waitSeconds}s` : "Check status"} disabled={waitSeconds > 0} onPress={() => recover(false)} />{canContinue ? <Button title="Continue with UPI" disabled={waitSeconds > 0} variant="secondary" onPress={() => recover(true)} /> : null}<Button title="Get help" variant="secondary" onPress={() => navigation.navigate("HelpSupport")} /></> : null;
+  return <ScreenFrame title="Payment" onBack={() => navigation.goBack()} scroll={phase !== "checkout"} footer={footer} contentStyle={phase === "checkout" ? { padding: 0, maxWidth: undefined } : undefined}>
+    {phase === "checkout" && Platform.OS !== "web" ? <>
+      {error ? <Text style={styles.error}>{error}</Text> : null}
+      <WebView key={checkout.attemptId} style={{ flex: 1 }} originWhitelist={["*"]} source={{ html: buildCheckoutHtml({ ...checkout, user, actionColor: colors.action, canvas: colors.canvas }), baseUrl: "https://checkout.razorpay.com" }} onMessage={handleMessage} onError={checkoutUnavailable} onHttpError={checkoutUnavailable} onRenderProcessGone={checkoutUnavailable} onShouldStartLoadWithRequest={allowRequest} javaScriptEnabled startInLoadingState />
+    </> : phase === "error" ? <><RecoveryState {...recovery} />{error ? <Text style={styles.error}>{error}</Text> : null}{estimatedAmount != null ? <Card style={styles.receipt}><Text style={styles.receiptLabel}>Order total</Text><Text style={styles.receiptAmount}>{formatRupees(estimatedAmount)}</Text></Card> : null}</> : <View style={styles.center}>
+      {pending ? <ActivityIndicator size="large" color={colors.action} /> : null}
+      <Text style={styles.title}>{phase === "verifying" ? "Confirming payment." : phase === "preparing" ? "Hold on." : phase === "checkout" ? "Continue in the Android app." : "Let's check your payment."}</Text>
+      <Text style={styles.subtitle}>{pending ? "Your pickup code appears after the server confirms payment." : phase === "checkout" ? "UPI app checkout requires the native app. This browser preview cannot complete a native payment." : "An uncertain payment will reuse its original checkout and verification details."}</Text>
+      {estimatedAmount != null ? <Text style={styles.amount}>{formatRupees(estimatedAmount)}</Text> : null}
+      {error ? <Text style={styles.error} accessibilityRole="alert">{error}</Text> : null}
+    </View>}
+  </ScreenFrame>;
 }
-
-function BreakdownRow({ label, value, emphasized }) {
-  return (
-    <View style={styles.breakdownRow}>
-      <Text style={emphasized ? styles.breakdownLabelEmphasized : styles.breakdownLabel}>{label}</Text>
-      <Text style={emphasized ? styles.breakdownValueEmphasized : styles.breakdownValue}>₹{value}</Text>
-    </View>
-  );
-}
-
-const styles = StyleSheet.create({
-  center: {
-    flex: 1,
-    alignItems: "center",
-    justifyContent: "center",
-    backgroundColor: colors.background,
-  },
-  centerText: { marginTop: spacing.lg, ...typography.body, color: colors.textSecondary },
-  fallback: { padding: spacing.xl, paddingTop: 48, backgroundColor: colors.background, flexGrow: 1 },
-  amount: { ...typography.display, fontSize: 40, color: colors.textPrimary, textAlign: "center", marginBottom: spacing.xl },
-  error: {
-    color: colors.danger,
-    backgroundColor: colors.dangerBg,
-    padding: spacing.md,
-    borderRadius: radius.md,
-    marginBottom: spacing.lg,
-    ...typography.bodySmall,
-    lineHeight: 21,
-  },
-  spacer: { height: spacing.md },
-  breakdownBox: {
-    backgroundColor: colors.surface,
-    borderRadius: radius.md,
-    borderWidth: 1,
-    borderColor: colors.border,
-    padding: spacing.lg,
-    marginBottom: spacing.lg,
-  },
-  breakdownRow: { flexDirection: "row", justifyContent: "space-between", marginBottom: spacing.xs },
-  breakdownLabel: { ...typography.bodySmall, color: colors.textSecondary },
-  breakdownValue: { ...typography.labelSmall, color: colors.textPrimary },
-  breakdownDivider: { height: 1, backgroundColor: colors.border, marginVertical: spacing.xs },
-  breakdownLabelEmphasized: { ...typography.label, color: colors.textPrimary },
-  breakdownValueEmphasized: { ...typography.label, color: colors.textPrimary },
-});
+const createStyles = ({ colors }) => ({ receipt: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: 16 }, receiptLabel: { ...typography.body, color: colors.textSecondary }, receiptAmount: { ...typography.h3, color: colors.textPrimary }, center: { flex: 1, alignItems: "center", justifyContent: "center", paddingVertical: 32 }, title: { ...typography.h1, color: colors.textPrimary, textAlign: "center", marginTop: 24 }, subtitle: { ...typography.body, color: colors.textSecondary, textAlign: "center", marginTop: 12 }, amount: { ...typography.h2, color: colors.textPrimary, marginTop: 24 }, error: { ...typography.bodySmall, color: colors.error, backgroundColor: colors.errorSurface, padding: 16, borderRadius: 16, marginTop: 16 } });

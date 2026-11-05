@@ -1,6 +1,9 @@
 import { Component } from "react";
-import { View, Text, Pressable, StyleSheet } from "react-native";
-import { colors, typography } from "../theme";
+import { ScrollView } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
+import RecoveryState from "./RecoveryState";
+import { typography } from "../theme";
+import { useThemedStyles } from "../context/ThemeContext";
 import { trackCrash } from "../lib/analytics";
 
 // What a customer sees if the app throws during render.
@@ -48,64 +51,16 @@ export default class ErrorBoundary extends Component {
 
   render() {
     if (this.state.hasError) {
-      return (
-        <View style={styles.screen}>
-          <Text style={styles.title}>Something went wrong</Text>
-          <Text style={styles.body}>
-            Printlly ran into an unexpected problem on this screen. Your orders
-            are safe - nothing has been lost or changed.
-          </Text>
-          <Text style={styles.note}>
-            If you have an order ready to collect, your pickup code is still
-            valid and the shop can look your order up.
-          </Text>
-          <Pressable style={styles.button} onPress={this.reset} accessibilityRole="button">
-            <Text style={styles.buttonLabel}>Try again</Text>
-          </Pressable>
-        </View>
-      );
+      return <ErrorFallback onRetry={this.reset} />;
     }
-
     return this.props.children;
   }
 }
-
-const styles = StyleSheet.create({
-  screen: {
-    flex: 1,
-    backgroundColor: colors.background,
-    alignItems: "center",
-    justifyContent: "center",
-    paddingHorizontal: 28,
-  },
-  title: {
-    ...typography.h2,
-    color: colors.textPrimary,
-    textAlign: "center",
-  },
-  body: {
-    ...typography.body,
-    color: colors.textSecondary,
-    textAlign: "center",
-    marginTop: 12,
-    lineHeight: 22,
-  },
-  note: {
-    ...typography.caption,
-    color: colors.textSecondary,
-    textAlign: "center",
-    marginTop: 10,
-    lineHeight: 19,
-  },
-  button: {
-    marginTop: 26,
-    backgroundColor: colors.primary,
-    paddingHorizontal: 26,
-    paddingVertical: 13,
-    borderRadius: 12,
-  },
-  buttonLabel: {
-    ...typography.button,
-    color: "#FFFFFF",
-  },
-});
+function ErrorFallback({ onRetry }) {
+  const styles = useThemedStyles(createStyles);
+  const insets = useSafeAreaInsets();
+  return <ScrollView style={styles.screen} contentContainerStyle={[styles.content, { paddingTop: insets.top + 24, paddingBottom: insets.bottom + 24 }]}>
+    <RecoveryState reaction="service_unavailable" title="This screen couldn’t open." message="Try opening it again. If you were making a payment, check your order’s confirmed payment status before trying to pay again." primaryLabel="Try again" onPrimary={onRetry} />
+  </ScrollView>;
+}
+const createStyles = ({ colors }) => ({ screen: { flex: 1, backgroundColor: colors.canvas }, content: { flexGrow: 1, paddingHorizontal: 24, width: "100%", maxWidth: 608, alignSelf: "center" } });

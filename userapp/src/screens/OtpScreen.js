@@ -1,135 +1,53 @@
-import { useState } from "react";
-import {
-  KeyboardAvoidingView,
-  Platform,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TextInput,
-  View,
-} from "react-native";
+import { useRef, useState } from "react";
+import { Pressable, Text, TextInput, View } from "react-native";
+import Ionicons from "@expo/vector-icons/Ionicons";
+import ScreenFrame from "../components/ScreenFrame";
 import Button from "../components/Button";
+import MascotReaction from "../components/MascotReaction";
 import { useAuth } from "../context/AuthContext";
+import { useTheme, useThemedStyles } from "../context/ThemeContext";
 import { toDemoCredentials } from "../constants/demoAuth";
-import { colors, statusColors, typography, spacing, radius } from "../theme";
+import { typography, radius } from "../theme";
 
-const DEMO_OTP = "123";
-
-// Step 2 of the demo login. No SMS is actually sent - the correct code is
-// always "123" (shown on screen so testers aren't left guessing). See
-// constants/demoAuth.js for what a real integration would replace this
-// with.
-//
-// After the fake OTP check passes, we try to log in with credentials
-// derived from the phone number. If that fails with 401 ("Invalid
-// credentials" - the backend gives the same message for "wrong password"
-// and "no such user"), we treat it as a new phone number and send the
-// user to account setup instead.
 export default function OtpScreen({ route, navigation }) {
-  const { phone } = route.params;
-  const { login } = useAuth();
-
-  const [otp, setOtp] = useState("");
-  const [error, setError] = useState("");
-  const [loading, setLoading] = useState(false);
-
-  const handleVerify = async () => {
-    if (otp.trim() !== DEMO_OTP) {
-      setError("Incorrect OTP. This demo build always uses 123.");
-      return;
-    }
-
-    setError("");
-    setLoading(true);
+  const { phone } = route.params, { login } = useAuth(), { colors } = useTheme();
+  const styles = useThemedStyles(createStyles), input = useRef(null), verifying = useRef(false);
+  const [code, setCode] = useState(""), [error, setError] = useState(""), [loading, setLoading] = useState(false), [showHelp, setShowHelp] = useState(false);
+  const verify = async () => {
+    if (verifying.current) return;
+    if (code !== "123") { setError("This development preview uses code 123. Try again."); return; }
+    verifying.current = true; setError(""); setLoading(true);
     try {
-      // Inside the try, not before it: toDemoCredentials throws outright
-      // in any non-development build (see constants/demoAuth.js's own
-      // comment) - this is the layer-2 backstop for that, surfacing its
-      // message the same way a failed login would rather than crashing
-      // the screen.
       const { email, password } = toDemoCredentials(phone);
       await login(email, password);
-      // AuthContext flips isAuthenticated on success; the navigator swaps
-      // to the main stack (shop list) on its own.
     } catch (err) {
-      if (err.response?.status === 401) {
-        navigation.navigate("AccountSetup", { phone });
-      } else {
-        setError(err.response?.data?.message || err.message || "Something went wrong. Please try again.");
-      }
-    } finally {
-      setLoading(false);
-    }
+      if (err.response?.status === 401) navigation.navigate("AccountSetup", { phone });
+      else setError(err.response?.data?.message || err.message || "Could not sign in. Try again.");
+    } finally { verifying.current = false; setLoading(false); }
   };
-
-  return (
-    <KeyboardAvoidingView
-      style={styles.flex}
-      behavior={Platform.OS === "ios" ? "padding" : undefined}
-    >
-      <ScrollView contentContainerStyle={styles.container} keyboardShouldPersistTaps="handled">
-        <Text style={styles.title}>Verify your number</Text>
-        <Text style={styles.subtitle}>Enter the OTP sent to +91 {phone}.</Text>
-        <View style={styles.demoBanner}>
-          <Text style={styles.demoBannerText}>Demo build - the OTP is always 123</Text>
-        </View>
-
-        <View style={styles.field}>
-          <Text style={styles.fieldLabel}>OTP</Text>
-          <TextInput
-            style={styles.otpInput}
-            value={otp}
-            onChangeText={setOtp}
-            keyboardType="number-pad"
-            maxLength={6}
-            placeholder="123"
-            placeholderTextColor={colors.textMuted}
-            autoFocus
-          />
-        </View>
-
-        {error ? <Text style={styles.error}>{error}</Text> : null}
-
-        <Button title="Verify & Continue" onPress={handleVerify} loading={loading} />
-      </ScrollView>
-    </KeyboardAvoidingView>
-  );
+  return <ScreenFrame title="Verify your number" onBack={() => navigation.goBack()} footer={<Button title="Verify" loading={loading} onPress={verify} />}>
+    <View style={styles.heading}>
+      {error ? <MascotReaction reaction="access_expired" /> : <View style={styles.statusIcon}><Ionicons name="shield-checkmark-outline" size={28} color={colors.action} /></View>}
+      <Text style={styles.title}>Enter your login code</Text>
+    </View>
+    <Text style={styles.phone}>Continue with +91 {phone}</Text>
+    <Pressable onPress={() => input.current?.focus()} accessible={false} style={styles.codeRow}>
+      {Array.from({ length: 6 }, (_, index) => <View key={index} style={styles.cell} accessible={false}><Text style={styles.digit}>{code[index] || ""}</Text></View>)}
+      <TextInput ref={input} value={code} onChangeText={(value) => setCode(value.replace(/\D/g, "").slice(0, 6))} keyboardType="number-pad"
+        autoComplete="sms-otp" textContentType="oneTimeCode" autoFocus maxLength={6} caretHidden style={styles.codeInput}
+        accessibilityLabel="Login code" accessibilityHint="Development preview. Use code 123." onSubmitEditing={verify} />
+    </Pressable>
+    {error ? <Text style={styles.error} accessibilityLiveRegion="polite">{error}</Text> : null}
+    <Button title="Show demo code" variant="secondary" onPress={() => setShowHelp(true)} style={{ marginTop: 16 }} />
+    <Text style={styles.note}>Development preview · use 123. No SMS is sent.</Text>
+    {showHelp ? <Text style={styles.note} accessibilityLiveRegion="polite">The demo code is 123. You can enter it above.</Text> : null}
+    <Text style={styles.note}>Never share your login code.</Text>
+  </ScreenFrame>;
 }
-
-const styles = StyleSheet.create({
-  flex: { flex: 1, backgroundColor: colors.background },
-  container: { padding: spacing.xl, paddingTop: 80, flexGrow: 1 },
-  title: { ...typography.h1, color: colors.textPrimary },
-  subtitle: { ...typography.body, color: colors.textSecondary, marginTop: spacing.sm },
-  // Reuses the "pending" status colour rather than a one-off hex value -
-  // this banner is informational, not an error.
-  demoBanner: {
-    backgroundColor: statusColors.pending.bg,
-    borderRadius: radius.md,
-    padding: spacing.md,
-    marginTop: spacing.lg,
-    marginBottom: spacing.xl,
-  },
-  demoBannerText: { ...typography.labelSmall, color: statusColors.pending.text, textAlign: "center" },
-  field: { marginBottom: spacing.lg },
-  fieldLabel: { ...typography.label, color: colors.textPrimary, marginBottom: spacing.sm },
-  otpInput: {
-    minHeight: 56,
-    borderWidth: 1,
-    borderColor: colors.border,
-    backgroundColor: colors.surface,
-    borderRadius: radius.md,
-    paddingHorizontal: spacing.lg,
-    fontSize: 24,
-    letterSpacing: 6,
-    color: colors.textPrimary,
-  },
-  error: {
-    color: colors.danger,
-    backgroundColor: colors.dangerBg,
-    padding: spacing.md,
-    borderRadius: radius.md,
-    marginBottom: spacing.lg,
-    ...typography.bodySmall,
-  },
+const createStyles = ({ colors }) => ({
+  heading: { flexDirection: "row", alignItems: "center", gap: 16, marginBottom: 16 }, statusIcon: { width: 56, height: 56, borderRadius: 28, backgroundColor: colors.selection, alignItems: "center", justifyContent: "center" },
+  title: { ...typography.h1, color: colors.textPrimary, flex: 1 }, phone: { ...typography.body, color: colors.textSecondary, marginBottom: 16 },
+  codeRow: { flexDirection: "row", gap: 8, minHeight: 56 }, cell: { flex: 1, minHeight: 56, alignItems: "center", justifyContent: "center", borderWidth: 1, borderColor: colors.controlBorder, borderRadius: radius.button, backgroundColor: colors.surface },
+  digit: { ...typography.h2, color: colors.textPrimary, fontVariant: ["tabular-nums"] }, codeInput: { position: "absolute", inset: 0, opacity: 0.01, color: "transparent", fontSize: 24 },
+  note: { ...typography.caption, color: colors.textSecondary, marginTop: 16 }, error: { ...typography.bodySmall, color: colors.error, marginTop: 12 },
 });

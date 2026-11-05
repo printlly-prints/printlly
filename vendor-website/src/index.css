@@ -29,7 +29,7 @@ body {
    them by hand would be replacing correct platform behaviour with a worse
    imitation. */
 :root {
-  color-scheme: dark;
+  color-scheme: light;
 }
 
 /* Form controls.
@@ -58,16 +58,16 @@ textarea::placeholder {
 input:-webkit-autofill,
 input:-webkit-autofill:hover,
 input:-webkit-autofill:focus {
-  -webkit-box-shadow: 0 0 0 1000px #0c2824 inset;
-  -webkit-text-fill-color: #e6f2ec;
-  caret-color: #e6f2ec;
+  -webkit-box-shadow: 0 0 0 1000px var(--color-surface) inset;
+  -webkit-text-fill-color: var(--color-textPrimary);
+  caret-color: var(--color-textPrimary);
 }
 
 /* Text selection. The browser default is a blue that belongs to no part of
    this palette; teal at low opacity keeps a selection legible and on-brand. */
 ::selection {
-  background-color: rgba(14, 165, 168, 0.3);
-  color: #e6f2ec;
+  background-color: var(--color-selection);
+  color: var(--color-textPrimary);
 }
 
 
