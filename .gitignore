@@ -78,3 +78,6 @@ Thumbs.db
 # Test and tooling artefacts -----------------------------------------------
 coverage/
 .nyc_output/
+
+# Local design references and agent working copies
+.codex/

@@ -1,7 +1,8 @@
-import { Suspense, lazy } from "react";
-import { Navigate, Route, Routes } from "react-router-dom";
+import { Suspense, lazy, useEffect } from "react";
+import { Navigate, Route, Routes, useLocation } from "react-router-dom";
 import ProtectedRoute from "./components/ProtectedRoute";
 import { useAuth } from "./context/AuthContext";
+import "./styles/paper.css";
 
 // Every page is code-split. Two distinct audiences never need each
 // other's code: a visitor landing on "/" gets the marketing page without
@@ -53,13 +54,19 @@ function AppEntry() {
   const { shop, shopLoading } = useAuth();
 
   if (shopLoading) {
-    return <div className="p-8 text-center text-text-secondary">Loading...</div>;
+    return (
+      <div className="p-8 text-center text-text-secondary">Loading...</div>
+    );
   }
   return <Navigate to={shop ? "/dashboard" : "/register-shop"} replace />;
 }
 
 export default function App() {
   const { isAuthenticated } = useAuth();
+  const { pathname } = useLocation();
+  useEffect(() => {
+    if (!window.location.hash) window.scrollTo(0, 0);
+  }, [pathname]);
 
   return (
     // One Suspense boundary around the whole route table: only ever one
@@ -67,7 +74,20 @@ export default function App() {
     // ProtectedRoute/AppEntry already use for their own brief waits, so a
     // chunk fetch looks the same as any other load rather than a new kind
     // of screen.
-    <Suspense fallback={<div className="p-8 text-center text-text-secondary">Loading...</div>}>
+    <Suspense
+      fallback={
+        <div className="route-loading" role="status" aria-label="Loading page">
+          <span>printlly.</span>
+          <div className="route-loading-bars" aria-hidden="true">
+            <i />
+            <i />
+            <i />
+            <i />
+          </div>
+          <span className="sr-only">Loading page</span>
+        </div>
+      }
+    >
       <Routes>
         {/* Public marketing page - never gated behind auth. */}
         <Route path="/" element={<LandingPage />} />
@@ -76,7 +96,9 @@ export default function App() {
             authenticated vendors skip straight past it. */}
         <Route
           path="/auth"
-          element={isAuthenticated ? <Navigate to="/app" replace /> : <AuthEntry />}
+          element={
+            isAuthenticated ? <Navigate to="/app" replace /> : <AuthEntry />
+          }
         />
 
         {/* Public: customer path - just a QR code / store links, no auth. */}
@@ -137,7 +159,10 @@ export default function App() {
             the same table as Orders on a different tab, and two routes
             rendering one page meant the sidebar could highlight either.
             Existing bookmarks land on the Completed tab of Orders. */}
-        <Route path="/recent-orders" element={<Navigate to="/orders?status=completed" replace />} />
+        <Route
+          path="/recent-orders"
+          element={<Navigate to="/orders?status=completed" replace />}
+        />
 
         <Route
           path="/pricing"
@@ -176,7 +201,10 @@ export default function App() {
           path="/settings"
           element={
             <ProtectedRoute requireShop>
-              <ComingSoon title="Settings" description="Account and shop preferences aren't built yet." />
+              <ComingSoon
+                title="Settings"
+                description="Account and shop preferences aren't built yet."
+              />
             </ProtectedRoute>
           }
         />

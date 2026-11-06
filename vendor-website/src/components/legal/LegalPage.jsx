@@ -2,7 +2,10 @@ import { useEffect } from "react";
 import { Link } from "react-router-dom";
 import LandingHeader from "../landing/LandingHeader";
 import LandingFooter from "../landing/LandingFooter";
-import { LEGAL_DETAILS_CONFIGURED, POLICY_LAST_UPDATED } from "../../config/legal";
+import {
+  LEGAL_DETAILS_CONFIGURED,
+  POLICY_LAST_UPDATED,
+} from "../../config/legal";
 
 // Shared shell for every legal and information page.
 //
@@ -35,7 +38,8 @@ function useDocumentMeta(title, description) {
     return () => {
       document.title = previousTitle;
       if (created) tag.remove();
-      else if (previousDescription !== null) tag.setAttribute("content", previousDescription);
+      else if (previousDescription !== null)
+        tag.setAttribute("content", previousDescription);
     };
   }, [title, description]);
 }
@@ -57,10 +61,9 @@ function UnconfiguredNotice() {
       </p>
       <p className="mt-1.5 text-[13.5px] leading-relaxed text-busy-text/90">
         This page still contains placeholders such as [LEGAL BUSINESS NAME] and
-        [SUPPORT EMAIL]. The real values have not been added to this
-        deployment, and nothing on this page should be treated as a published
-        policy until they are and the text has been reviewed by a legal
-        professional.
+        [SUPPORT EMAIL]. The real values have not been added to this deployment,
+        and nothing on this page should be treated as a published policy until
+        they are and the text has been reviewed by a legal professional.
       </p>
     </div>
   );
@@ -81,13 +84,17 @@ export function Section({ id, number, title, children }) {
 }
 
 export function P({ children }) {
-  return <p className="text-[15px] leading-[1.75] text-text-secondary">{children}</p>;
+  return (
+    <p className="text-[15px] leading-[1.75] text-text-secondary">{children}</p>
+  );
 }
 
 export function Sub({ title, children }) {
   return (
     <>
-      <h3 className="font-heading text-[15.5px] font-bold text-text-primary mt-4">{title}</h3>
+      <h3 className="font-heading text-[15.5px] font-bold text-text-primary mt-4">
+        {title}
+      </h3>
       {children}
     </>
   );
@@ -112,23 +119,37 @@ export function List({ children, ordered = false }) {
 export function Note({ children }) {
   return (
     <div className="rounded-card border border-border bg-background-soft px-4 py-3.5">
-      <p className="text-[14px] leading-[1.7] text-text-secondary">{children}</p>
+      <p className="text-[14px] leading-[1.7] text-text-secondary">
+        {children}
+      </p>
     </div>
   );
 }
 
-export default function LegalPage({ title, description, intro, toc, children }) {
+export default function LegalPage({
+  title,
+  description,
+  intro,
+  toc,
+  children,
+}) {
   useDocumentMeta(title, description);
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="paper-theme paper-page paper-legal">
       <LandingHeader />
 
-      <main className="max-w-[760px] mx-auto px-5 sm:px-6 pt-28 pb-20">
+      <main
+        id="main-content"
+        className="max-w-[760px] mx-auto px-5 sm:px-6 pt-16 pb-20"
+      >
         <nav aria-label="Breadcrumb" className="mb-5">
           <ol className="flex items-center gap-2 text-[13px] text-text-muted">
             <li>
-              <Link to="/" className="hover:text-primary-bright transition-colors">
+              <Link
+                to="/"
+                className="hover:text-primary-bright transition-colors"
+              >
                 Home
               </Link>
             </li>

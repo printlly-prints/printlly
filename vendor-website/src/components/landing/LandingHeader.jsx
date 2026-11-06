@@ -1,136 +1,215 @@
-import { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
-import Logo from "../Logo";
+import { useEffect, useRef, useState } from "react";
+import { Link, useLocation } from "react-router-dom";
+import { ArrowUpRight, Files, Menu, Search, X } from "lucide-react";
+import "../../styles/paper.css";
 
-// Nav targets map onto routes that actually exist. The section order
-// this page follows has no dedicated Pricing or About section, so those
-// two point at the sections that carry that information: per-page rates
-// live on the shop cards, and Features is what explains the product.
-// Root-relative rather than bare fragments ("/#shops", not "#shops").
-// The header is reused on the legal pages, where a bare "#shops" would
-// resolve against /terms and scroll nowhere. These are plain anchors, so the
-// browser performs a real navigation to the landing page and handles the
-// fragment itself - no router or scroll handling needed, and the behaviour on
-// the landing page is unchanged.
 const NAV = [
-  { label: "Home", href: "/#top" },
-  { label: "Find Shops", href: "/#shops" },
-  { label: "How It Works", href: "/#how-it-works" },
-  { label: "Pricing", href: "/#shops" },
-  { label: "About", href: "/about" },
+  { label: "How it works", href: "/#how-it-works" },
+  { label: "Find a shop", href: "/#shops" },
+  { label: "Print partners", to: "/auth/vendor" },
 ];
+const COMMANDS = [
+  ...NAV,
+  { label: "Get the Printlly app", to: "/auth/get-app" },
+  { label: "Help & questions", to: "/faq" },
+  { label: "Contact us", to: "/contact" },
+];
+
+export function PaperWordmark() {
+  return (
+    <span className="paper-wordmark">
+      <Files size={28} strokeWidth={1.7} />
+      <span>
+        printlly<span className="wordmark-period">.</span>
+      </span>
+    </span>
+  );
+}
 
 export default function LandingHeader() {
   const [open, setOpen] = useState(false);
-  const [scrolled, setScrolled] = useState(false);
+  const [query, setQuery] = useState("");
+  const header = useRef(null);
+  const menuButton = useRef(null);
+  const commandButton = useRef(null);
+  const dialog = useRef(null);
+  const search = useRef(null);
+  const { pathname, hash } = useLocation();
+  const results = COMMANDS.filter((item) =>
+    item.label.toLowerCase().includes(query.toLowerCase()),
+  );
+  const returnSearchFocus = () => {
+    const target = commandButton.current?.offsetParent
+      ? commandButton.current
+      : menuButton.current;
+    target?.focus();
+  };
+  const closeCommand = () => {
+    dialog.current?.close();
+    returnSearchFocus();
+  };
+  const showCommand = () => {
+    setQuery("");
+    setOpen(false);
+    if (!dialog.current?.open) dialog.current?.showModal();
+    search.current?.focus();
+  };
 
-  // Elevates the bar once the page moves, so it reads as floating over
-  // the content rather than being a permanent heavy strip. Passive
-  // listener, and it only ever flips a boolean.
   useEffect(() => {
-    const onScroll = () => setScrolled(window.scrollY > 8);
-    onScroll();
-    window.addEventListener("scroll", onScroll, { passive: true });
-    return () => window.removeEventListener("scroll", onScroll);
-  }, []);
+    setOpen(false);
+    dialog.current?.close();
+  }, [pathname, hash]);
+  useEffect(() => {
+    const keydown = (event) => {
+      if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === "k") {
+        event.preventDefault();
+        dialog.current?.open ? closeCommand() : showCommand();
+      }
+      if (event.key === "Escape" && open) {
+        setOpen(false);
+        menuButton.current?.focus();
+      }
+    };
+    const outside = (event) => {
+      if (!header.current?.contains(event.target)) setOpen(false);
+    };
+    document.addEventListener("keydown", keydown);
+    document.addEventListener("pointerdown", outside);
+    return () => {
+      document.removeEventListener("keydown", keydown);
+      document.removeEventListener("pointerdown", outside);
+    };
+  }, [open]);
+
+  const navLink = (item, props = {}) =>
+    item.to ? (
+      <Link key={item.label} to={item.to} {...props}>
+        {item.label}
+      </Link>
+    ) : (
+      <a key={item.label} href={item.href} {...props}>
+        {item.label}
+      </a>
+    );
 
   return (
-    // Soft teal glass. The fill is the page's own ground token at 88%
-    // (rgba(234,247,244,.88)) rather than white, so the bar reads as a
-    // pane of the environment rather than a white strip laid over it, and
-    // backdrop-blur-lg is 16px - the middle of the intended 14-18px.
-    //
-    // The tint stays constant between states; it is the elevation that
-    // changes on scroll, which keeps the bar from appearing to change
-    // colour as the wash beneath it moves.
-    <header
-      className={`sticky top-0 z-50 backdrop-blur-lg border-b border-primary/10 bg-background/[0.88] transition-shadow duration-200 ${
-        scrolled ? "shadow-nav" : "shadow-none"
-      }`}
-    >
-      <div className="max-w-[1180px] mx-auto px-5 sm:px-6 h-16 flex items-center justify-between gap-4">
-        <Link to="/" className="flex items-center gap-2.5 shrink-0" onClick={() => setOpen(false)}>
-          <Logo size={30} />
-          <span className="font-heading text-[19px] font-extrabold tracking-[-0.03em] text-text-primary">
-            Printlly
-          </span>
-        </Link>
-
-        <nav className="hidden lg:flex items-center gap-8">
-          {NAV.map((item) => (
-            <a
-              key={item.label}
-              href={item.href}
-              className="group relative py-2 text-[14px] font-medium text-text-secondary hover:text-primary-bright transition-colors duration-200"
+    <>
+      <header className="paper-theme paper-header" ref={header}>
+        <a href="#main-content" className="paper-skip">
+          Skip to content
+        </a>
+        <div className="paper-wrap paper-nav-row">
+          <a href="/#top" aria-label="Printlly home">
+            <PaperWordmark />
+          </a>
+          <nav className="paper-desktop-nav" aria-label="Main navigation">
+            {NAV.map((item) => navLink(item))}
+          </nav>
+          <div className="paper-nav-actions">
+            <button
+              type="button"
+              className="paper-command-button"
+              onClick={showCommand}
+              ref={commandButton}
+              aria-label="Search pages"
+              aria-keyshortcuts="Control+k Meta+k"
             >
-              {item.label}
-              {/* Underline grows from the centre on hover. */}
-              <span
-                aria-hidden="true"
-                className="pointer-events-none absolute left-0 right-0 bottom-0 h-0.5 rounded-full bg-primary origin-center scale-x-0 transition-transform duration-200 ease-out group-hover:scale-x-100"
-              />
-            </a>
-          ))}
-        </nav>
-
-        <div className="hidden sm:flex items-center gap-2.5 shrink-0">
-          <Link
-            to="/auth/vendor"
-            className="inline-flex items-center h-10 px-5 rounded-control border border-border text-[14px] font-heading font-bold text-text-primary transition-[background-color,border-color,color] duration-200 hover:border-primary hover:text-primary-bright hover:bg-primary-wash/60"
-          >
-            Login
-          </Link>
-          <Link
-            to="/auth"
-            className="inline-flex items-center h-10 px-5 rounded-control bg-primary text-white text-[14px] font-heading font-bold shadow-cta transition-[background-color,transform,box-shadow] duration-200 ease-out hover:bg-primary-deep hover:-translate-y-0.5 hover:shadow-cta-hover active:translate-y-0"
-          >
-            Get Started
-          </Link>
-        </div>
-
-        <button
-          type="button"
-          onClick={() => setOpen((v) => !v)}
-          aria-expanded={open}
-          aria-label={open ? "Close menu" : "Open menu"}
-          className="lg:hidden w-11 h-11 -mr-2 flex items-center justify-center rounded-control text-text-primary hover:bg-background-soft focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
-        >
-          {open ? (
-            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M6 6l12 12M18 6 6 18" /></svg>
-          ) : (
-            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M4 7h16M4 12h16M4 17h16" /></svg>
-          )}
-        </button>
-      </div>
-
-      {open && (
-        <div className="lg:hidden border-t border-primary/10 bg-background/[0.95] backdrop-blur-lg px-5 py-4 flex flex-col gap-1">
-          {NAV.map((item) => (
-            <a
-              key={item.label}
-              href={item.href}
-              onClick={() => setOpen(false)}
-              className="py-3 text-[15px] font-medium text-text-secondary hover:text-primary-bright"
-            >
-              {item.label}
-            </a>
-          ))}
-          <div className="flex gap-2.5 pt-3">
-            <Link
-              to="/auth/vendor"
-              className="flex-1 inline-flex items-center justify-center h-11 rounded-control border border-border font-heading font-bold text-sm text-text-primary"
-            >
-              Login
+              <Search size={17} />
+              <kbd>Ctrl K</kbd>
+            </button>
+            <Link to="/auth/get-app" className="paper-button nav-app-button">
+              Get the app <ArrowUpRight size={17} />
             </Link>
-            <Link
-              to="/auth"
-              className="flex-1 inline-flex items-center justify-center h-11 rounded-control bg-primary text-white font-heading font-bold text-sm"
+            <button
+              className="paper-menu-button"
+              type="button"
+              ref={menuButton}
+              onClick={() => setOpen(!open)}
+              aria-label={open ? "Close menu" : "Open menu"}
+              aria-expanded={open}
+              aria-controls="paper-mobile-menu"
             >
-              Get Started
-            </Link>
+              {open ? <X size={22} /> : <Menu size={22} />}
+            </button>
           </div>
         </div>
-      )}
-    </header>
+        {open && (
+          <nav
+            id="paper-mobile-menu"
+            className="paper-mobile-menu paper-wrap"
+            aria-label="Mobile navigation"
+          >
+            {NAV.map((item) =>
+              navLink(item, { onClick: () => setOpen(false) }),
+            )}
+            <Link to="/faq" onClick={() => setOpen(false)}>
+              Help & questions
+            </Link>
+            <button
+              type="button"
+              className="paper-text-link"
+              onClick={showCommand}
+            >
+              <Search size={16} />
+              Search pages
+            </button>
+          </nav>
+        )}
+      </header>
+      <dialog
+        className="paper-theme paper-command-dialog"
+        ref={dialog}
+        aria-labelledby="command-title"
+        onClick={(event) => {
+          if (event.target === dialog.current) closeCommand();
+        }}
+        onClose={returnSearchFocus}
+      >
+        <div className="command-heading">
+          <Search size={20} />
+          <label className="sr-only" id="command-title" htmlFor="paper-search">
+            Find a page
+          </label>
+          <input
+            id="paper-search"
+            ref={search}
+            value={query}
+            onChange={(event) => setQuery(event.target.value)}
+            placeholder="Where would you like to go?"
+            onKeyDown={(event) => {
+              if (event.key === "ArrowDown") {
+                event.preventDefault();
+                dialog.current?.querySelector(".command-results a")?.focus();
+              }
+            }}
+          />
+          <button
+            type="button"
+            onClick={closeCommand}
+            aria-label="Close search"
+          >
+            <X size={20} />
+          </button>
+        </div>
+        <nav className="command-results" aria-label="Search results">
+          {results.length ? (
+            results.map((item) =>
+              navLink(item, {
+                onClick: closeCommand,
+                className: "command-result",
+              }),
+            )
+          ) : (
+            <p>No pages found. Try “app”, “shop” or “help”.</p>
+          )}
+        </nav>
+        <div className="command-hint">
+          <span>Navigate with Tab</span>
+          <span>
+            <kbd>Esc</kbd> to close
+          </span>
+        </div>
+      </dialog>
+    </>
   );
 }
