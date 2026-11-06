@@ -1,5 +1,12 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import {
+  ActivityIndicator,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  View,
+} from "react-native";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import Button from "../components/Button";
 import Card from "../components/Card";
@@ -59,7 +66,9 @@ export default function ReviewCheckoutScreen({ route, navigation }) {
   const perPageRateFor = (settings) => {
     const pricing = shopDetail?.pricing;
     if (!pricing) return undefined;
-    return settings.color_mode === "color" ? pricing.rate_per_page_color : pricing.rate_per_page_bw;
+    return settings.color_mode === "color"
+      ? pricing.rate_per_page_color
+      : pricing.rate_per_page_bw;
   };
 
   // Re-quote after an edit. Keyed on a token so a slow earlier response
@@ -80,7 +89,9 @@ export default function ReviewCheckoutScreen({ route, navigation }) {
 
         const result = data?.[0];
         if (!result) {
-          setError(`${shop.shop_name} can't price this order any more. Go back and pick another shop.`);
+          setError(
+            `${shop.shop_name} can't price this order any more. Go back and pick another shop.`,
+          );
           return;
         }
         setQuote({
@@ -91,16 +102,21 @@ export default function ReviewCheckoutScreen({ route, navigation }) {
         });
       } catch (err) {
         if (token !== requestToken.current) return;
-        setError(err.response?.data?.message || "Couldn't update the price. Check your connection.");
+        setError(
+          err.response?.data?.message ||
+            "Couldn't update the price. Check your connection.",
+        );
       } finally {
         if (token === requestToken.current) setRepricing(false);
       }
     },
-    [shop._id, shop.shop_name]
+    [shop._id, shop.shop_name],
   );
 
   const setCopies = (index, copies) => {
-    const nextSettings = docSettings.map((s, i) => (i === index ? { ...s, copies } : s));
+    const nextSettings = docSettings.map((s, i) =>
+      i === index ? { ...s, copies } : s,
+    );
     setDocSettings(nextSettings);
     reprice(uploadedDocs, nextSettings);
   };
@@ -129,8 +145,9 @@ export default function ReviewCheckoutScreen({ route, navigation }) {
   return (
     <ScreenBackground>
       <ScrollView style={styles.scroll} contentContainerStyle={styles.content}>
-        <Text style={styles.title}>Your Cart</Text>
-        <Text style={styles.subtitle}>Review your items before checkout.</Text>
+        <Text style={[styles.subtitle, { marginTop: 0 }]}>
+          Check your documents and settings before checkout.
+        </Text>
 
         <Card style={styles.itemsCard}>
           {uploadedDocs.map((doc, i) => (
@@ -157,15 +174,30 @@ export default function ReviewCheckoutScreen({ route, navigation }) {
             upload flow, not a competing call to action. Settings for the
             documents already here are carried forward. */}
         <Pressable
+          accessibilityRole="button"
+          accessibilityLabel="Add another PDF"
           onPress={() =>
-            navigation.navigate("UploadDocuments", { preselectedShop: shopDetail || shop })
+            navigation.navigate("UploadDocuments", {
+              preselectedShop: shopDetail || shop,
+              initialUploadedDocs: uploadedDocs,
+              initialDocSettings: docSettings,
+            })
           }
-          style={({ pressed }) => [styles.addMore, pressed && styles.addMorePressed]}
+          style={({ pressed }) => [
+            styles.addMore,
+            pressed && styles.addMorePressed,
+          ]}
         >
-          <Ionicons name="add-circle-outline" size={20} color={colors.primaryBright} />
+          <Ionicons
+            name="add-circle-outline"
+            size={20}
+            color={colors.primaryBright}
+          />
           <View>
-            <Text style={styles.addMoreTitle}>Add more files</Text>
-            <Text style={styles.addMoreBody}>Upload and add to your cart</Text>
+            <Text style={styles.addMoreTitle}>Add another PDF</Text>
+            <Text style={styles.addMoreBody}>
+              Keep your current documents and settings
+            </Text>
           </View>
         </Pressable>
 
@@ -183,11 +215,14 @@ export default function ReviewCheckoutScreen({ route, navigation }) {
             {repricing ? (
               <ActivityIndicator color={colors.primaryBright} />
             ) : (
-              <Text style={styles.totalValue}>{formatRupees(quote.totalAmount)}</Text>
+              <Text style={styles.totalValue}>
+                {formatRupees(quote.totalAmount)}
+              </Text>
             )}
           </View>
           <Text style={styles.totalNote}>
-            Includes paper, sides, add-on services and the platform fee. Full breakdown at checkout.
+            Includes paper, sides, add-on services and the platform fee. Full
+            breakdown at checkout.
           </Text>
         </Card>
 
@@ -204,7 +239,7 @@ export default function ReviewCheckoutScreen({ route, navigation }) {
           accessibilityRole="button"
         >
           <Ionicons name="arrow-back" size={16} color={colors.primaryBright} />
-          <Text style={styles.continueShoppingLabel}>Continue shopping</Text>
+          <Text style={styles.continueShoppingLabel}>Change shop</Text>
         </Pressable>
       </ScrollView>
     </ScreenBackground>
@@ -215,7 +250,12 @@ const styles = StyleSheet.create({
   scroll: { flex: 1 },
   content: { padding: spacing.lg, paddingBottom: spacing.xxl },
   title: { ...typography.h1, color: colors.textPrimary },
-  subtitle: { ...typography.body, color: colors.textSecondary, marginTop: 2, marginBottom: spacing.lg },
+  subtitle: {
+    ...typography.body,
+    color: colors.textSecondary,
+    marginTop: 2,
+    marginBottom: spacing.lg,
+  },
 
   itemsCard: { paddingVertical: spacing.xs },
   divider: { height: 1, backgroundColor: colors.border },
@@ -234,7 +274,11 @@ const styles = StyleSheet.create({
   },
   addMorePressed: { opacity: 0.75 },
   addMoreTitle: { ...typography.label, color: colors.primaryDeep },
-  addMoreBody: { ...typography.caption, color: colors.textSecondary, marginTop: 1 },
+  addMoreBody: {
+    ...typography.caption,
+    color: colors.textSecondary,
+    marginTop: 1,
+  },
 
   errorBox: {
     backgroundColor: colors.dangerBg,
@@ -245,10 +289,18 @@ const styles = StyleSheet.create({
   errorText: { ...typography.bodySmall, color: colors.danger },
 
   totalCard: { marginTop: spacing.md, marginBottom: spacing.lg },
-  totalRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
+  totalRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+  },
   totalLabel: { ...typography.label, color: colors.textPrimary },
   totalValue: { ...typography.h2, color: colors.primaryDeep },
-  totalNote: { ...typography.caption, color: colors.textMuted, marginTop: spacing.xs },
+  totalNote: {
+    ...typography.caption,
+    color: colors.textMuted,
+    marginTop: spacing.xs,
+  },
 
   continueShopping: {
     flexDirection: "row",

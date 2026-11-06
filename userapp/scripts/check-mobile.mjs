@@ -13,6 +13,66 @@ async function sourceModule(relative) {
 const { validateCustomerAuth, assertCustomerSession } = await sourceModule(
   "src/utils/authValidation.js",
 );
+const { validateProfilePreferences, profilePreferencesKey } =
+  await sourceModule("src/utils/profilePreferences.js");
+const profile = {
+  name: "Alex",
+  avatar: "paper-pal",
+  printDefaults: {
+    color_mode: "bw",
+    paper_size: "A4",
+    sides: "single",
+    copies: 1,
+  },
+};
+assert.equal(validateProfilePreferences(profile), "");
+assert.match(validateProfilePreferences({ ...profile, name: "   " }), /name/);
+assert.match(
+  validateProfilePreferences({ ...profile, avatar: "../photo" }),
+  /character/,
+);
+assert.match(
+  validateProfilePreferences({
+    ...profile,
+    printDefaults: { ...profile.printDefaults, copies: 0 },
+  }),
+  /preferences/,
+);
+assert.notEqual(
+  profilePreferencesKey("customer-a"),
+  profilePreferencesKey("customer-b"),
+);
+const { selectedQuote } = await sourceModule("src/utils/quoteSelection.js");
+const available = {
+  shop_id: "open",
+  is_currently_open: true,
+  total_amount: 19,
+};
+const closed = {
+  shop_id: "closed",
+  is_currently_open: false,
+  total_amount: 12,
+};
+assert.equal(selectedQuote([closed, available], null), available);
+assert.equal(selectedQuote([closed, available], "closed"), null);
+assert.equal(selectedQuote([closed, available], "missing"), null);
+assert.equal(selectedQuote([closed, available], "open"), available);
+const { orderJourney } = await sourceModule("src/utils/orderJourney.js");
+assert.equal(orderJourney("pending").stage, -1);
+assert.equal(orderJourney("accepted").art, "printing");
+assert.equal(orderJourney("ready_for_pickup").stage, 2);
+assert.equal(
+  validateProfilePreferences({ ...profile, avatar: "avatar-17" }),
+  "",
+);
+assert.match(
+  validateProfilePreferences({ ...profile, avatar: "avatar-00" }),
+  /character/,
+);
+for (let n = 1; n <= 17; n++)
+  await access(
+    path.join(root, `assets/avatars/avatar-${String(n).padStart(2, "0")}.png`),
+  );
 const valid = {
   name: "Customer",
   phone: "9000000000",
@@ -95,6 +155,9 @@ for (const asset of [
   await access(path.join(root, asset));
 for (const art of ["pickup", "student", "paper-pal"])
   await access(path.join(root, `assets/art/${art}-cmyk.png`));
+for (const pose of ["offline", "empty", "success", "pending"])
+  await access(path.join(root, `assets/art/paper-pal-${pose}.png`));
+await access(path.join(root, "assets/art/customer-avatar-cmyk.png"));
 console.log(
   "Passed: customer auth validation/role guards, theme contrast, app identity and referenced assets.",
 );

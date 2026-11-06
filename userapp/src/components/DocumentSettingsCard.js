@@ -2,7 +2,10 @@ import { useState } from "react";
 import { Pressable, StyleSheet, Text, TextInput, View } from "react-native";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import Stepper from "./Stepper";
-import { describeDocumentSettings, sameServiceName } from "../utils/documentSettings";
+import {
+  describeDocumentSettings,
+  sameServiceName,
+} from "../utils/documentSettings";
 import { colors, typography, spacing, radius, fonts } from "../theme";
 
 // Convenient starting points, NOT a fixed set. Shops name their own
@@ -39,6 +42,7 @@ export default function DocumentSettingsCard({
   showCopyToAll,
   estimate,
   availableServices,
+  compact = false,
 }) {
   const set = (patch) => onChange({ ...settings, ...patch });
 
@@ -49,12 +53,17 @@ export default function DocumentSettingsCard({
   // Quick-select suggestions: the chosen shop's real list when there is
   // one, otherwise the three most commonly asked for.
   const suggestions = availableServices?.length
-    ? availableServices.map((service) => ({ name: service.name, rate: service.rate }))
+    ? availableServices.map((service) => ({
+        name: service.name,
+        rate: service.rate,
+      }))
     : COMMON_SERVICES.map((name) => ({ name, rate: null }));
 
   // Typed-in names that aren't among the suggestions - shown as removable
   // chips so the customer can see exactly what they asked for.
-  const extras = requested.filter((name) => !suggestions.some((s) => sameServiceName(s.name, name)));
+  const extras = requested.filter(
+    (name) => !suggestions.some((s) => sameServiceName(s.name, name)),
+  );
 
   const [draft, setDraft] = useState("");
 
@@ -76,6 +85,99 @@ export default function DocumentSettingsCard({
     setDraft("");
   };
 
+  const controls = (
+    <>
+      <Field label="Colour">
+        <Segmented
+          value={settings.color_mode}
+          onChange={(color_mode) => set({ color_mode })}
+          options={[
+            // "B&W" rather than "Black & White": the summary line
+            // above already uses it, and a short label is what lets
+            // the control fit beside its own label on a 320px screen.
+            { value: "bw", label: "B&W" },
+            { value: "color", label: "Colour" },
+          ]}
+        />
+      </Field>
+
+      <Field label="Copies">
+        <Stepper value={settings.copies} onChange={(v) => set({ copies: v })} />
+      </Field>
+
+      <Field label="Paper">
+        <Segmented
+          value={settings.paper_size}
+          onChange={(paper_size) => set({ paper_size })}
+          options={[
+            { value: "A4", label: "A4" },
+            { value: "A3", label: "A3" },
+          ]}
+        />
+      </Field>
+
+      <Field label="Sides">
+        <Segmented
+          value={settings.sides}
+          onChange={(sides) => set({ sides })}
+          options={[
+            { value: "single", label: "Single" },
+            { value: "double", label: "Double" },
+          ]}
+        />
+      </Field>
+    </>
+  );
+  if (compact)
+    return (
+      <View style={styles.quickControls}>
+        {name ? (
+          <View style={styles.quickHeading}>
+            <Text style={styles.quickEyebrow}>SETTINGS FOR</Text>
+            <Text numberOfLines={2} style={styles.quickName}>
+              {name.replace(/\.pdf$/i, "")}
+            </Text>
+          </View>
+        ) : null}
+        <Segmented
+          value={settings.color_mode}
+          onChange={(color_mode) => set({ color_mode })}
+          options={[
+            { value: "bw", label: "Black & white" },
+            { value: "color", label: "Colour" },
+          ]}
+        />
+        <Segmented
+          value={settings.sides}
+          onChange={(sides) => set({ sides })}
+          options={[
+            { value: "single", label: "Single-sided" },
+            { value: "double", label: "Double-sided" },
+          ]}
+        />
+        <View style={styles.quickBottom}>
+          <View style={styles.quickHalf}>
+            <Text style={styles.quickLabel}>Paper size</Text>
+            <Segmented
+              value={settings.paper_size}
+              onChange={(paper_size) => set({ paper_size })}
+              options={[
+                { value: "A4", label: "A4" },
+                { value: "A3", label: "A3" },
+              ]}
+            />
+          </View>
+          <View style={styles.quickHalf}>
+            <Text style={styles.quickLabel}>Copies</Text>
+            <Stepper
+              value={settings.copies}
+              onChange={(copies) => set({ copies })}
+            />
+          </View>
+        </View>
+      </View>
+    );
+
   return (
     <View style={styles.card}>
       <Pressable style={styles.header} onPress={onToggleExpanded}>
@@ -90,7 +192,9 @@ export default function DocumentSettingsCard({
           {/* Shown whether open or closed: when open it confirms the
               choices without scrolling back, when closed it is the only
               way to see them. */}
-          <Text style={styles.summary}>{describeDocumentSettings(settings)}</Text>
+          <Text style={styles.summary}>
+            {describeDocumentSettings(settings)}
+          </Text>
         </View>
         <Ionicons
           name={expanded ? "chevron-up" : "chevron-down"}
@@ -106,45 +210,7 @@ export default function DocumentSettingsCard({
               space each time; as rows they are four. The labels are short
               enough to sit in a fixed column, which also lines all four
               controls up with each other. */}
-          <Field label="Colour">
-            <Segmented
-              value={settings.color_mode}
-              onChange={(color_mode) => set({ color_mode })}
-              options={[
-                // "B&W" rather than "Black & White": the summary line
-                // above already uses it, and a short label is what lets
-                // the control fit beside its own label on a 320px screen.
-                { value: "bw", label: "B&W" },
-                { value: "color", label: "Colour" },
-              ]}
-            />
-          </Field>
-
-          <Field label="Copies">
-            <Stepper value={settings.copies} onChange={(v) => set({ copies: v })} />
-          </Field>
-
-          <Field label="Paper">
-            <Segmented
-              value={settings.paper_size}
-              onChange={(paper_size) => set({ paper_size })}
-              options={[
-                { value: "A4", label: "A4" },
-                { value: "A3", label: "A3" },
-              ]}
-            />
-          </Field>
-
-          <Field label="Sides">
-            <Segmented
-              value={settings.sides}
-              onChange={(sides) => set({ sides })}
-              options={[
-                { value: "single", label: "Single" },
-                { value: "double", label: "Double" },
-              ]}
-            />
-          </Field>
+          {controls}
 
           <Text style={styles.label}>Additional services (optional)</Text>
           <Text style={styles.serviceHint}>
@@ -155,20 +221,32 @@ export default function DocumentSettingsCard({
 
           <View style={styles.servicesBox}>
             {suggestions.map((service, i) => {
-              const checked = requested.some((n) => sameServiceName(n, service.name));
+              const checked = requested.some((n) =>
+                sameServiceName(n, service.name),
+              );
               return (
                 <Pressable
                   key={service.name}
                   style={[styles.serviceRow, i > 0 && styles.serviceRowBorder]}
                   onPress={() => toggleService(service.name)}
                 >
-                  <View style={[styles.checkbox, checked && styles.checkboxChecked]}>
-                    {checked ? <Ionicons name="checkmark" size={14} color={colors.surface} /> : null}
+                  <View
+                    style={[styles.checkbox, checked && styles.checkboxChecked]}
+                  >
+                    {checked ? (
+                      <Ionicons
+                        name="checkmark"
+                        size={14}
+                        color={colors.surface}
+                      />
+                    ) : null}
                   </View>
                   <Text style={styles.serviceLabel}>{service.name}</Text>
                   {/* A price only exists once a shop is chosen - the
                       suggestions otherwise have no shop behind them. */}
-                  {service.rate !== null ? <Text style={styles.serviceRate}>₹{service.rate}</Text> : null}
+                  {service.rate !== null ? (
+                    <Text style={styles.serviceRate}>₹{service.rate}</Text>
+                  ) : null}
                 </Pressable>
               );
             })}
@@ -188,18 +266,29 @@ export default function DocumentSettingsCard({
               autoCapitalize="words"
             />
             <Pressable
-              style={[styles.addServiceButton, !draft.trim() && styles.addServiceButtonDisabled]}
+              style={[
+                styles.addServiceButton,
+                !draft.trim() && styles.addServiceButtonDisabled,
+              ]}
               onPress={addTypedService}
               disabled={!draft.trim()}
             >
-              <Ionicons name="add" size={20} color={draft.trim() ? colors.surface : colors.textMuted} />
+              <Ionicons
+                name="add"
+                size={20}
+                color={draft.trim() ? colors.surface : colors.textMuted}
+              />
             </Pressable>
           </View>
 
           {extras.length > 0 ? (
             <View style={styles.chipRow}>
               {extras.map((name) => (
-                <Pressable key={name} style={styles.chip} onPress={() => toggleService(name)}>
+                <Pressable
+                  key={name}
+                  style={styles.chip}
+                  onPress={() => toggleService(name)}
+                >
                   <Text style={styles.chipLabel}>{name}</Text>
                   <Ionicons name="close" size={14} color={colors.primaryDeep} />
                 </Pressable>
@@ -211,8 +300,14 @@ export default function DocumentSettingsCard({
               as the one-way action it is - it overwrites the others. */}
           {showCopyToAll ? (
             <Pressable style={styles.copyRow} onPress={onCopyToAll}>
-              <Ionicons name="copy-outline" size={16} color={colors.primaryBright} />
-              <Text style={styles.copyLabel}>Apply these settings to all documents</Text>
+              <Ionicons
+                name="copy-outline"
+                size={16}
+                color={colors.primaryBright}
+              />
+              <Text style={styles.copyLabel}>
+                Apply these settings to all documents
+              </Text>
             </Pressable>
           ) : null}
         </View>
@@ -250,13 +345,21 @@ function Segmented({ value, onChange, options }) {
         return (
           <Pressable
             key={option.value}
-            style={[styles.segment, i > 0 && styles.segmentDivider, selected && styles.segmentSelected]}
+            style={[
+              styles.segment,
+              i > 0 && styles.segmentDivider,
+              selected && styles.segmentSelected,
+            ]}
             onPress={() => onChange(option.value)}
             accessibilityRole="radio"
-            accessibilityState={{ selected }}
+            accessibilityState={{ selected, checked: selected }}
+            aria-checked={selected}
           >
             <Text
-              style={[styles.segmentLabel, selected && styles.segmentLabelSelected]}
+              style={[
+                styles.segmentLabel,
+                selected && styles.segmentLabelSelected,
+              ]}
               numberOfLines={1}
             >
               {option.label}
@@ -269,6 +372,18 @@ function Segmented({ value, onChange, options }) {
 }
 
 const styles = StyleSheet.create({
+  quickControls: { gap: spacing.lg },
+  quickHeading: { gap: spacing.sm },
+  quickEyebrow: {
+    ...typography.labelSmall,
+    fontSize: 11,
+    letterSpacing: 0.6,
+    color: colors.primaryDeep,
+  },
+  quickName: { ...typography.bodyMedium, color: colors.ink },
+  quickBottom: { flexDirection: "row", gap: spacing.md },
+  quickHalf: { flex: 1, gap: spacing.sm, minWidth: 0 },
+  quickLabel: { ...typography.caption, color: colors.textSecondary },
   card: {
     backgroundColor: colors.surface,
     borderWidth: 1,
@@ -289,7 +404,11 @@ const styles = StyleSheet.create({
   headerText: { flex: 1 },
   name: { ...typography.label, color: colors.textPrimary },
   meta: { ...typography.caption, color: colors.textSecondary, marginTop: 2 },
-  summary: { ...typography.caption, color: colors.primaryDeep, marginTop: spacing.xs },
+  summary: {
+    ...typography.caption,
+    color: colors.primaryDeep,
+    marginTop: spacing.xs,
+  },
   body: {
     paddingHorizontal: spacing.lg,
     paddingBottom: spacing.md,
@@ -297,7 +416,12 @@ const styles = StyleSheet.create({
     borderTopColor: colors.border,
     paddingTop: spacing.md,
   },
-  label: { ...typography.labelSmall, color: colors.textPrimary, marginBottom: spacing.xs, marginTop: spacing.xs },
+  label: {
+    ...typography.labelSmall,
+    color: colors.textPrimary,
+    marginBottom: spacing.xs,
+    marginTop: spacing.xs,
+  },
   fieldRow: {
     flexDirection: "row",
     alignItems: "center",
@@ -306,18 +430,21 @@ const styles = StyleSheet.create({
   },
   // Fixed, not flexed: every control then starts at the same x, which is
   // what makes four rows read as one group instead of four.
-  fieldLabel: { ...typography.labelSmall, color: colors.textSecondary, width: 62 },
+  fieldLabel: {
+    ...typography.labelSmall,
+    color: colors.textSecondary,
+    width: 62,
+  },
   fieldControl: { flex: 1, flexDirection: "row", alignItems: "center" },
   segmented: {
     flex: 1,
     flexDirection: "row",
     // 40 is the floor for a control that still has to be tapped
     // accurately. Everything else here shrank; this did not.
-    height: 40,
-    borderRadius: radius.sm,
-    borderWidth: 1,
-    borderColor: colors.border,
-    backgroundColor: colors.surface,
+    height: 44,
+    borderRadius: 16,
+    padding: 3,
+    backgroundColor: colors.backgroundSoft,
     overflow: "hidden",
   },
   segment: {
@@ -325,11 +452,26 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     paddingHorizontal: spacing.xs,
+    borderRadius: 12,
   },
-  segmentDivider: { borderLeftWidth: 1, borderLeftColor: colors.border },
-  segmentSelected: { backgroundColor: colors.primaryWash },
-  segmentLabel: { fontFamily: fonts.bodyMedium, fontSize: 13, color: colors.textSecondary },
-  segmentLabelSelected: { fontFamily: fonts.headingSemiBold, color: colors.primaryDeep },
+  segmentDivider: {},
+  segmentSelected: {
+    backgroundColor: colors.surface,
+    shadowColor: colors.ink,
+    shadowOpacity: 0.06,
+    shadowRadius: 3,
+    shadowOffset: { width: 0, height: 1 },
+    elevation: 1,
+  },
+  segmentLabel: {
+    fontFamily: fonts.bodyMedium,
+    fontSize: 13,
+    color: colors.textSecondary,
+  },
+  segmentLabelSelected: {
+    fontFamily: fonts.headingSemiBold,
+    color: colors.ink,
+  },
   servicesBox: {
     borderWidth: 1,
     borderColor: colors.border,
@@ -355,11 +497,23 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
-  checkboxChecked: { borderColor: colors.primary, backgroundColor: colors.primary },
+  checkboxChecked: {
+    borderColor: colors.primary,
+    backgroundColor: colors.primary,
+  },
   serviceLabel: { ...typography.bodySmall, color: colors.textPrimary, flex: 1 },
   serviceRate: { ...typography.bodySmall, color: colors.textSecondary },
-  serviceHint: { ...typography.caption, color: colors.textMuted, marginBottom: spacing.sm },
-  addServiceRow: { flexDirection: "row", alignItems: "center", gap: spacing.sm, marginTop: spacing.sm },
+  serviceHint: {
+    ...typography.caption,
+    color: colors.textMuted,
+    marginBottom: spacing.sm,
+  },
+  addServiceRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.sm,
+    marginTop: spacing.sm,
+  },
   addServiceInput: {
     flex: 1,
     minHeight: 40,
@@ -380,7 +534,12 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   addServiceButtonDisabled: { backgroundColor: colors.border },
-  chipRow: { flexDirection: "row", flexWrap: "wrap", gap: spacing.sm, marginTop: spacing.sm },
+  chipRow: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: spacing.sm,
+    marginTop: spacing.sm,
+  },
   chip: {
     flexDirection: "row",
     alignItems: "center",

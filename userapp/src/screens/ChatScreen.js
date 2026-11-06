@@ -13,6 +13,8 @@ import {
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { useIsFocused } from "@react-navigation/native";
 import { useSupport } from "../context/SupportContext";
+import ProfileAvatar from "../components/ProfileAvatar";
+import { DEMO_MODE } from "../config/runtime";
 import { colors, typography, spacing, radius, fonts } from "../theme";
 
 // Live chat with platform support.
@@ -27,8 +29,17 @@ import { colors, typography, spacing, radius, fonts } from "../theme";
 // and a pre-filled opening line.
 export default function ChatScreen({ route }) {
   const orderContext = route.params?.orderContext || null;
-  const { messages, loading, loaded, connected, hasMore, refresh, loadOlder, sendMessage, markRead } =
-    useSupport();
+  const {
+    messages,
+    loading,
+    loaded,
+    connected,
+    hasMore,
+    refresh,
+    loadOlder,
+    sendMessage,
+    markRead,
+  } = useSupport();
 
   const isFocused = useIsFocused();
   const [draft, setDraft] = useState(route.params?.draft || "");
@@ -91,9 +102,30 @@ export default function ChatScreen({ route }) {
       {/* Shown only when the live connection is actually down, and
           worded as a delay rather than a failure - messages still send
           over REST in this state, they just don't arrive instantly. */}
-      {!connected && loaded ? (
+      <View
+        style={{
+          flexDirection: "row",
+          alignItems: "center",
+          gap: 12,
+          padding: 16,
+          backgroundColor: colors.primaryWash,
+        }}
+      >
+        <ProfileAvatar avatar="avatar-05" size={44} />
+        <View>
+          <Text style={{ ...typography.label, color: colors.ink }}>
+            Paprout support
+          </Text>
+          <Text style={{ ...typography.caption, color: colors.textSecondary }}>
+            Ask our team about your prints
+          </Text>
+        </View>
+      </View>
+      {!DEMO_MODE && !connected && loaded ? (
         <View style={styles.offlineBar}>
-          <Text style={styles.offlineText}>Reconnecting - replies may take a moment to appear</Text>
+          <Text style={styles.offlineText}>
+            Reconnecting - replies may take a moment to appear
+          </Text>
         </View>
       ) : null}
 
@@ -106,7 +138,10 @@ export default function ChatScreen({ route }) {
           ref={listRef}
           data={messages}
           keyExtractor={(item) => String(item._id)}
-          contentContainerStyle={[styles.list, !messages.length && styles.listEmpty]}
+          contentContainerStyle={[
+            styles.list,
+            !messages.length && styles.listEmpty,
+          ]}
           renderItem={({ item }) => <Bubble message={item} />}
           ListHeaderComponent={
             hasMore ? (
@@ -117,10 +152,15 @@ export default function ChatScreen({ route }) {
           }
           ListEmptyComponent={
             <View style={styles.empty}>
-              <Ionicons name="chatbubbles-outline" size={40} color={colors.textMuted} />
+              <Ionicons
+                name="chatbubbles-outline"
+                size={40}
+                color={colors.textMuted}
+              />
               <Text style={styles.emptyTitle}>No messages yet</Text>
               <Text style={styles.emptyBody}>
-                Tell us what's going on and someone from the Paprout team will reply here.
+                Tell us what's going on and someone from the Paprout team will
+                reply here.
               </Text>
             </View>
           }
@@ -130,7 +170,9 @@ export default function ChatScreen({ route }) {
           // bubble wraps, both of which would otherwise push the latest
           // message out of view - and a reply nobody sees reads as no
           // reply at all.
-          onContentSizeChange={() => messages.length && listRef.current?.scrollToEnd({ animated: true })}
+          onContentSizeChange={() =>
+            messages.length && listRef.current?.scrollToEnd({ animated: true })
+          }
         />
       )}
 
@@ -142,6 +184,7 @@ export default function ChatScreen({ route }) {
           value={draft}
           onChangeText={setDraft}
           placeholder="Type your message"
+          accessibilityLabel="Message Paprout support"
           placeholderTextColor={colors.textMuted}
           multiline
           // The server refuses anything longer, so stopping it here means
@@ -150,6 +193,8 @@ export default function ChatScreen({ route }) {
           maxLength={2000}
         />
         <Pressable
+          accessibilityRole="button"
+          accessibilityLabel="Send message"
           onPress={onSend}
           disabled={!draft.trim() || sending}
           style={({ pressed }) => [
@@ -179,8 +224,15 @@ function Bubble({ message }) {
   });
 
   return (
-    <View style={[styles.bubbleRow, mine ? styles.bubbleRowMine : styles.bubbleRowTheirs]}>
-      <View style={[styles.bubble, mine ? styles.bubbleMine : styles.bubbleTheirs]}>
+    <View
+      style={[
+        styles.bubbleRow,
+        mine ? styles.bubbleRowMine : styles.bubbleRowTheirs,
+      ]}
+    >
+      <View
+        style={[styles.bubble, mine ? styles.bubbleMine : styles.bubbleTheirs]}
+      >
         {/* The order this message was sent about, resolved server-side
             from the order itself. Shown to the customer too, not just to
             the admin, so it's clear what the support agent is looking at. */}
@@ -191,14 +243,21 @@ function Bubble({ message }) {
               size={12}
               color={mine ? colors.primaryWash : colors.textSecondary}
             />
-            <Text style={[styles.contextText, mine && styles.contextTextMine]} numberOfLines={1}>
+            <Text
+              style={[styles.contextText, mine && styles.contextTextMine]}
+              numberOfLines={1}
+            >
               {message.order_context.shop_name || "Order"} ·{" "}
               {String(message.order_context.order_id).slice(-6).toUpperCase()}
             </Text>
           </View>
         ) : null}
-        <Text style={[styles.bubbleText, mine && styles.bubbleTextMine]}>{message.text}</Text>
-        <Text style={[styles.bubbleTime, mine && styles.bubbleTimeMine]}>{time}</Text>
+        <Text style={[styles.bubbleText, mine && styles.bubbleTextMine]}>
+          {message.text}
+        </Text>
+        <Text style={[styles.bubbleTime, mine && styles.bubbleTimeMine]}>
+          {time}
+        </Text>
       </View>
     </View>
   );
@@ -215,13 +274,21 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: colors.border,
   },
-  offlineText: { ...typography.caption, color: colors.textSecondary, textAlign: "center" },
+  offlineText: {
+    ...typography.caption,
+    color: colors.textSecondary,
+    textAlign: "center",
+  },
 
   list: { padding: spacing.lg, paddingBottom: spacing.md },
   listEmpty: { flexGrow: 1, justifyContent: "center" },
 
   empty: { alignItems: "center", paddingHorizontal: spacing.xl },
-  emptyTitle: { ...typography.h3, color: colors.textPrimary, marginTop: spacing.md },
+  emptyTitle: {
+    ...typography.h3,
+    color: colors.textPrimary,
+    marginTop: spacing.md,
+  },
   emptyBody: {
     ...typography.bodySmall,
     color: colors.textSecondary,
@@ -229,7 +296,11 @@ const styles = StyleSheet.create({
     marginTop: spacing.xs,
   },
 
-  loadOlder: { alignSelf: "center", paddingVertical: spacing.sm, marginBottom: spacing.sm },
+  loadOlder: {
+    alignSelf: "center",
+    paddingVertical: spacing.sm,
+    marginBottom: spacing.sm,
+  },
   loadOlderText: { ...typography.labelSmall, color: colors.primaryBright },
 
   bubbleRow: { flexDirection: "row", marginBottom: spacing.sm },
@@ -255,7 +326,12 @@ const styles = StyleSheet.create({
   },
   bubbleText: { ...typography.body, color: colors.textPrimary },
   bubbleTextMine: { color: colors.surface },
-  bubbleTime: { ...typography.caption, color: colors.textMuted, marginTop: 4, alignSelf: "flex-end" },
+  bubbleTime: {
+    ...typography.caption,
+    color: colors.textMuted,
+    marginTop: 4,
+    alignSelf: "flex-end",
+  },
   bubbleTimeMine: { color: colors.primaryWash },
 
   contextChip: {
@@ -271,7 +347,11 @@ const styles = StyleSheet.create({
     maxWidth: "100%",
   },
   contextChipMine: { backgroundColor: colors.primaryDeep },
-  contextText: { ...typography.caption, color: colors.textSecondary, flexShrink: 1 },
+  contextText: {
+    ...typography.caption,
+    color: colors.textSecondary,
+    flexShrink: 1,
+  },
   contextTextMine: { color: colors.primaryWash },
 
   error: {

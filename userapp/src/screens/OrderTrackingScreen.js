@@ -1,10 +1,19 @@
 import { useCallback, useState } from "react";
-import { Alert, Pressable, RefreshControl, ScrollView, Share, StyleSheet, Text, View } from "react-native";
+import {
+  Alert,
+  Pressable,
+  RefreshControl,
+  ScrollView,
+  Share,
+  StyleSheet,
+  Text,
+  View,
+} from "react-native";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import Button from "../components/Button";
 import Card, { CardHeader } from "../components/Card";
 import CartItem from "../components/CartItem";
-import OrderTimeline from "../components/OrderTimeline";
+import OrderJourney from "../components/OrderJourney";
 import OtpCard from "../components/OtpCard";
 import PriceBreakdown from "../components/PriceBreakdown";
 import ScreenBackground from "../components/ScreenBackground";
@@ -19,12 +28,28 @@ const ORDER_POLL_MS = 20 * 1000;
 // Status label + colour for the badge beside the title. Driven entirely
 // by the backend's own status values - no state is invented here.
 const STATUS_META = {
-  pending: { label: "In progress", bg: colors.primaryWash, text: colors.primaryDeep },
-  accepted: { label: "In progress", bg: colors.primaryWash, text: colors.primaryDeep },
-  ready_for_pickup: { label: "Ready for pickup", bg: colors.successBg, text: colors.success },
+  pending: {
+    label: "In progress",
+    bg: colors.primaryWash,
+    text: colors.primaryDeep,
+  },
+  accepted: {
+    label: "In progress",
+    bg: colors.primaryWash,
+    text: colors.primaryDeep,
+  },
+  ready_for_pickup: {
+    label: "Ready for pickup",
+    bg: colors.successBg,
+    text: colors.success,
+  },
   completed: { label: "Completed", bg: colors.successBg, text: colors.success },
   cancelled: { label: "Cancelled", bg: colors.dangerBg, text: colors.danger },
-  expired: { label: "Expired", bg: colors.backgroundSoft, text: colors.textSecondary },
+  expired: {
+    label: "Expired",
+    bg: colors.backgroundSoft,
+    text: colors.textSecondary,
+  },
 };
 
 // One screen for the whole life of an order: tracking while it is live,
@@ -43,10 +68,13 @@ export default function OrderTrackingScreen({ route, navigation }) {
   const otpStillNeeded = !isClosed && !isCompleted && order.otp;
 
   const showQueuePosition =
-    (status === "pending" || status === "accepted") && typeof order.queue_position === "number";
+    (status === "pending" || status === "accepted") &&
+    typeof order.queue_position === "number";
 
   const shareDetails = () => {
-    Share.share({ message: `My Paprout order\nOrder: ${orderRef(order)}\nPickup OTP: ${order.otp}` });
+    Share.share({
+      message: `My Paprout order\nOrder: ${orderRef(order)}\nPickup OTP: ${order.otp}`,
+    });
   };
 
   const onRefresh = async ({ silent } = {}) => {
@@ -70,7 +98,10 @@ export default function OrderTrackingScreen({ route, navigation }) {
   };
 
   const isLive = ["pending", "accepted", "ready_for_pickup"].includes(status);
-  const pollStatus = useCallback(() => onRefresh({ silent: true }), [order._id, order.status]);
+  const pollStatus = useCallback(
+    () => onRefresh({ silent: true }),
+    [order._id, order.status],
+  );
   useFocusedPoll(isLive ? pollStatus : null, ORDER_POLL_MS);
 
   // Reorder: the same shop, a fresh upload. It cannot carry the original
@@ -86,17 +117,27 @@ export default function OrderTrackingScreen({ route, navigation }) {
         { text: "Cancel", style: "cancel" },
         {
           text: "Upload files",
-          onPress: () => navigation.navigate("UploadDocuments", { preselectedShop: order.shop_id }),
+          onPress: () =>
+            navigation.navigate("PrintFlow", {
+              screen: "UploadDocuments",
+              params: { preselectedShop: order.shop_id },
+            }),
         },
-      ]
+      ],
     );
   };
 
   const priceRows = [
     { label: "Subtotal", value: order.base_subtotal ?? 0 },
-    order.paper_size_charge > 0 ? { label: "Paper size", value: order.paper_size_charge } : null,
-    order.sides_charge > 0 ? { label: "Double-sided", value: order.sides_charge } : null,
-    order.services_charge > 0 ? { label: "Additional services", value: order.services_charge } : null,
+    order.paper_size_charge > 0
+      ? { label: "Paper size", value: order.paper_size_charge }
+      : null,
+    order.sides_charge > 0
+      ? { label: "Double-sided", value: order.sides_charge }
+      : null,
+    order.services_charge > 0
+      ? { label: "Additional services", value: order.services_charge }
+      : null,
     { label: "Platform fee", value: order.platform_fee ?? 0 },
     { label: "Pickup", free: true },
   ];
@@ -107,18 +148,41 @@ export default function OrderTrackingScreen({ route, navigation }) {
         style={styles.scroll}
         contentContainerStyle={styles.content}
         refreshControl={
-          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.primaryBright} />
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            tintColor={colors.primaryBright}
+          />
         }
       >
-        <View style={styles.headerRow}>
-          <View style={styles.headerText}>
-            <Text style={styles.title}>{isCompleted ? "Order details" : "Track your order"}</Text>
-            <Text style={styles.ref}>Order {orderRef(order)}</Text>
+        {!otpStillNeeded ? (
+          <View style={styles.headerRow}>
+            <View style={styles.headerText}>
+              <Text style={styles.title}>
+                {isCompleted ? "Order details" : "Track your order"}
+              </Text>
+              <Text style={styles.ref}>Order {orderRef(order)}</Text>
+            </View>
+            <View style={[styles.badge, { backgroundColor: meta.bg }]}>
+              <Text style={[styles.badgeText, { color: meta.text }]}>
+                {meta.label}
+              </Text>
+            </View>
           </View>
-          <View style={[styles.badge, { backgroundColor: meta.bg }]}>
-            <Text style={[styles.badgeText, { color: meta.text }]}>{meta.label}</Text>
-          </View>
-        </View>
+        ) : null}
+
+        {otpStillNeeded ? (
+          <OtpCard
+            otp={order.otp}
+            reference={orderRef(order)}
+            shopName={order.shop_id?.shop_name}
+            caption={
+              status === "ready_for_pickup"
+                ? "Show this code at the counter"
+                : "Keep this code for when your prints are ready"
+            }
+          />
+        ) : null}
 
         {isClosed ? (
           <Card style={styles.card}>
@@ -129,24 +193,16 @@ export default function OrderTrackingScreen({ route, navigation }) {
             </Text>
           </Card>
         ) : (
-          <Card style={styles.card}>
-            <OrderTimeline
-              status={status}
-              placedAt={order.createdAt}
-              // Only stamps the order actually carries. updatedAt is the
-              // last transition, so it belongs to whichever step is
-              // current - not spread across every step as though each had
-              // been timed.
-              completedAt={isCompleted ? order.updatedAt : null}
-              readyAt={status === "ready_for_pickup" ? order.updatedAt : null}
-              acceptedAt={status === "accepted" ? order.updatedAt : null}
-            />
-          </Card>
+          <OrderJourney status={status} />
         )}
 
         {showQueuePosition ? (
           <View style={styles.queueBox}>
-            <Ionicons name="people-outline" size={16} color={colors.primaryDeep} />
+            <Ionicons
+              name="people-outline"
+              size={16}
+              color={colors.primaryDeep}
+            />
             <Text style={styles.queueText}>
               {order.queue_position === 0
                 ? "You're next in line"
@@ -154,8 +210,6 @@ export default function OrderTrackingScreen({ route, navigation }) {
             </Text>
           </View>
         ) : null}
-
-        {otpStillNeeded ? <OtpCard otp={order.otp} /> : null}
 
         <View style={styles.card}>
           <Text style={styles.sectionLabel}>Print shop</Text>
@@ -178,22 +232,38 @@ export default function OrderTrackingScreen({ route, navigation }) {
             </View>
           ))}
           <View style={styles.summaryFooter}>
-            <PriceBreakdown rows={priceRows} total={order.total_amount ?? 0} totalLabel="Total paid" compact />
+            <PriceBreakdown
+              rows={priceRows}
+              total={order.total_amount ?? 0}
+              totalLabel="Total paid"
+              compact
+            />
           </View>
         </Card>
 
         <Card style={styles.card}>
           <CardHeader title="Order info" />
-          <InfoRow label="Placed on" value={new Date(order.createdAt).toLocaleString("en-IN")} />
-          <InfoRow label="Reference" value={String(order._id)} />
-          {order.instructions ? <InfoRow label="Notes" value={order.instructions} /> : null}
+          <InfoRow
+            label="Placed on"
+            value={new Date(order.createdAt).toLocaleString("en-IN")}
+          />
+          <InfoRow
+            label="Reference"
+            value={order.is_demo ? orderRef(order) : String(order._id)}
+          />
+          {order.instructions ? (
+            <InfoRow label="Notes" value={order.instructions} />
+          ) : null}
         </Card>
 
         {/* "Need help with this order?" stays available on every order,
             closed ones included - those are the ones people most need
             help with. */}
         <Pressable
-          style={({ pressed }) => [styles.helpRow, pressed && styles.helpRowPressed]}
+          style={({ pressed }) => [
+            styles.helpRow,
+            pressed && styles.helpRowPressed,
+          ]}
           onPress={() =>
             navigation.navigate("Chat", {
               orderContext: { order_id: order._id },
@@ -203,13 +273,26 @@ export default function OrderTrackingScreen({ route, navigation }) {
             })
           }
         >
-          <Ionicons name="chatbubble-ellipses-outline" size={18} color={colors.primaryBright} />
+          <Ionicons
+            name="chatbubble-ellipses-outline"
+            size={18}
+            color={colors.primaryBright}
+          />
           <Text style={styles.helpText}>Need help with this order?</Text>
-          <Ionicons name="chevron-forward" size={16} color={colors.primaryBright} />
+          <Ionicons
+            name="chevron-forward"
+            size={16}
+            color={colors.primaryBright}
+          />
         </Pressable>
 
         {otpStillNeeded ? (
-          <Button title="Share OTP" variant="secondary" onPress={shareDetails} style={styles.action} />
+          <Button
+            title="Share OTP"
+            variant="secondary"
+            onPress={shareDetails}
+            style={styles.action}
+          />
         ) : null}
 
         {isCompleted ? (
@@ -236,18 +319,37 @@ function InfoRow({ label, value }) {
 const styles = StyleSheet.create({
   scroll: { flex: 1 },
   content: { padding: spacing.lg, paddingBottom: spacing.xxl },
-  headerRow: { flexDirection: "row", alignItems: "flex-start", gap: spacing.md, marginBottom: spacing.lg },
+  headerRow: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    gap: spacing.md,
+    marginBottom: spacing.lg,
+  },
   headerText: { flex: 1 },
   title: { ...typography.h1, color: colors.textPrimary },
   ref: { ...typography.bodySmall, color: colors.textSecondary, marginTop: 2 },
-  badge: { borderRadius: radius.pill, paddingVertical: 5, paddingHorizontal: spacing.md, marginTop: 6 },
+  badge: {
+    borderRadius: radius.pill,
+    paddingVertical: 5,
+    paddingHorizontal: spacing.md,
+    marginTop: 6,
+  },
   badgeText: { ...typography.labelSmall },
 
   card: { marginBottom: spacing.md },
-  sectionLabel: { ...typography.label, color: colors.textPrimary, marginBottom: spacing.sm },
+  sectionLabel: {
+    ...typography.label,
+    color: colors.textPrimary,
+    marginBottom: spacing.sm,
+  },
   closedText: { ...typography.bodySmall, color: colors.textSecondary },
   divider: { height: 1, backgroundColor: colors.border },
-  summaryFooter: { marginTop: spacing.sm, paddingTop: spacing.sm, borderTopWidth: 1, borderTopColor: colors.border },
+  summaryFooter: {
+    marginTop: spacing.sm,
+    paddingTop: spacing.sm,
+    borderTopWidth: 1,
+    borderTopColor: colors.border,
+  },
 
   queueBox: {
     flexDirection: "row",

@@ -32,9 +32,17 @@ import { colors, fonts, radius } from "../theme";
 const MAX_RETRIES = 2;
 const RETRY_DELAY_MS = 1500;
 
-function ShopPhoto({ uri, source, style, iconSize = 28, closed = false, shopName }) {
+function ShopPhoto({
+  uri,
+  source,
+  style,
+  iconSize = 28,
+  closed = false,
+  shopName,
+}) {
   const imageSource = source || (uri ? { uri } : null);
-  const remoteUri = imageSource && typeof imageSource === "object" ? imageSource.uri : null;
+  const remoteUri =
+    imageSource && typeof imageSource === "object" ? imageSource.uri : null;
 
   // A remote photo can be present in the API response and still fail to
   // load on the device - no connectivity on the phone's network, a DNS
@@ -45,7 +53,7 @@ function ShopPhoto({ uri, source, style, iconSize = 28, closed = false, shopName
   const [reason, setReason] = useState("");
   const retryTimer = useRef(null);
 
-  const sourceKey = imageSource ? (remoteUri || String(imageSource)) : null;
+  const sourceKey = imageSource ? remoteUri || String(imageSource) : null;
 
   // Reset when this component is pointed at a DIFFERENT photo.
   useEffect(() => {
@@ -76,13 +84,16 @@ function ShopPhoto({ uri, source, style, iconSize = 28, closed = false, shopName
         });
       }
       if (attempt < MAX_RETRIES) {
-        retryTimer.current = setTimeout(() => setAttempt((n) => n + 1), RETRY_DELAY_MS);
+        retryTimer.current = setTimeout(
+          () => setAttempt((n) => n + 1),
+          RETRY_DELAY_MS,
+        );
         return;
       }
       setReason(String(nativeError || "unknown error"));
       setFailed(true);
     },
-    [attempt, remoteUri, shopName]
+    [attempt, remoteUri, shopName],
   );
 
   // A retry has to change the source object for React Native to re-fetch
@@ -91,7 +102,11 @@ function ShopPhoto({ uri, source, style, iconSize = 28, closed = false, shopName
   // the exact URL the database stored, so nothing about a working photo
   // is ever rewritten or cache-busted.
   const activeSource =
-    attempt > 0 && remoteUri ? { uri: `${remoteUri}${remoteUri.includes("?") ? "&" : "?"}retry=${attempt}` } : imageSource;
+    attempt > 0 && remoteUri
+      ? {
+          uri: `${remoteUri}${remoteUri.includes("?") ? "&" : "?"}retry=${attempt}`,
+        }
+      : imageSource;
 
   const showImage = imageSource && !failed;
 
@@ -118,8 +133,14 @@ function ShopPhoto({ uri, source, style, iconSize = 28, closed = false, shopName
         //   - a URL that would not load: say so, because the shop DOES
         //     have a photo and the customer is not seeing it.
         <View style={[styles.fill, styles.placeholder]}>
-          <Ionicons name="storefront-outline" size={iconSize} color={colors.textMuted} />
-          {failed ? <Text style={styles.placeholderText}>Shop image unavailable</Text> : null}
+          <Ionicons
+            name="storefront-outline"
+            size={iconSize}
+            color={colors.textMuted}
+          />
+          {failed ? (
+            <Text style={styles.placeholderText}>Shop image unavailable</Text>
+          ) : null}
           {failed && __DEV__ ? (
             <Text style={styles.debugText} numberOfLines={2}>
               {reason}
@@ -146,7 +167,7 @@ const styles = StyleSheet.create({
     backgroundColor: colors.backgroundSoft,
     overflow: "hidden", // clips the image/scrim to the box's own rounded corners
   },
-  fill: { ...StyleSheet.absoluteFillObject },
+  fill: { ...StyleSheet.absoluteFillObject, width: "100%", height: "100%" },
   placeholder: {
     alignItems: "center",
     justifyContent: "center",

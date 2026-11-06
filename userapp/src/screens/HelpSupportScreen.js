@@ -1,5 +1,12 @@
 import { useState } from "react";
-import { Linking, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import {
+  Linking,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  View,
+} from "react-native";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import Button from "../components/Button";
 import { useSupport } from "../context/SupportContext";
@@ -20,43 +27,35 @@ import { colors, typography, spacing, radius } from "../theme";
 const FAQS = [
   {
     q: "What happens to my documents after printing?",
-    a:
-      "They are deleted automatically. The moment the shop marks your order completed - by entering your pickup OTP - the file is removed from our servers and from our storage provider. The same thing happens if an order expires without being collected. Your documents are only ever used to fulfil the order you uploaded them for; they are never shared or sold.",
+    a: "They are deleted automatically. The moment the shop marks your order completed - by entering your pickup OTP - the file is removed from our servers and from our storage provider. The same thing happens if an order expires without being collected. Your documents are only ever used to fulfil the order you uploaded them for; they are never shared or sold.",
   },
   {
     q: "How does pickup work?",
-    a:
-      "Once your payment is confirmed you get a 6-digit OTP, shown on the order screen. When your prints are ready, go to the shop and read out that OTP - the shop enters it to confirm you collected the right order. Only then is the order marked completed. Don't share the OTP with anyone before you're at the counter: it's the only thing proving the prints are yours.",
+    a: "Once your payment is confirmed you get a 6-digit OTP, shown on the order screen. When your prints are ready, go to the shop and read out that OTP - the shop enters it to confirm you collected the right order. Only then is the order marked completed. Don't share the OTP with anyone before you're at the counter: it's the only thing proving the prints are yours.",
   },
   {
     q: "Why does the same document cost different amounts at different shops?",
-    a:
-      "Because each shop sets its own prices. A shop chooses its own per-page rate for black & white and for colour, what it charges for A3, its surcharge for double-sided, and which add-on services it offers and at what price. Paprout adds a platform fee on top, and that part is the same everywhere. The shop-selection screen prices your exact documents at every nearby shop, so the totals you compare there are the real ones.",
+    a: "Because each shop sets its own prices. A shop chooses its own per-page rate for black & white and for colour, what it charges for A3, its surcharge for double-sided, and which add-on services it offers and at what price. Paprout adds a platform fee on top, and that part is the same everywhere. The shop-selection screen prices your exact documents at every nearby shop, so the totals you compare there are the real ones.",
   },
   {
     q: "I asked for a service and a shop didn't show up",
-    a:
-      "Add-on services like binding or lamination are set up by each shop individually, so not every shop offers every service - and a shop that can't do what you asked for is left out of the comparison rather than shown at a price it can't honour. Shops also name things differently: one shop's \"Lamination\" may be another's \"Glossy Lamination\". We match loosely when comparing, and the shop's own name and price are what you see on the review screen and on the final order.",
+    a: "Add-on services like binding or lamination are set up by each shop individually, so not every shop offers every service - and a shop that can't do what you asked for is left out of the comparison rather than shown at a price it can't honour. Shops also name things differently: one shop's \"Lamination\" may be another's \"Glossy Lamination\". We match loosely when comparing, and the shop's own name and price are what you see on the review screen and on the final order.",
   },
   {
     q: "My order says expired - what happened?",
-    a:
-      "Orders expire in two situations. If a payment is never completed, the order is released after about an hour. And if an order stalls - still waiting on the shop to accept it, or accepted but never moved on - it is closed out after 48 hours without progress. Once your prints are marked ready for pickup that clock stops, so a ready order won't expire out from under you. In either case the uploaded documents are deleted along with the order, so you'll need to upload again to place a new one.",
+    a: "Orders expire in two situations. If a payment is never completed, the order is released after about an hour. And if an order stalls - still waiting on the shop to accept it, or accepted but never moved on - it is closed out after 48 hours without progress. Once your prints are marked ready for pickup that clock stops, so a ready order won't expire out from under you. In either case the uploaded documents are deleted along with the order, so you'll need to upload again to place a new one.",
   },
   {
     q: "My payment failed but money left my account",
-    a:
-      "If a payment doesn't verify, Razorpay releases the amount back to the original payment method automatically - bank timelines vary, but it is usually a few working days. The order itself stays payable in the meantime, so you can simply try again from the order screen. If you've waited and nothing has come back, start a chat below with the order open and we'll trace it.",
+    a: "If a payment doesn't verify, Razorpay releases the amount back to the original payment method automatically - bank timelines vary, but it is usually a few working days. The order itself stays payable in the meantime, so you can simply try again from the order screen. If you've waited and nothing has come back, start a chat below with the order open and we'll trace it.",
   },
   {
     q: "Can I cancel or change an order after paying?",
-    a:
-      "Not from the app - there's no self-serve cancellation yet, mainly because your file may already be printing. Message us here as early as you can and we'll sort it out with the shop directly.",
+    a: "Not from the app - there's no self-serve cancellation yet, mainly because your file may already be printing. Message us here as early as you can and we'll sort it out with the shop directly.",
   },
   {
     q: "A shop is showing as closed",
-    a:
-      "Shops set their own opening hours, and can also close manually when they're mid-rush or out of paper. A closed shop still appears in the list - it just can't take a new order until it reopens. If it looks wrong, pick another shop for now and tell us which one, and we'll check with the owner.",
+    a: "Shops set their own opening hours, and can also close manually when they're mid-rush or out of paper. A closed shop still appears in the list - it just can't take a new order until it reopens. If it looks wrong, pick another shop for now and tell us which one, and we'll check with the owner.",
   },
 ];
 
@@ -78,7 +77,11 @@ export default function HelpSupportScreen({ navigation }) {
       <View style={styles.chatCard}>
         <View style={styles.chatHeader}>
           <View style={styles.chatIcon}>
-            <Ionicons name="chatbubbles" size={20} color={colors.primaryBright} />
+            <Ionicons
+              name="chatbubbles"
+              size={20}
+              color={colors.primaryBright}
+            />
           </View>
           <View style={styles.chatHeaderText}>
             <Text style={styles.chatTitle}>Chat with support</Text>
@@ -89,7 +92,10 @@ export default function HelpSupportScreen({ navigation }) {
             </Text>
           </View>
         </View>
-        <Button title={unreadCount > 0 ? "Open chat" : "Start a chat"} onPress={() => navigation.navigate("Chat")} />
+        <Button
+          title={unreadCount > 0 ? "Open chat" : "Start a chat"}
+          onPress={() => navigation.navigate("Chat")}
+        />
       </View>
 
       <Text style={styles.sectionTitle}>Common questions</Text>
@@ -97,7 +103,10 @@ export default function HelpSupportScreen({ navigation }) {
         {FAQS.map((faq, i) => {
           const open = openIndex === i;
           return (
-            <View key={faq.q} style={[styles.faqItem, i > 0 && styles.faqItemBorder]}>
+            <View
+              key={faq.q}
+              style={[styles.faqItem, i > 0 && styles.faqItemBorder]}
+            >
               <Pressable
                 style={styles.faqQuestionRow}
                 onPress={() => setOpenIndex(open ? null : i)}
@@ -117,40 +126,33 @@ export default function HelpSupportScreen({ navigation }) {
         })}
       </View>
 
-      <Text style={styles.sectionTitle}>Other ways to reach us</Text>
-      <View style={styles.contactBox}>
-        {!SUPPORT_CONTACT_CONFIGURED ? (
-          // Stated rather than hidden. An invented email that looks real
-          // is worse than an obvious placeholder: a customer writes to it
-          // and hears nothing back.
-          <View style={styles.placeholderNote}>
-            <Ionicons name="alert-circle-outline" size={16} color={colors.textSecondary} />
-            <Text style={styles.placeholderText}>
-              Placeholder details - set EXPO_PUBLIC_SUPPORT_EMAIL and EXPO_PUBLIC_SUPPORT_PHONE in
-              userapp/.env before release.
-            </Text>
+      {SUPPORT_CONTACT_CONFIGURED ? (
+        <>
+          <Text style={styles.sectionTitle}>Other ways to reach us</Text>
+          <View style={styles.contactBox}>
+            <ContactRow
+              icon="mail-outline"
+              label="Email"
+              value={SUPPORT_EMAIL}
+              onPress={() => openLink(`mailto:${SUPPORT_EMAIL}`)}
+            />
+            <ContactRow
+              icon="call-outline"
+              label="Phone"
+              value={SUPPORT_PHONE}
+              note={SUPPORT_HOURS}
+              onPress={() =>
+                openLink(`tel:${SUPPORT_PHONE.replace(/\s/g, "")}`)
+              }
+              border
+            />
           </View>
-        ) : null}
-
-        <ContactRow
-          icon="mail-outline"
-          label="Email"
-          value={SUPPORT_EMAIL}
-          onPress={() => openLink(`mailto:${SUPPORT_EMAIL}`)}
-        />
-        <ContactRow
-          icon="call-outline"
-          label="Phone"
-          value={SUPPORT_PHONE}
-          note={SUPPORT_HOURS}
-          onPress={() => openLink(`tel:${SUPPORT_PHONE.replace(/\s/g, "")}`)}
-          border
-        />
-      </View>
+        </>
+      ) : null}
 
       <Text style={styles.footnote}>
-        Chat is the fastest route for anything about a specific order - it comes through with your
-        order details already attached.
+        Chat is the fastest route for anything about a specific order - it comes
+        through with your order details already attached.
       </Text>
     </ScrollView>
   );
@@ -158,7 +160,10 @@ export default function HelpSupportScreen({ navigation }) {
 
 function ContactRow({ icon, label, value, note, onPress, border }) {
   return (
-    <Pressable style={[styles.contactRow, border && styles.contactRowBorder]} onPress={onPress}>
+    <Pressable
+      style={[styles.contactRow, border && styles.contactRowBorder]}
+      onPress={onPress}
+    >
       <Ionicons name={icon} size={18} color={colors.textSecondary} />
       <View style={styles.contactText}>
         <Text style={styles.contactLabel}>{label}</Text>
@@ -194,7 +199,11 @@ const styles = StyleSheet.create({
   },
   chatHeaderText: { flex: 1 },
   chatTitle: { ...typography.h3, color: colors.textPrimary },
-  chatSubtitle: { ...typography.bodySmall, color: colors.textSecondary, marginTop: 2 },
+  chatSubtitle: {
+    ...typography.bodySmall,
+    color: colors.textSecondary,
+    marginTop: 2,
+  },
 
   sectionTitle: {
     ...typography.labelSmall,
@@ -213,9 +222,17 @@ const styles = StyleSheet.create({
   },
   faqItem: { paddingHorizontal: spacing.lg, paddingVertical: spacing.md },
   faqItemBorder: { borderTopWidth: 1, borderTopColor: colors.border },
-  faqQuestionRow: { flexDirection: "row", alignItems: "center", gap: spacing.md },
+  faqQuestionRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.md,
+  },
   faqQuestion: { ...typography.bodyMedium, color: colors.textPrimary, flex: 1 },
-  faqAnswer: { ...typography.bodySmall, color: colors.textSecondary, marginTop: spacing.sm },
+  faqAnswer: {
+    ...typography.bodySmall,
+    color: colors.textSecondary,
+    marginTop: spacing.sm,
+  },
 
   contactBox: {
     backgroundColor: colors.surface,
@@ -230,7 +247,11 @@ const styles = StyleSheet.create({
     alignItems: "flex-start",
     paddingTop: spacing.md,
   },
-  placeholderText: { ...typography.caption, color: colors.textSecondary, flex: 1 },
+  placeholderText: {
+    ...typography.caption,
+    color: colors.textSecondary,
+    flex: 1,
+  },
   contactRow: {
     flexDirection: "row",
     alignItems: "center",
@@ -241,7 +262,11 @@ const styles = StyleSheet.create({
   contactText: { flex: 1 },
   contactLabel: { ...typography.caption, color: colors.textMuted },
   contactValue: { ...typography.bodyMedium, color: colors.textPrimary },
-  contactNote: { ...typography.caption, color: colors.textSecondary, marginTop: 2 },
+  contactNote: {
+    ...typography.caption,
+    color: colors.textSecondary,
+    marginTop: 2,
+  },
 
   footnote: {
     ...typography.caption,

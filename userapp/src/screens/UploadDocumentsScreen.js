@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   Image,
   Pressable,
@@ -7,11 +7,22 @@ import {
   Text,
   View,
 } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import * as DocumentPicker from "expo-document-picker";
 import { trackEvent, EVENTS } from "../lib/analytics";
 import Button from "../components/Button";
+import { toast } from "react-native-sonner";
+import { PressableScale } from "pressto";
+import DocumentSettingsCard from "../components/DocumentSettingsCard";
+import { defaultDocumentSettings } from "../utils/documentSettings";
+import { describeDocumentSettings } from "../utils/documentSettings";
+import DocumentThumbnail from "../components/DocumentThumbnail";
+import PaperPreview from "../components/PaperPreview";
 import { uploadDocuments } from "../api/client";
+import { DEMO_MODE } from "../config/runtime";
+import { demoStore } from "../demo/store";
+import { useAuth } from "../context/AuthContext";
 import { colors, typography, spacing, radius } from "../theme";
 
 const MAX_FILES = 10;
@@ -24,7 +35,13 @@ const MAX_FILES = 10;
 // route.params.preselectedShop carries a shop forward when this flow was
 // started by tapping a shop directly (Shops tab / Home's nearby list),
 // so the customer doesn't have to pick it again at the Select Shop step.
-export default function UploadDocumentsScreen({ route, navigation }) {
+export default function UploadDocumentsScreen({
+  route,
+  navigation,
+  completedOrderId,
+}) {
+  const insets = useSafeAreaInsets();
+  const { appearance } = useAuth();
   const preselectedShop = route.params?.preselectedShop || null;
 
   const [pendingFiles, setPendingFiles] = useState([]);
@@ -36,6 +53,33 @@ export default function UploadDocumentsScreen({ route, navigation }) {
   const [uploading, setUploading] = useState(false);
   const [retryingName, setRetryingName] = useState(null);
   const [error, setError] = useState("");
+  const [settingsById, setSettingsById] = useState({});
+  const [activeDocId, setActiveDocId] = useState(null);
+
+  useEffect(() => {
+    const docs = route.params?.initialUploadedDocs;
+    if (!docs) return;
+    setUploadedDocs(docs);
+    setSettingsById(
+      Object.fromEntries(
+        docs.map((doc, index) => [
+          doc.upload_id,
+          route.params.initialDocSettings?.[index] || defaultDocumentSettings(),
+        ]),
+      ),
+    );
+    setActiveDocId(docs[0]?.upload_id || null);
+  }, [route.params?.initialUploadedDocs, route.params?.initialDocSettings]);
+
+  useEffect(() => {
+    if (!completedOrderId) return;
+    setUploadedDocs([]);
+    setPendingFiles([]);
+    setFailedUploads([]);
+    setError("");
+    setSettingsById({});
+    setActiveDocId(null);
+  }, [completedOrderId]);
 
   const totalSlotsUsed =
     pendingFiles.length + uploadedDocs.length + failedUploads.length;
@@ -44,6 +88,21 @@ export default function UploadDocumentsScreen({ route, navigation }) {
     pendingFiles.length === 0 &&
     failedUploads.length === 0;
 
+  const rememberSettings = (docs) => {
+    setSettingsById((previous) => {
+      const next = { ...previous };
+      docs.forEach((doc) => {
+        if (!next[doc.upload_id])
+          next[doc.upload_id] = {
+            ...defaultDocumentSettings(),
+            ...appearance?.printDefaults,
+            services: [],
+          };
+      });
+      return next;
+    });
+  };
+
   const addFiles = async () => {
     setError("");
     const room = MAX_FILES - totalSlotsUsed;
@@ -51,12 +110,28 @@ export default function UploadDocumentsScreen({ route, navigation }) {
       setError(`You can add up to ${MAX_FILES} documents per order.`);
       return;
     }
+    if (DEMO_MODE) {
+      const sample = demoStore.addDocument();
+      setUploadedDocs((previous) => [...previous, sample]);
+      setActiveDocId(sample.upload_id);
+      rememberSettings([sample]);
+      toast.success("PDF added", {
+        description: sample.page_count + " pages ready to configure.",
+      });
+      return;
+    }
 
-    const result = await DocumentPicker.getDocumentAsync({
-      type: "application/pdf",
-      multiple: true,
-      copyToCacheDirectory: true,
-    });
+    let result;
+    try {
+      result = await DocumentPicker.getDocumentAsync({
+        type: "application/pdf",
+        multiple: true,
+        copyToCacheDirectory: true,
+      });
+    } catch {
+      setError("Couldn’t open the file picker. Please try again.");
+      return;
+    }
     if (result.canceled) return;
 
     // document_upload_started - emitted after the customer has actually
@@ -87,6 +162,11 @@ export default function UploadDocumentsScreen({ route, navigation }) {
 
   const removeUploadedDoc = (uploadId) => {
     setUploadedDocs((prev) => prev.filter((d) => d.upload_id !== uploadId));
+    setSettingsById((previous) => {
+      const next = { ...previous };
+      delete next[uploadId];
+      return next;
+    });
   };
 
   const removeFailed = (originalName) => {
@@ -101,7 +181,13 @@ export default function UploadDocumentsScreen({ route, navigation }) {
     setUploading(true);
     try {
       const result = await uploadDocuments(pendingFiles);
+      rememberSettings(result.succeeded);
       setUploadedDocs((prev) => [...prev, ...result.succeeded]);
+      if (result.succeeded.length)
+        toast.success("PDF added", {
+          description:
+            result.succeeded.length + " document(s) ready to configure.",
+        });
       if (result.failed.length > 0) {
         // Matched back to the original asset by filename so "Retry" can
         // resubmit the exact same bytes. Two same-named files in one
@@ -139,6 +225,7 @@ export default function UploadDocumentsScreen({ route, navigation }) {
     setRetryingName(failedItem.original_name);
     try {
       const result = await uploadDocuments([failedItem.asset]);
+      rememberSettings(result.succeeded);
       setFailedUploads((prev) =>
         prev.filter((f) => f.original_name !== failedItem.original_name),
       );
@@ -160,218 +247,439 @@ export default function UploadDocumentsScreen({ route, navigation }) {
     }
   };
 
-  const handleContinue = () => {
-    if (!canProceed) return;
-    navigation.navigate("PrintPreferences", { uploadedDocs, preselectedShop });
+  const settingsFor = (doc) =>
+    settingsById[doc.upload_id] || {
+      ...defaultDocumentSettings(),
+      ...appearance?.printDefaults,
+      services: [],
+    };
+  const docSettings = uploadedDocs.map(settingsFor);
+  const openTask = (screen, params) => {
+    if (navigation.getState().routeNames.includes(screen))
+      navigation.navigate(screen, params);
+    else navigation.navigate("PrintFlow", { screen, params });
   };
-
+  const handleContinue = () => {
+    if (!canProceed || uploading || retryingName) return;
+    openTask(preselectedShop ? "ChooseShopOption" : "SelectShop", {
+      uploadedDocs,
+      docSettings,
+      notes: "",
+      preselectedShop,
+    });
+  };
+  const activeDoc =
+    uploadedDocs.find((doc) => doc.upload_id === activeDocId) ||
+    uploadedDocs[0];
+  const pageCount = uploadedDocs.reduce(
+    (sum, doc) => sum + (doc.page_count || 0),
+    0,
+  );
+  const hasFailure = failedUploads.length > 0 || Boolean(error);
   return (
-    <ScrollView style={styles.screen} contentContainerStyle={styles.content}>
-      <Text style={styles.title}>Add your documents</Text>
-      <Text style={styles.subtitle}>
-        PDFs only - we'll count the pages for you.
-      </Text>
-
-      {uploadedDocs.map((doc) => (
-        <View key={doc.upload_id} style={styles.docRow}>
-          <View style={styles.docInfo}>
-            <Text style={styles.docName} numberOfLines={1}>
-              {doc.original_name}
-            </Text>
-            <Text style={styles.docMeta}>
-              {doc.page_count} page{doc.page_count > 1 ? "s" : ""} · uploaded
-            </Text>
-          </View>
-          <Pressable
-            onPress={() => removeUploadedDoc(doc.upload_id)}
-            hitSlop={10}
-          >
-            <Text style={styles.removeX}>×</Text>
-          </Pressable>
-        </View>
-      ))}
-
-      {failedUploads.map((f) => (
-        <View
-          key={f.original_name}
-          style={[styles.docRow, styles.docRowFailed]}
-        >
-          <View style={styles.docInfo}>
-            <Text style={styles.docName} numberOfLines={1}>
-              {f.original_name}
-            </Text>
-            <Text style={styles.docError}>{f.error}</Text>
-          </View>
-          <View style={styles.failedActions}>
-            <Pressable
-              onPress={() => retryFailed(f)}
-              disabled={retryingName === f.original_name}
-            >
-              <Text style={styles.retryText}>
-                {retryingName === f.original_name ? "Retrying..." : "Retry"}
-              </Text>
-            </Pressable>
-            <Pressable
-              onPress={() => removeFailed(f.original_name)}
-              hitSlop={10}
-            >
-              <Text style={styles.removeX}>×</Text>
-            </Pressable>
-          </View>
-        </View>
-      ))}
-
-      {pendingFiles.map((f) => (
-        <View key={f.uri} style={styles.docRow}>
-          <View style={styles.docInfo}>
-            <Text style={styles.docName} numberOfLines={1}>
-              {f.name}
-            </Text>
-            <Text style={styles.docMeta}>Ready to upload</Text>
-          </View>
-          <Pressable onPress={() => removePendingFile(f.uri)} hitSlop={10}>
-            <Text style={styles.removeX}>×</Text>
-          </Pressable>
-        </View>
-      ))}
-
-      <Pressable
-        style={styles.filePicker}
-        onPress={addFiles}
-        accessibilityRole="button"
-        accessibilityLabel="Choose PDF documents"
+    <View style={styles.screen}>
+      <ScrollView
+        contentContainerStyle={styles.content}
+        keyboardShouldPersistTaps="handled"
       >
-        {totalSlotsUsed === 0 && (
-          <Image
-            source={require("../../assets/art/paper-pal-cmyk.png")}
-            style={styles.uploadCharacter}
-            resizeMode="contain"
-            accessible={false}
-          />
+        {totalSlotsUsed === 0 ? (
+          <View style={styles.emptyWorkspace}>
+            <PaperPreview />
+            <Text accessibilityRole="header" style={styles.title}>
+              What are we{"\n"}printing today?
+            </Text>
+            <Text style={styles.subtitle}>
+              Add a PDF and set it up. You’ll compare nearby shops after.
+            </Text>
+            <Button
+              title="Add PDF"
+              icon="document-attach-outline"
+              iconPosition="left"
+              onPress={addFiles}
+            />
+            <Text style={styles.fileLimit}>
+              PDF only · up to 10 MB per file · 10 files per order
+            </Text>
+            <View style={styles.defaults}>
+              <Text style={styles.defaultTitle}>Your defaults</Text>
+              <Text style={styles.note}>
+                {describeDocumentSettings({
+                  ...defaultDocumentSettings(),
+                  ...appearance?.printDefaults,
+                  services: [],
+                })}{" "}
+              </Text>
+            </View>
+          </View>
+        ) : (
+          <View style={styles.documentsHeading}>
+            <View style={{ flex: 1, gap: 6 }}>
+              <Text accessibilityRole="header" style={styles.listTitle}>
+                Your documents
+              </Text>
+              <Text style={styles.note}>
+                {uploadedDocs.length}{" "}
+                {uploadedDocs.length === 1 ? "file" : "files"} · {pageCount}{" "}
+                pages
+              </Text>
+            </View>
+            <Image
+              source={
+                hasFailure
+                  ? require("../../assets/art/paper-pal-pending.png")
+                  : require("../../assets/art/paper-pal-cmyk.png")
+              }
+              style={{ width: 70, height: 86 }}
+              resizeMode="contain"
+              accessible={false}
+            />
+          </View>
         )}
-        <View style={styles.uploadIcon}>
-          <Ionicons name="add" size={24} color={colors.primary} />
+        {uploadedDocs.map((doc) => (
+          <DocumentRow
+            key={doc.upload_id}
+            name={doc.original_name}
+            meta={
+              doc.page_count +
+              " pages · " +
+              describeDocumentSettings(settingsFor(doc))
+            }
+            colour={settingsFor(doc).color_mode === "color"}
+            onRemove={() => removeUploadedDoc(doc.upload_id)}
+            disabled={uploading}
+            selected={doc.upload_id === activeDoc?.upload_id}
+            onSelect={() => setActiveDocId(doc.upload_id)}
+          />
+        ))}
+        {pendingFiles.map((file) => (
+          <DocumentRow
+            key={file.uri}
+            name={file.name}
+            meta="Ready to upload"
+            onRemove={() => removePendingFile(file.uri)}
+            disabled={uploading}
+          />
+        ))}
+        {failedUploads.map((file) => (
+          <View key={file.original_name}>
+            <DocumentRow
+              name={file.original_name}
+              meta={file.error}
+              failed
+              onRemove={() => removeFailed(file.original_name)}
+              disabled={retryingName === file.original_name}
+            />
+            <PressableScale
+              accessibilityRole="button"
+              accessibilityLabel={"Retry " + file.original_name}
+              onPress={() => retryFailed(file)}
+              disabled={retryingName !== null || uploading}
+              style={styles.retry}
+            >
+              <Text style={styles.link}>
+                {retryingName === file.original_name
+                  ? "Retrying…"
+                  : "Retry upload"}
+              </Text>
+            </PressableScale>
+          </View>
+        ))}
+        {totalSlotsUsed > 0 && totalSlotsUsed < MAX_FILES ? (
+          <PressableScale
+            accessibilityRole="button"
+            disabled={uploading}
+            onPress={addFiles}
+            style={styles.add}
+          >
+            <Ionicons name="add" size={23} color={colors.primary} />
+            <Text style={styles.link}>Add PDF</Text>
+          </PressableScale>
+        ) : null}
+        {pendingFiles.length > 0 ? (
+          <Button
+            title={
+              "Upload " +
+              pendingFiles.length +
+              " document" +
+              (pendingFiles.length === 1 ? "" : "s")
+            }
+            onPress={handleUpload}
+            loading={uploading}
+          />
+        ) : null}
+        {error ? (
+          <Text accessibilityRole="alert" style={styles.error}>
+            {error}
+          </Text>
+        ) : null}
+        {activeDoc ? (
+          <View style={styles.preferences}>
+            <DocumentSettingsCard
+              compact
+              name={activeDoc.original_name}
+              settings={settingsFor(activeDoc)}
+              onChange={(next) =>
+                setSettingsById((previous) => ({
+                  ...previous,
+                  [activeDoc.upload_id]: next,
+                }))
+              }
+              availableServices={preselectedShop?.pricing?.services}
+            />
+            <PressableScale
+              accessibilityRole="button"
+              onPress={() =>
+                openTask("PrintPreferences", {
+                  uploadedDocs,
+                  preselectedShop,
+                  initialDocSettings: docSettings,
+                })
+              }
+              style={styles.more}
+            >
+              <View>
+                <Text style={styles.link}>Finishing & instructions</Text>
+                <Text style={styles.note}>
+                  Binding, stapling and notes for the shop
+                </Text>
+              </View>
+              <Ionicons
+                name="chevron-forward"
+                size={16}
+                color={colors.primary}
+              />
+            </PressableScale>
+          </View>
+        ) : totalSlotsUsed > 0 ? (
+          <View style={styles.emptyNote}>
+            <Ionicons
+              name="document-text-outline"
+              size={19}
+              color={colors.textMuted}
+            />
+            <Text style={styles.note}>
+              PDF files only. Up to {MAX_FILES} per order.
+            </Text>
+          </View>
+        ) : null}
+        {!DEMO_MODE ? (
+          <Text style={styles.privacy}>
+            Your files are used for your print order and deleted when the order
+            ends.
+          </Text>
+        ) : null}
+      </ScrollView>
+      {totalSlotsUsed > 0 ? (
+        <View
+          style={[
+            styles.footer,
+            {
+              paddingBottom:
+                route.name === "Home"
+                  ? spacing.md
+                  : Math.max(insets.bottom, spacing.md),
+            },
+          ]}
+        >
+          <Button
+            title="Choose a shop"
+            onPress={handleContinue}
+            disabled={
+              totalSlotsUsed > 0 &&
+              (!canProceed || uploading || retryingName !== null)
+            }
+          />
+          {pendingFiles.length > 0 || failedUploads.length > 0 ? (
+            <Text style={styles.note}>
+              Upload, retry or remove remaining files to continue.
+            </Text>
+          ) : null}
         </View>
-        <Text style={styles.filePickerText}>
-          Choose PDF document{totalSlotsUsed > 0 ? "s" : ""}
-        </Text>
-        <Text style={styles.filePickerHint}>
-          Up to {MAX_FILES} files · Page counts checked for you
-        </Text>
-      </Pressable>
-
-      {pendingFiles.length > 0 && (
-        <Button
-          title={`Upload ${pendingFiles.length} document${pendingFiles.length > 1 ? "s" : ""}`}
-          onPress={handleUpload}
-          loading={uploading}
-        />
-      )}
-
-      {error ? <Text style={styles.error}>{error}</Text> : null}
-
-      <View style={styles.spacer} />
-      <Button
-        title="Continue"
-        onPress={handleContinue}
-        disabled={!canProceed}
-      />
-      {pendingFiles.length > 0 && (
-        <Text style={styles.note}>
-          Upload your documents above before continuing.
-        </Text>
-      )}
-      {failedUploads.length > 0 && (
-        <Text style={styles.note}>
-          Retry or remove the failed document(s) above.
-        </Text>
-      )}
-    </ScrollView>
+      ) : null}
+    </View>
   );
 }
-
+function DocumentRow({
+  name,
+  meta,
+  onRemove,
+  onSelect,
+  selected,
+  disabled,
+  failed,
+  colour,
+}) {
+  return (
+    <View
+      style={[
+        styles.docRow,
+        selected && styles.docSelected,
+        failed && { backgroundColor: colors.dangerBg },
+      ]}
+    >
+      <DocumentThumbnail colour={colour} />
+      <Pressable
+        disabled={!onSelect || disabled}
+        onPress={onSelect}
+        accessibilityRole={onSelect ? "button" : undefined}
+        accessibilityLabel={onSelect ? "Print settings for " + name : undefined}
+        accessibilityState={{ selected: Boolean(selected) }}
+        style={styles.docCopy}
+      >
+        <Text style={styles.docName} numberOfLines={1}>
+          {name}
+        </Text>
+        <Text style={[styles.note, failed && { color: colors.danger }]}>
+          {meta}
+        </Text>
+      </Pressable>
+      <PressableScale
+        accessibilityRole="button"
+        accessibilityLabel={"Remove " + name}
+        disabled={disabled}
+        onPress={onRemove}
+        style={styles.remove}
+      >
+        <Ionicons name="trash-outline" size={19} color={colors.textSecondary} />
+      </PressableScale>
+    </View>
+  );
+}
 const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: colors.background },
-  content: { padding: spacing.lg, paddingBottom: 48 },
-  title: { ...typography.h1, color: colors.textPrimary },
+  content: {
+    padding: 20,
+    paddingBottom: spacing.xl,
+    width: "100%",
+    alignSelf: "center",
+  },
+  title: { ...typography.h2, color: colors.ink },
+  emptyWorkspace: { gap: spacing.lg },
+  fileLimit: {
+    ...typography.caption,
+    fontSize: 11,
+    color: colors.textMuted,
+    textAlign: "center",
+  },
+  defaults: {
+    padding: spacing.lg,
+    borderWidth: 1,
+    borderStyle: "dashed",
+    borderColor: colors.border,
+    borderRadius: 24,
+    gap: spacing.sm,
+    marginTop: spacing.sm,
+  },
+  defaultTitle: { ...typography.labelSmall, color: colors.ink },
+  documentsHeading: {
+    flexDirection: "row",
+    alignItems: "baseline",
+    justifyContent: "space-between",
+    marginBottom: spacing.sm,
+    marginTop: spacing.md,
+    gap: spacing.sm,
+  },
+  listTitle: { ...typography.h3, fontSize: 18, color: colors.ink },
   subtitle: {
-    ...typography.body,
+    ...typography.bodySmall,
     color: colors.textSecondary,
     marginTop: spacing.xs,
-    marginBottom: spacing.xl,
+  },
+  feedback: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.lg,
+    marginVertical: spacing.md,
+  },
+  mascot: { width: 112, height: 136 },
+  speech: {
+    flex: 1,
+    borderWidth: 1.5,
+    borderColor: colors.primary,
+    borderRadius: 22,
+    padding: spacing.md,
+    backgroundColor: colors.surface,
+  },
+  speechText: {
+    ...typography.bodyMedium,
+    color: colors.ink,
+    textAlign: "center",
   },
   docRow: {
     flexDirection: "row",
     alignItems: "center",
-    justifyContent: "space-between",
-    backgroundColor: colors.surface,
-    borderWidth: 1,
-    borderColor: colors.border,
-    borderRadius: radius.md,
-    paddingVertical: spacing.sm,
-    paddingHorizontal: spacing.md,
-    marginBottom: spacing.sm,
-  },
-  docRowFailed: {
-    borderColor: colors.danger,
-    backgroundColor: colors.dangerBg,
-  },
-  docInfo: { flex: 1, marginRight: spacing.md },
-  docName: { ...typography.bodyMedium, color: colors.textPrimary },
-  docMeta: { ...typography.caption, color: colors.textSecondary, marginTop: 2 },
-  docError: { ...typography.caption, color: colors.danger, marginTop: 2 },
-  failedActions: {
-    flexDirection: "row",
-    alignItems: "center",
     gap: spacing.md,
+    padding: spacing.md,
+    borderWidth: 1.5,
+    borderColor: "transparent",
+    borderRadius: 24,
+    minHeight: 86,
   },
-  retryText: { ...typography.labelSmall, color: colors.primaryBright },
-  removeX: { fontSize: 22, color: colors.textSecondary, lineHeight: 24 },
-  filePicker: {
-    minHeight: 160,
-    borderRadius: radius.lg,
-    borderWidth: 1,
-    borderStyle: "dashed",
-    borderColor: colors.borderStrong,
-    backgroundColor: colors.primaryWash,
-    alignItems: "center",
-    justifyContent: "center",
-    padding: spacing.lg,
-    marginBottom: spacing.lg,
+  docSelected: { borderColor: colors.primary, backgroundColor: colors.surface },
+  pdf: { width: 38, alignItems: "center", justifyContent: "center" },
+  pdfText: {
+    ...typography.production,
+    color: colors.primary,
+    fontSize: 9,
+    letterSpacing: 0.5,
   },
-  uploadCharacter: { width: 100, height: 132, marginBottom: 16 },
-  uploadIcon: {
+  docCopy: { flex: 1, gap: spacing.xs },
+  docName: { ...typography.bodyMedium, color: colors.ink },
+  remove: {
     width: 44,
     height: 44,
-    borderRadius: 12,
-    backgroundColor: colors.surface,
     alignItems: "center",
     justifyContent: "center",
-    marginBottom: 12,
   },
-  filePickerText: {
-    ...typography.bodyMedium,
-    color: colors.primaryBright,
-    textAlign: "center",
+  link: { ...typography.labelSmall, color: colors.primary },
+  add: {
+    minHeight: 44,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.sm,
+    alignSelf: "flex-start",
   },
-  filePickerHint: {
-    ...typography.caption,
-    color: colors.textSecondary,
-    marginTop: spacing.xs,
+  retry: { minHeight: 44, justifyContent: "center", alignSelf: "flex-end" },
+  preferences: {
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: 28,
+    padding: spacing.lg,
+    backgroundColor: colors.surface,
+    marginTop: spacing.md,
+    gap: spacing.sm,
+  },
+  preferenceTitle: { ...typography.h3, color: colors.ink },
+  more: {
+    minHeight: 44,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+  },
+  note: { ...typography.caption, color: colors.textSecondary, flexShrink: 1 },
+  emptyNote: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.sm,
+    marginTop: spacing.lg,
   },
   error: {
+    ...typography.bodySmall,
     color: colors.danger,
-    backgroundColor: colors.dangerBg,
-    padding: spacing.md,
-    borderRadius: radius.md,
-    marginTop: spacing.md,
-    ...typography.bodySmall,
+    paddingVertical: spacing.md,
   },
-  spacer: { height: spacing.md },
-  note: {
-    textAlign: "center",
-    color: colors.textSecondary,
+  privacy: {
+    ...typography.caption,
+    color: colors.textMuted,
     marginTop: spacing.md,
-    ...typography.bodySmall,
+  },
+  footer: {
+    padding: spacing.lg,
+    gap: spacing.sm,
+    backgroundColor: colors.background,
+    borderTopWidth: 1,
+    borderColor: colors.border,
+    width: "100%",
+    alignSelf: "center",
   },
 });

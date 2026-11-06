@@ -70,19 +70,24 @@ const styles = StyleSheet.create({
     color: colors.textPrimary,
     marginBottom: spacing.sm,
   },
-  row: { flexDirection: "row", alignItems: "center" },
+  row: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: colors.backgroundSoft,
+    borderRadius: 16,
+    alignSelf: "flex-start",
+    padding: 2,
+  },
   // 40x40: the floor for a control that needs an accurate tap. The old
   // 56x56 was sized for a screen showing one set of preferences; with a
   // card per document there can be four of these on screen at once.
   stepButton: {
     width: 40,
     height: 40,
-    borderRadius: radius.sm,
-    borderWidth: 1,
-    borderColor: colors.primary,
+    borderRadius: 20,
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: colors.surface,
+    backgroundColor: "transparent",
   },
   disabled: { opacity: 0.4 },
   stepText: { fontSize: 20, color: colors.primaryBright, lineHeight: 24 },
@@ -90,7 +95,7 @@ const styles = StyleSheet.create({
     fontFamily: fonts.headingBold,
     fontSize: 17,
     color: colors.textPrimary,
-    minWidth: 44,
+    minWidth: 28,
     fontVariant: ["tabular-nums"],
     textAlign: "center",
   },

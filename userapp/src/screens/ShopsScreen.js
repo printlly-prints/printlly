@@ -1,5 +1,14 @@
+import { PressableScale } from "pressto";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { ActivityIndicator, FlatList, Pressable, StyleSheet, Text, TextInput, View } from "react-native";
+import {
+  ActivityIndicator,
+  FlatList,
+  Pressable,
+  StyleSheet,
+  Text,
+  TextInput,
+  View,
+} from "react-native";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import api from "../api/client";
 import SavedShopHeart from "../components/SavedShopHeart";
@@ -9,7 +18,15 @@ import { geoParams, useLocation } from "../context/LocationContext";
 import { formatDistanceShort } from "../utils/distance";
 import { shopAvailability } from "../utils/shopAvailability";
 import useOpenStatusRefresh from "../hooks/useOpenStatusRefresh";
-import { colors, typography, fonts, spacing, radius, shadows, rushLabels } from "../theme";
+import {
+  colors,
+  typography,
+  fonts,
+  spacing,
+  radius,
+  shadows,
+  rushLabels,
+} from "../theme";
 
 const SEARCH_DEBOUNCE_MS = 400;
 
@@ -22,7 +39,12 @@ const SEARCH_DEBOUNCE_MS = 400;
 // sorted nearest first with a distance on each card (?lat=&lng=) - both
 // params go together when both apply.
 export default function ShopsScreen({ navigation }) {
-  const { coords, ensureLocation } = useLocation();
+  const {
+    coords,
+    areaLabel,
+    status: locationStatus,
+    ensureLocation,
+  } = useLocation();
 
   const [shops, setShops] = useState([]);
   const [initialLoading, setInitialLoading] = useState(true);
@@ -53,7 +75,10 @@ export default function ShopsScreen({ navigation }) {
       try {
         const trimmed = searchText.trim();
         const { data } = await api.get("/shops", {
-          params: { ...(trimmed ? { search: trimmed } : {}), ...geoParams(coords) },
+          params: {
+            ...(trimmed ? { search: trimmed } : {}),
+            ...geoParams(coords),
+          },
         });
         if (id !== requestId.current) return;
         setShops(data);
@@ -61,7 +86,10 @@ export default function ShopsScreen({ navigation }) {
         setError("");
       } catch (err) {
         if (id !== requestId.current) return;
-        setError(err.response?.data?.message || "Could not load shops. Check your connection.");
+        setError(
+          err.response?.data?.message ||
+            "Could not load shops. Check your connection.",
+        );
       } finally {
         if (id === requestId.current) {
           setInitialLoading(false);
@@ -70,7 +98,7 @@ export default function ShopsScreen({ navigation }) {
         }
       }
     },
-    [coords]
+    [coords],
   );
 
   // Debounced on typing; a location fix arriving (coords change) re-runs
@@ -89,7 +117,7 @@ export default function ShopsScreen({ navigation }) {
   // whatever is half-typed in the box - that one is the debounce's job.
   const refreshOpenStatus = useCallback(
     () => loadShops(activeQuery, { silent: true }),
-    [loadShops, activeQuery]
+    [loadShops, activeQuery],
   );
   useOpenStatusRefresh(refreshOpenStatus);
 
@@ -112,7 +140,7 @@ export default function ShopsScreen({ navigation }) {
             style={styles.searchInput}
             value={query}
             onChangeText={setQuery}
-            placeholder="Search by shop or area, e.g. Clement Town"
+            placeholder="Search shop name or area"
             placeholderTextColor={colors.textMuted}
             returnKeyType="search"
             autoCorrect={false}
@@ -122,12 +150,45 @@ export default function ShopsScreen({ navigation }) {
           {searching ? (
             <ActivityIndicator size="small" color={colors.primaryBright} />
           ) : query ? (
-            <Pressable onPress={() => setQuery("")} hitSlop={10} accessibilityLabel="Clear search">
-              <Ionicons name="close-circle" size={18} color={colors.textMuted} />
+            <Pressable
+              onPress={() => setQuery("")}
+              hitSlop={10}
+              accessibilityLabel="Clear search"
+            >
+              <Ionicons
+                name="close-circle"
+                size={18}
+                color={colors.textMuted}
+              />
             </Pressable>
           ) : null}
         </View>
-        {coords ? <Text style={styles.sortNote}>Nearest shops first</Text> : null}
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel="Update current location"
+          onPress={() => ensureLocation({ userInitiated: true })}
+          style={styles.locationRow}
+          disabled={locationStatus === "loading"}
+        >
+          <View style={styles.locationIcon}>
+            <Ionicons name="location" size={19} color={colors.primary} />
+          </View>
+          <View style={{ flex: 1 }}>
+            <Text style={styles.locationEyebrow}>PRINT NEAR YOU</Text>
+            <Text style={styles.locationText}>
+              {areaLabel ||
+                (locationStatus === "loading"
+                  ? "Finding your location…"
+                  : "Use your current location")}
+            </Text>
+          </View>
+          <Ionicons name="locate-outline" size={22} color={colors.primary} />
+        </Pressable>
+        {locationStatus === "denied" || locationStatus === "unavailable" ? (
+          <Text style={styles.sortNote}>
+            Location isn’t available. You can search by area above.
+          </Text>
+        ) : null}
       </View>
 
       <FlatList
@@ -142,7 +203,9 @@ export default function ShopsScreen({ navigation }) {
           setRefreshing(true);
           loadShops(query);
         }}
-        ListHeaderComponent={error ? <Text style={styles.error}>{error}</Text> : null}
+        ListHeaderComponent={
+          error ? <Text style={styles.error}>{error}</Text> : null
+        }
         ListEmptyComponent={
           !error ? (
             <Text style={styles.empty}>
@@ -152,7 +215,7 @@ export default function ShopsScreen({ navigation }) {
             </Text>
           ) : null
         }
-        renderItem={({ item }) => {
+        renderItem={({ item, index }) => {
           // Closed shops stay fully tappable (a customer can still view
           // details or save one for later) - just visually dimmed and
           // marked, never disabled or hidden. Tapping opens the shop's
@@ -160,25 +223,60 @@ export default function ShopsScreen({ navigation }) {
           const availability = shopAvailability(item);
           const closed = availability.isClosed;
           const distanceLabel = formatDistanceShort(item.distance_km);
-          const location = [item.locality, item.address].filter(Boolean).join(", ");
+          const location = [item.locality, item.address]
+            .filter(Boolean)
+            .join(", ");
           return (
-            <Pressable
-              style={({ pressed }) => [styles.card, closed && styles.cardClosed, pressed && styles.cardPressed]}
+            <PressableScale
+              accessibilityRole="button"
+              accessibilityLabel={"View " + item.shop_name}
+              style={[
+                styles.card,
+                index === 0 && styles.featuredCard,
+                closed && styles.cardClosed,
+              ]}
               onPress={() => navigation.navigate("ShopDetails", { shop: item })}
             >
               {/* Photo beside the text rather than a full-width band above
                   it: the band alone was taller than this entire row, and
                   it was what kept the list to two shops per screen. */}
-              <ShopPhoto source={shopImageSource(item)} shopName={item.shop_name} style={styles.photo} iconSize={24} closed={closed} />
+              <View
+                style={
+                  index === 0 ? styles.featuredPhotoWrap : styles.smallPhotoWrap
+                }
+              >
+                <ShopPhoto
+                  source={shopImageSource(item)}
+                  shopName={item.shop_name}
+                  style={index === 0 ? styles.featuredPhoto : styles.photo}
+                  iconSize={24}
+                  closed={closed}
+                />
+                {index === 0 ? (
+                  <SavedShopHeart
+                    shop={item}
+                    overlay
+                    style={styles.photoSave}
+                  />
+                ) : null}
+              </View>
 
-              <View style={styles.details}>
+              <View
+                style={[styles.details, index === 0 && styles.featuredDetails]}
+              >
                 <View style={styles.titleRow}>
                   <Text style={styles.shopName} numberOfLines={1}>
                     {item.shop_name}
                   </Text>
                   {/* Off the photo now, so no translucent backing is
                       needed to keep it legible. */}
-                  <SavedShopHeart shop={item} size={18} style={styles.heart} />
+                  {index > 0 ? (
+                    <SavedShopHeart
+                      shop={item}
+                      size={20}
+                      style={styles.heart}
+                    />
+                  ) : null}
                 </View>
 
                 {/* Only fields GET /shops actually sends. It carries no
@@ -188,7 +286,11 @@ export default function ShopsScreen({ navigation }) {
                     business. */}
                 {location ? (
                   <View style={styles.metaRow}>
-                    <Ionicons name="location-outline" size={12} color={colors.textMuted} />
+                    <Ionicons
+                      name="location-outline"
+                      size={12}
+                      color={colors.textMuted}
+                    />
                     <Text style={styles.metaText} numberOfLines={1}>
                       {location}
                     </Text>
@@ -200,12 +302,24 @@ export default function ShopsScreen({ navigation }) {
                     specific promise, and it is the whole difference busy
                     makes to this customer. */}
                 <View style={styles.metaRow}>
-                  <View style={[styles.statusDot, { backgroundColor: availability.colors.dot }]} />
+                  <View
+                    style={[
+                      styles.statusDot,
+                      { backgroundColor: availability.colors.dot },
+                    ]}
+                  />
                   <Text
-                    style={[styles.statusText, { color: availability.colors.text }]}
+                    style={[
+                      styles.statusText,
+                      { color: availability.colors.text },
+                    ]}
                     numberOfLines={1}
                   >
-                    {[availability.label, availability.prepLine || rushLabels[item.queue?.rush_level]]
+                    {[
+                      availability.label,
+                      availability.prepLine ||
+                        rushLabels[item.queue?.rush_level],
+                    ]
                       .filter(Boolean)
                       .join(" · ")}
                   </Text>
@@ -213,7 +327,9 @@ export default function ShopsScreen({ navigation }) {
 
                 {distanceLabel || item.contact ? (
                   <View style={styles.footerRow}>
-                    {distanceLabel ? <Text style={styles.distance}>{distanceLabel}</Text> : null}
+                    {distanceLabel ? (
+                      <Text style={styles.distance}>{distanceLabel}</Text>
+                    ) : null}
                     {item.contact ? (
                       <Text style={styles.contact} numberOfLines={1}>
                         {item.contact}
@@ -222,7 +338,7 @@ export default function ShopsScreen({ navigation }) {
                   </View>
                 ) : null}
               </View>
-            </Pressable>
+            </PressableScale>
           );
         }}
       />
@@ -233,22 +349,38 @@ export default function ShopsScreen({ navigation }) {
 const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: colors.background },
   list: { flex: 1 },
-  listContent: { padding: spacing.lg, paddingTop: spacing.sm, flexGrow: 1 },
-  center: { flex: 1, alignItems: "center", justifyContent: "center", backgroundColor: colors.background },
-  searchWrap: { paddingHorizontal: spacing.lg, paddingTop: spacing.lg, paddingBottom: spacing.sm },
+  listContent: { padding: 20, paddingTop: spacing.sm, flexGrow: 1 },
+  center: {
+    flex: 1,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: colors.background,
+  },
+  searchWrap: {
+    paddingHorizontal: 20,
+    paddingTop: spacing.lg,
+    paddingBottom: spacing.sm,
+  },
   searchBar: {
     flexDirection: "row",
     alignItems: "center",
     gap: spacing.sm,
     minHeight: 48,
     paddingHorizontal: spacing.md,
-    borderWidth: 1,
-    borderColor: colors.border,
-    borderRadius: radius.md,
-    backgroundColor: colors.surface,
+    borderRadius: 22,
+    backgroundColor: colors.backgroundSoft,
   },
-  searchInput: { flex: 1, ...typography.body, color: colors.textPrimary, paddingVertical: spacing.sm },
-  sortNote: { ...typography.caption, color: colors.textSecondary, marginTop: spacing.xs },
+  searchInput: {
+    flex: 1,
+    ...typography.body,
+    color: colors.textPrimary,
+    paddingVertical: spacing.sm,
+  },
+  sortNote: {
+    ...typography.caption,
+    color: colors.textSecondary,
+    marginTop: spacing.xs,
+  },
   // 122px photo + 12px padding top and bottom = a 146px row, against
   // roughly 300px before. The height is set by the photo, not by the
   // text, so a shop with no locality doesn't produce a shorter card.
@@ -257,28 +389,78 @@ const styles = StyleSheet.create({
     alignItems: "flex-start",
     gap: spacing.md,
     backgroundColor: colors.surface,
-    borderRadius: radius.md,
-    padding: spacing.md,
-    marginBottom: spacing.md,
+    borderRadius: 0,
+    paddingVertical: spacing.lg,
+    marginBottom: spacing.sm,
+    borderBottomWidth: 1,
+    borderColor: colors.border,
+    backgroundColor: colors.background,
+  },
+  photo: { width: 88, height: 88, borderRadius: 20 },
+  smallPhotoWrap: { width: 88 },
+  featuredCard: {
+    flexDirection: "column",
+    gap: 0,
+    paddingVertical: 0,
     borderWidth: 1,
     borderColor: colors.border,
-    ...shadows.card,
+    borderRadius: 28,
+    overflow: "hidden",
+    backgroundColor: colors.surface,
   },
-  photo: { width: 124, height: 122, borderRadius: 12 },
+  featuredPhotoWrap: { width: "100%", position: "relative" },
+  featuredPhoto: { width: "100%", height: 174 },
+  featuredDetails: { padding: spacing.lg, width: "100%" },
+  photoSave: { position: "absolute", top: spacing.md, right: spacing.md },
+  locationRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.sm,
+    minHeight: 72,
+    paddingTop: spacing.sm,
+  },
+  locationIcon: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: colors.primaryWash,
+  },
+  locationEyebrow: {
+    ...typography.labelSmall,
+    fontSize: 9,
+    letterSpacing: 0.8,
+    color: colors.textSecondary,
+  },
+  locationText: { ...typography.labelSmall, color: colors.ink, marginTop: 2 },
   // A dim, not a disable - the card stays fully tappable while closed.
   cardClosed: { opacity: 0.6 },
   // Soft teal wash instead of a plain opacity dim, to match the shared
   // "primaryWash for selected/active states" pattern.
-  cardPressed: { backgroundColor: colors.primaryWash, borderColor: colors.primary },
+  cardPressed: {
+    backgroundColor: colors.primaryWash,
+    borderColor: colors.primary,
+  },
   // minWidth: 0 so a long shop name truncates inside this column instead
   // of widening it and pushing the photo off the card.
   details: { flex: 1, minWidth: 0, paddingVertical: 2 },
   titleRow: { flexDirection: "row", alignItems: "center", gap: spacing.sm },
-  shopName: { flex: 1, minWidth: 0, ...typography.label, color: colors.textPrimary },
+  shopName: {
+    flex: 1,
+    minWidth: 0,
+    ...typography.label,
+    color: colors.textPrimary,
+  },
   // Pulled up and out so the 32px tap target doesn't add height to the
   // row it sits in, while staying a 32px tap target.
   heart: { marginVertical: -7, marginRight: -6 },
-  metaRow: { flexDirection: "row", alignItems: "center", gap: 5, marginTop: spacing.xs },
+  metaRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 5,
+    marginTop: spacing.xs,
+  },
   metaText: {
     flex: 1,
     minWidth: 0,
@@ -297,10 +479,33 @@ const styles = StyleSheet.create({
     fontSize: 12,
     lineHeight: 16,
   },
-  footerRow: { flexDirection: "row", alignItems: "center", gap: spacing.sm, marginTop: spacing.sm },
-  distance: { fontFamily: fonts.bodyMedium, fontSize: 12, lineHeight: 16, color: colors.primaryDeep },
-  contact: { flex: 1, minWidth: 0, fontFamily: fonts.bodyRegular, fontSize: 12, lineHeight: 16, color: colors.textMuted },
-  empty: { textAlign: "center", ...typography.body, color: colors.textSecondary, marginTop: 40, paddingHorizontal: spacing.lg },
+  footerRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.sm,
+    marginTop: spacing.sm,
+  },
+  distance: {
+    fontFamily: fonts.bodyMedium,
+    fontSize: 12,
+    lineHeight: 16,
+    color: colors.primaryDeep,
+  },
+  contact: {
+    flex: 1,
+    minWidth: 0,
+    fontFamily: fonts.bodyRegular,
+    fontSize: 12,
+    lineHeight: 16,
+    color: colors.textMuted,
+  },
+  empty: {
+    textAlign: "center",
+    ...typography.body,
+    color: colors.textSecondary,
+    marginTop: 40,
+    paddingHorizontal: spacing.lg,
+  },
   error: {
     color: colors.danger,
     backgroundColor: colors.dangerBg,

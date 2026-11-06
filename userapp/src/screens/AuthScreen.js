@@ -97,13 +97,12 @@ export default function AuthScreen() {
         </View>
         <View style={styles.intro}>
           <View style={styles.introCopy}>
-            <Text style={styles.eyebrow}>YOUR LOCAL PRINT DESK</Text>
             <Text style={styles.title}>
-              {signingUp
-                ? "A fresh start.\nOn paper."
-                : "Good things.\nOn paper."}
+              {signingUp ? "Create an account" : "Sign in to Paprout"}
             </Text>
-            <Text style={styles.subtitle}>Paprout pe bhej de</Text>
+            <Text style={styles.subtitle}>
+              Print documents at a shop near you.
+            </Text>
           </View>
           <Image
             source={require("../../assets/art/student-cmyk.png")}
@@ -288,9 +287,9 @@ const styles = StyleSheet.create({
   },
   title: {
     fontFamily: fonts.headingExtraBold,
-    fontSize: 34,
-    lineHeight: 37,
-    letterSpacing: -1.4,
+    fontSize: 26,
+    lineHeight: 32,
+    letterSpacing: -0.7,
     color: colors.ink,
   },
   subtitle: {

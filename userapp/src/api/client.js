@@ -1,17 +1,20 @@
 import axios from "axios";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { API_BASE_URL, DEMO_MODE, SESSION_KEYS } from "../config/runtime";
+import { demoAdapter } from "../demo/store";
 
 // Single Axios instance used by every screen. The base URL comes from
 // EXPO_PUBLIC_API_BASE_URL (see .env.example); Expo inlines any env var
 // prefixed with EXPO_PUBLIC_ at build time.
 const api = axios.create({
-  baseURL: process.env.EXPO_PUBLIC_API_BASE_URL,
+  baseURL: API_BASE_URL,
+  ...(DEMO_MODE ? { adapter: demoAdapter } : {}),
 });
 
 // Attach the stored JWT to every request. AsyncStorage is async, so this
 // interceptor has to be async too.
 api.interceptors.request.use(async (config) => {
-  const token = await AsyncStorage.getItem("token");
+  const token = await AsyncStorage.getItem(SESSION_KEYS.token);
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;
   }
@@ -28,6 +31,7 @@ api.interceptors.request.use(async (config) => {
 // server-computed page_count; failed entries carry original_name + a
 // reason, for files that were rejected without ever reaching Cloudinary.
 export async function uploadDocuments(assets) {
+  if (DEMO_MODE) throw new Error("Could not add this file. Please try again.");
   const form = new FormData();
   assets.forEach((asset) => {
     form.append("documents", {

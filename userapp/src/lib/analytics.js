@@ -1,3 +1,4 @@
+import { DEMO_MODE } from "../config/runtime";
 // Product analytics for the customer app.
 //
 // WHAT IS HERE, AND WHAT IS DELIBERATELY NOT
@@ -80,6 +81,7 @@ const ALLOWED_PROPERTIES = new Set([
 ]);
 
 export function initAnalytics() {
+  if (DEMO_MODE) return false;
   if (!POSTHOG_KEY) return false;
 
   try {

@@ -1,48 +1,48 @@
-# Paprout mobile implementation
+# Paprout mobile
 
-The Expo customer app now shares the approved Paprout paper/ink/CMYK identity. Existing document upload, per-file preferences, shop selection, server-priced checkout, verified payments, pickup and support routes remain in place.
+The Expo customer app uses Paprout's paper, ink and CMYK palette, Manrope headings, Inter body text and the approved character style. The current implementation uses compact app layouts and functional copy. Marketing slogans stay out of the mobile UI.
 
-## First implementation pass
+The latest pass applies the approved character-feedback direction and reuses Reacticx, Pressto and Sonner Native motion templates. The greeting/header bell, inline per-document settings and saved-shop Undo are implemented. See [motion sources and validation](MOBILE_MOTION_SOURCES.md); the current screenshot is `design/mobile-validation/template-print-workspace.png`.
 
-- Shared theme: paper `#FAFAF7`, ink `#242426`, readable cyan actions `#007C9C`, pale cyan surfaces and restrained yellow/magenta accents. Status labels keep their distinct semantic colors.
-- Manrope headings and Inter body text match the website. Only the five used font assets are loaded and bundled.
-- Home has a new illustrated print desk, clearer actions, safe-area padding, skeleton loading and retry feedback. Failed refreshes retain previously loaded data.
-- Navigation, cards, forms, preferences, pricing, tracking and pickup use the same central tokens. Four bottom destinations remain: Home, Shops, Orders and You.
-- Upload and empty-order screens use the approved Paprout character artwork. Customer profile details stay read-only because the API has no profile-edit endpoint; placeholder edit buttons were removed.
-- Real email/password customer sign-in and registration replace the development-only phone demo in the root navigator. Existing API methods and token persistence are reused, with a customer-role guard, submission loading/error handling and request timeouts. Unconfigured API builds show an honest disabled state.
-- Shared buttons use Reanimated 4.5.1 press transitions (120ms, scale 0.97); skeleton opacity pulses indicate loading. Reduced motion removes scale/pulsing. Copy steppers use optional native selection haptics, with visual feedback retained.
-- Expo packages are aligned on SDK 57 patch versions. React Native remains 0.86.3. The web dependencies enable a browser preview of the same React Native screens.
+## Navigation contract
 
-The website's approved hero headline is retained in the mobile home screen. App identity and launcher assets remain Paprout. Artwork came from the already-approved CMYK adaptations under `vendor-website/public/art/themes/`, converted to native PNG assets under `userapp/assets/art/`.
+- **Print** is the document workspace: choose PDFs, inspect page counts and remove files. It contains no Shops or Orders previews or duplicate account controls.
+- **Shops** owns browsing, saved shops and shop details.
+- **Orders** owns the order list, tracking and pickup codes.
+- **You** owns identity, notifications, settings/privacy and support. It has no Orders shortcut or unsupported profile editor.
+- Shops, Orders and You use independent native navigation stacks. Opening a detail retains the tab bar; switching tabs preserves the current detail and Back history.
+- Print setup is a self-contained full-screen modal stack: files → preferences → shop → review → checkout → payment. A shop's “Print here” starts this task without switching tabs. Closing returns to the originating screen.
+- Verified/simulated payment removes the spent checkout and preserves the originating tab's state. Done returns there. Completed files are cleared from the Print workspace. Contextual order details from notifications open without redirecting into the Orders tab.
 
-## Run and configure
+This follows the hierarchy and state-preservation principles in [Apple's tab-bar guidance](https://developer.apple.com/design/human-interface-guidelines/tab-bars). The app remains React Native/Expo for Android and iOS, with platform-native stack transitions.
 
-Install dependencies in `userapp`, configure `EXPO_PUBLIC_API_BASE_URL` using `userapp/.env.example`, and run the existing Expo scripts. Physical phones need a reachable LAN or HTTPS API URL; `localhost` on a phone points to that phone. No backend credentials belong in public Expo environment values.
+## Artwork and motion
 
-- `npm start`: Expo development server / Expo Go.
-- `npm run web`: browser preview.
-- `npm run check`: pure customer-auth, role-guard, theme contrast and asset checks.
-- `npx expo install --check`: SDK dependency compatibility.
-- `npx expo export --platform android --platform ios`: native JavaScript/assets export. This does not create an APK or signed iOS binary.
+Read the Figma library's canonical action artwork, profile avatars and mascot reactions before creating concepts. Generated screen concepts and prompt records are in `design/mobile-concepts/`. `app-direction-v2.png` demonstrates the compact app direction; the implementation's tab responsibilities supersede its Home preview content. Concepts are generated images, not implemented screenshots.
 
-The old demo phone/OTP modules remain unregistered; there is no demo login route in the current app. Phone OTP authentication would require a real provider and server verification.
+The built-in Imagegen tool produced new mascot poses in the existing cream-paper, charcoal-outline, cyan-bag and pink-shoe style. Transparent sprites were cropped/resized for native use. Empty/offline order feedback and order confirmation use contextual mascot artwork. Adding a document triggers a finite paper-flight animation. It pauses off-screen and is static under reduced motion. No per-frame JavaScript state updates are used.
 
-## Verification and limits
+## Demo and live data
 
-- Auth validation, non-customer session rejection, theme contrast and asset checks passed.
-- All 69 screen/component/helper modules parsed successfully.
-- Expo's SDK compatibility check passed after patch alignment.
-- Android and iOS Metro/Hermes JavaScript exports passed. Native device builds, touch/keyboard behavior and animation performance require physical-device validation; no Xcode or Android emulator is installed here.
-- Browser checks cover sign-in/account-mode switching, password visibility and phone-width layout without an API configuration. Evidence is under `design/mobile-validation/`.
-- Automatic approval review blocked starting an interactive preview against an isolated test API, reporting only “blocked by policy.” No live API authentication, document upload, shop selection, checkout or payment verification was performed during this pass.
-- Nonbreaking dependency fixes removed the reported high/critical audit findings. Four moderate findings remain in Expo's build tooling dependency chain; npm's proposed forced fix downgrades Expo across SDKs and was not applied.
+Without `EXPO_PUBLIC_API_BASE_URL`, the app defaults to isolated offline seeded mode. `EXPO_PUBLIC_DEMO_MODE=true` explicitly selects it; setting it to `false` disables the fallback. At the user's request, the interface has no demo/sample banners or labels. Auth uses separate storage keys. Seeded PDF selection never accesses personal files; shops/orders/support operate in process. Location prompts, sockets, analytics and real payment endpoints remain disabled. Order state resets on reload; profile appearance and default print settings persist per account on the device. The seeded confirmation does not process money.
 
-## Installed mobile guidance
+Live mode retains customer email/password authentication, customer-role guards, timeouts, upload/retry validation, server page counts, server-priced checkout and verified payment behavior. Real shop data is never replaced with invented ratings, prices or testimonials. A reachable backend URL is still required for live use.
 
-13 skills were installed in the user's local Codex skills directory and will be discoverable on the next turn:
+## Run and validation
 
-- [Official Expo skills](https://github.com/expo/skills): `expo-overview`, `expo-native-ui`, `expo-design-system`, `expo-animation`, `expo-data-fetching`, `expo-router`, `expo-ui`, `expo-dev-client`, `expo-upgrade`, `eas-app-stores`, `eas-workflows`.
-- [Software Mansion](https://github.com/software-mansion-labs/skills): `react-native-best-practices`, including animation and gesture references.
-- [SwiftLee](https://github.com/AvdLee/SwiftUI-Agent-Skill): `swiftui-expert-skill` for platform-specific SwiftUI work. The app remains Expo/React Native for both platforms.
+From `userapp`:
 
-Ponytail and the existing shared components govern the size and structure of the implementation. Platform guidance comes from the [Expo SDK 57 reference](https://docs.expo.dev/versions/v57.0.0/) and the installed skills. Reanimated runs the native motion; native stack transitions are preserved rather than recreated in JavaScript.
+- `npm start` starts Expo/Expo Go; `npm run web` opens the browser preview.
+- `npm run check` checks auth validation, roles, contrast, assets, sample pricing/payment isolation and navigation state preservation.
+- `npx expo install --check` checks SDK compatibility.
+- `npx expo export --platform android` exports the native JS/assets bundle; it does not create an APK.
+
+Checks passed for auth, contrast, demo quotes/totals, idempotent simulated payment, pickup progression, payment isolation, tab-history preservation and spent-checkout cleanup. Android Metro/Hermes export passed after the redesign.
+
+Browser verification at 390px covered adding a sample file, opening/closing print setup without losing files, shop details retaining the tab bar, and tab switching retaining the shop detail. Implemented screenshots are `design/mobile-validation/print-workspace-v2.png` and `you-v2.png`.
+
+An earlier version ran through a sample order on the USB-connected Android phone in Expo Go. Phone debugging was stopped at the user's request. This redesign has not been revalidated on physical hardware or an iOS device; release animation performance, native gestures and keyboard behavior remain unverified. Live API/payment verification and standalone signed builds have not been performed.
+
+## Installed guidance
+
+The installed Expo skills cover native UI, themes, animation, routing, data fetching, development clients, upgrades and EAS builds. Software Mansion's React Native guidance supplies the Reanimated patterns. SwiftLee's skill is available for future SwiftUI-specific work. Ponytail governs reuse and change scope. Reference: [Expo SDK 57](https://docs.expo.dev/versions/v57.0.0/).

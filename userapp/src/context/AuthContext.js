@@ -12,7 +12,13 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 // would be a require cycle.
 import api from "../api/client";
 import { assertCustomerSession } from "../utils/authValidation";
+import { DEMO_MODE, SESSION_KEYS } from "../config/runtime";
+import { DEMO_SESSION } from "../demo/store";
 import { identifyUser, clearUser } from "../lib/analytics";
+import {
+  profilePreferencesKey,
+  validateProfilePreferences,
+} from "../utils/profilePreferences";
 
 const AuthContext = createContext(null);
 
@@ -22,14 +28,55 @@ export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
   const [token, setToken] = useState(null);
   const [loading, setLoading] = useState(true); // true while reading storage on launch
+  const [appearanceRecord, setAppearanceRecord] = useState(null);
+  const [appearanceLoadedId, setAppearanceLoadedId] = useState(null);
+  const appearance =
+    user?._id && appearanceRecord?.id === user._id
+      ? appearanceRecord.value
+      : null;
+
+  useEffect(() => {
+    let active = true;
+    if (user?._id) {
+      AsyncStorage.getItem(profilePreferencesKey(user._id))
+        .then((stored) => {
+          const value = stored ? JSON.parse(stored) : null;
+          if (active && value && !validateProfilePreferences(value))
+            setAppearanceRecord({ id: user._id, value });
+        })
+        .catch(() => {})
+        .finally(() => {
+          if (active) setAppearanceLoadedId(user._id);
+        });
+    }
+    return () => {
+      active = false;
+    };
+  }, [user?._id]);
+
+  // Appearance is device-local; account identity and payment contact remain server-owned.
+  const saveAppearance = useCallback(
+    async (value) => {
+      const message = validateProfilePreferences(value);
+      if (message) throw new Error(message);
+      if (!user?._id) throw new Error("Sign in to customize your profile.");
+      const next = { ...value, name: value.name.trim() };
+      await AsyncStorage.setItem(
+        profilePreferencesKey(user._id),
+        JSON.stringify(next),
+      );
+      setAppearanceRecord({ id: user._id, value: next });
+    },
+    [user?._id],
+  );
 
   // Restore a previous session on app start.
   useEffect(() => {
     (async () => {
       try {
         const [storedToken, storedUser] = await Promise.all([
-          AsyncStorage.getItem("token"),
-          AsyncStorage.getItem("user"),
+          AsyncStorage.getItem(SESSION_KEYS.token),
+          AsyncStorage.getItem(SESSION_KEYS.user),
         ]);
         if (storedToken) setToken(storedToken);
         if (storedUser) {
@@ -52,8 +99,8 @@ export function AuthProvider({ children }) {
   // render anyway, which is no memoization at all.
   const persistSession = useCallback(async (data) => {
     assertCustomerSession(data);
-    await AsyncStorage.setItem("token", data.token);
-    await AsyncStorage.setItem("user", JSON.stringify(data.user));
+    await AsyncStorage.setItem(SESSION_KEYS.token, data.token);
+    await AsyncStorage.setItem(SESSION_KEYS.user, JSON.stringify(data.user));
     setToken(data.token);
     setUser(data.user);
     // Id and role only - never the customer's name, email or phone. See
@@ -92,6 +139,11 @@ export function AuthProvider({ children }) {
     [persistSession],
   );
 
+  const enterDemo = useCallback(async () => {
+    if (!DEMO_MODE) throw new Error("Demo mode is not enabled.");
+    await persistSession(DEMO_SESSION);
+  }, [persistSession]);
+
   const logout = useCallback(async () => {
     // Deactivate this device's push registration FIRST, while the JWT is
     // still available - the endpoint is authenticated. Only this device is
@@ -99,7 +151,7 @@ export function AuthProvider({ children }) {
     // Never throws, so a notification-service hiccup cannot block sign-out.
     const { unregisterPushToken } = await import("./OrderEventsContext");
     await unregisterPushToken();
-    await AsyncStorage.multiRemove(["token", "user"]);
+    await AsyncStorage.multiRemove([SESSION_KEYS.token, SESSION_KEYS.user]);
     setToken(null);
     setUser(null);
     // Detaches the analytics identity, so events after sign-out are not
@@ -115,13 +167,27 @@ export function AuthProvider({ children }) {
     () => ({
       user,
       token,
-      loading,
+      loading: loading || Boolean(user?._id && appearanceLoadedId !== user._id),
       isAuthenticated: !!token,
       login,
+      enterDemo,
       register,
       logout,
+      appearance,
+      saveAppearance,
     }),
-    [user, token, loading, login, register, logout],
+    [
+      user,
+      token,
+      loading,
+      login,
+      enterDemo,
+      register,
+      logout,
+      appearance,
+      saveAppearance,
+      appearanceLoadedId,
+    ],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

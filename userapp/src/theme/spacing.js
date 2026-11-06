@@ -23,11 +23,13 @@ export const spacing = {
 // filter chips and tags; nothing else should be fully rounded.
 export const radius = {
   sm: 8, // chips, small controls, inline inputs
-  md: 12, // cards
-  lg: 18, // large cards, grouped lists, tappable option tiles
-  hero: 24, // hero cards, OTP card
+  md: 10, // compact surfaces
+  lg: 12, // large surfaces
+  hero: 12,
   modal: 24, // sheets and modals
-  button: 12, // buttons stay tighter than the cards they sit in
+  button: 8,
+  card: 22,
+  navigation: 36,
   pill: 999, // status badges, filter chips, tags only
 };
 

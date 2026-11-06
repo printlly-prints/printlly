@@ -14,6 +14,7 @@
 // be given QuickPrint's storefront as though it were a photo of their
 // own premises. A missing photo is a gap; a wrong photo is a lie about a
 // real business.
+import { DEMO_MODE } from "../config/runtime";
 const DEMO_SHOP_PHOTOS = {
   copyhub: require("../../assets/shops/copyhub.jpg"),
   printpoint: require("../../assets/shops/printpoint.jpg"),
@@ -38,8 +39,7 @@ function normalize(name) {
 export function shopImageSource(shop) {
   if (!shop) return null;
   if (shop.shop_photo_url) return { uri: shop.shop_photo_url };
-
-  const demo = DEMO_SHOP_PHOTOS[normalize(shop.shop_name)];
+  const demo = DEMO_MODE ? DEMO_SHOP_PHOTOS[shop.demo_photo || normalize(shop.shop_name)] : null;
   return demo || null;
 }
 
@@ -48,5 +48,6 @@ export function shopImageSource(shop) {
 // avoid presenting stock art as a photograph of the real premises.
 export function isDemoShopPhoto(shop) {
   if (!shop || shop.shop_photo_url) return false;
-  return Boolean(DEMO_SHOP_PHOTOS[normalize(shop.shop_name)]);
+  if (DEMO_MODE && shop.demo_photo) return true;
+  return DEMO_MODE && Boolean(DEMO_SHOP_PHOTOS[normalize(shop.shop_name)]);
 }

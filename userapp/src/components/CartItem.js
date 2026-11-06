@@ -1,5 +1,6 @@
 import { Pressable, StyleSheet, Text, View } from "react-native";
 import Ionicons from "@expo/vector-icons/Ionicons";
+import DocumentThumbnail from "./DocumentThumbnail";
 import { formatRupees } from "./PriceBreakdown";
 import { colors, typography, spacing, radius, fonts } from "../theme";
 
@@ -40,9 +41,7 @@ export default function CartItem({
 
   return (
     <View style={styles.card}>
-      <View style={styles.thumb}>
-        <Ionicons name="document-text-outline" size={22} color={colors.primaryBright} />
-      </View>
+      <DocumentThumbnail colour={!bw} />
 
       <View style={styles.body}>
         <Text style={styles.name} numberOfLines={1}>
@@ -62,10 +61,15 @@ export default function CartItem({
         {(services || []).length > 0 ? (
           <View style={styles.serviceRow}>
             {services.map((service) => (
-              <View key={service.service_id || service.name} style={styles.serviceChip}>
+              <View
+                key={service.service_id || service.name}
+                style={styles.serviceChip}
+              >
                 <Text style={styles.serviceText}>
                   {service.name}
-                  {typeof service.rate === "number" ? ` ${formatRupees(service.rate)}` : ""}
+                  {typeof service.rate === "number"
+                    ? ` ${formatRupees(service.rate)}`
+                    : ""}
                 </Text>
               </View>
             ))}
@@ -79,11 +83,18 @@ export default function CartItem({
               <Pressable
                 onPress={onRemove}
                 hitSlop={8}
-                style={({ pressed }) => [styles.remove, pressed && styles.removePressed]}
+                style={({ pressed }) => [
+                  styles.remove,
+                  pressed && styles.removePressed,
+                ]}
                 accessibilityRole="button"
                 accessibilityLabel={`Remove ${name}`}
               >
-                <Ionicons name="trash-outline" size={17} color={colors.danger} />
+                <Ionicons
+                  name="trash-outline"
+                  size={17}
+                  color={colors.danger}
+                />
               </Pressable>
             ) : null}
           </View>
@@ -95,7 +106,9 @@ export default function CartItem({
       </View>
 
       <View style={styles.priceColumn}>
-        {typeof total === "number" ? <Text style={styles.price}>{formatRupees(total)}</Text> : null}
+        {typeof total === "number" ? (
+          <Text style={styles.price}>{formatRupees(total)}</Text>
+        ) : null}
         {/* The working, spelled out - section 19's whole point. */}
         {typeof total === "number" && typeof perPageRate === "number" ? (
           <Text style={styles.workings}>
@@ -116,7 +129,11 @@ function Stepper({ value, onChange }) {
         onPress={() => onChange(Math.max(1, value - 1))}
         disabled={value <= 1}
         hitSlop={6}
-        style={({ pressed }) => [styles.step, pressed && styles.stepPressed, value <= 1 && styles.stepOff]}
+        style={({ pressed }) => [
+          styles.step,
+          pressed && styles.stepPressed,
+          value <= 1 && styles.stepOff,
+        ]}
         accessibilityRole="button"
         accessibilityLabel="Decrease copies"
       >
@@ -150,10 +167,19 @@ const styles = StyleSheet.create({
   },
   body: { flex: 1 },
   name: { ...typography.bodyMedium, color: colors.textPrimary },
-  descriptor: { ...typography.caption, color: colors.textSecondary, marginTop: 2 },
+  descriptor: {
+    ...typography.caption,
+    color: colors.textSecondary,
+    marginTop: 2,
+  },
   rate: { ...typography.caption, color: colors.textMuted, marginTop: 1 },
 
-  serviceRow: { flexDirection: "row", flexWrap: "wrap", gap: spacing.xs, marginTop: spacing.xs },
+  serviceRow: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: spacing.xs,
+    marginTop: spacing.xs,
+  },
   serviceChip: {
     backgroundColor: colors.successBg,
     borderRadius: radius.pill,
@@ -162,8 +188,17 @@ const styles = StyleSheet.create({
   },
   serviceText: { ...typography.caption, color: colors.success },
 
-  controls: { flexDirection: "row", alignItems: "center", gap: spacing.md, marginTop: spacing.sm },
-  copiesStatic: { ...typography.caption, color: colors.textMuted, marginTop: spacing.xs },
+  controls: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.md,
+    marginTop: spacing.sm,
+  },
+  copiesStatic: {
+    ...typography.caption,
+    color: colors.textMuted,
+    marginTop: spacing.xs,
+  },
 
   stepper: {
     flexDirection: "row",
@@ -173,7 +208,12 @@ const styles = StyleSheet.create({
     borderRadius: radius.sm,
     overflow: "hidden",
   },
-  step: { width: 34, height: 32, alignItems: "center", justifyContent: "center" },
+  step: {
+    width: 34,
+    height: 32,
+    alignItems: "center",
+    justifyContent: "center",
+  },
   stepPressed: { backgroundColor: colors.primaryWash },
   stepOff: { opacity: 0.4 },
   stepGlyph: { fontSize: 17, lineHeight: 20, color: colors.primaryBright },
@@ -184,10 +224,21 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: colors.textPrimary,
   },
-  remove: { width: 34, height: 32, alignItems: "center", justifyContent: "center", borderRadius: radius.sm },
+  remove: {
+    width: 34,
+    height: 32,
+    alignItems: "center",
+    justifyContent: "center",
+    borderRadius: radius.sm,
+  },
   removePressed: { backgroundColor: colors.dangerBg },
 
   priceColumn: { alignItems: "flex-end", minWidth: 64 },
   price: { ...typography.bodyMedium, color: colors.textPrimary },
-  workings: { ...typography.caption, color: colors.textMuted, marginTop: 2, textAlign: "right" },
+  workings: {
+    ...typography.caption,
+    color: colors.textMuted,
+    marginTop: 2,
+    textAlign: "right",
+  },
 });

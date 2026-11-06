@@ -1,5 +1,12 @@
 import { useCallback } from "react";
-import { ActivityIndicator, FlatList, RefreshControl, StyleSheet, Text, View } from "react-native";
+import {
+  ActivityIndicator,
+  FlatList,
+  RefreshControl,
+  StyleSheet,
+  Text,
+  View,
+} from "react-native";
 import Button from "../components/Button";
 import SavedShopHeart from "../components/SavedShopHeart";
 import ShopPhoto from "../components/ShopPhoto";
@@ -20,7 +27,10 @@ export default function SavedShopsScreen({ navigation }) {
   // computed server-side per request - so keep it current while this
   // screen is open rather than showing the status from whenever the
   // shared cache last loaded.
-  const refreshOpenStatus = useCallback(() => refresh({ silent: true }), [refresh]);
+  const refreshOpenStatus = useCallback(
+    () => refresh({ silent: true }),
+    [refresh],
+  );
   useOpenStatusRefresh(refreshOpenStatus);
 
   if (loading && savedShops.length === 0) {
@@ -37,9 +47,17 @@ export default function SavedShopsScreen({ navigation }) {
       contentContainerStyle={styles.listContent}
       data={savedShops}
       keyExtractor={(item) => item._id}
-      refreshControl={<RefreshControl refreshing={loading} onRefresh={refresh} tintColor={colors.primaryBright} />}
+      refreshControl={
+        <RefreshControl
+          refreshing={loading}
+          onRefresh={refresh}
+          tintColor={colors.primaryBright}
+        />
+      }
       ListEmptyComponent={
-        <Text style={styles.empty}>No saved shops yet — tap the heart on any shop to save it here.</Text>
+        <Text style={styles.empty}>
+          No saved shops yet — tap the bookmark on any shop to save it here.
+        </Text>
       }
       renderItem={({ item }) => {
         const shop = item.shop_id;
@@ -53,18 +71,32 @@ export default function SavedShopsScreen({ navigation }) {
         const distanceLabel = formatDistance(shop.distance_km);
         return (
           <View style={[styles.card, closed && styles.cardClosed]}>
-            <ShopPhoto source={shopImageSource(shop)} shopName={shop.shop_name} style={styles.photo} closed={closed} />
+            <ShopPhoto
+              source={shopImageSource(shop)}
+              shopName={shop.shop_name}
+              style={styles.photo}
+              closed={closed}
+            />
             <SavedShopHeart shop={shop} overlay style={styles.heartCorner} />
             <Text style={styles.shopName} numberOfLines={1}>
               {shop.shop_name}
             </Text>
             <Text style={styles.address}>{shop.address}</Text>
-            {distanceLabel ? <Text style={styles.distance}>{distanceLabel}</Text> : null}
-            {shop.contact ? <Text style={styles.contact}>{shop.contact}</Text> : null}
+            {distanceLabel ? (
+              <Text style={styles.distance}>{distanceLabel}</Text>
+            ) : null}
+            {shop.contact ? (
+              <Text style={styles.contact}>{shop.contact}</Text>
+            ) : null}
             <View style={styles.orderButton}>
               <Button
                 title="Order Now"
-                onPress={() => navigation.navigate("UploadDocuments", { preselectedShop: shop })}
+                onPress={() =>
+                  navigation.navigate("PrintFlow", {
+                    screen: "UploadDocuments",
+                    params: { preselectedShop: shop },
+                  })
+                }
               />
             </View>
           </View>
@@ -77,7 +109,12 @@ export default function SavedShopsScreen({ navigation }) {
 const styles = StyleSheet.create({
   list: { flex: 1, backgroundColor: colors.background },
   listContent: { padding: spacing.lg, flexGrow: 1 },
-  center: { flex: 1, alignItems: "center", justifyContent: "center", backgroundColor: colors.background },
+  center: {
+    flex: 1,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: colors.background,
+  },
   card: {
     position: "relative",
     backgroundColor: colors.surface,
@@ -89,11 +126,27 @@ const styles = StyleSheet.create({
   },
   photo: { height: 120, marginBottom: spacing.md },
   cardClosed: { opacity: 0.6 },
-  heartCorner: { position: "absolute", top: spacing.xl + spacing.xs, right: spacing.xl + spacing.xs },
+  heartCorner: {
+    position: "absolute",
+    top: spacing.xl + spacing.xs,
+    right: spacing.xl + spacing.xs,
+  },
   shopName: { ...typography.h2, color: colors.textPrimary },
-  address: { ...typography.body, color: colors.textSecondary, marginTop: spacing.sm },
-  contact: { ...typography.bodySmall, color: colors.textSecondary, marginTop: spacing.xs },
-  distance: { ...typography.labelSmall, color: colors.primaryDeep, marginTop: spacing.xs },
+  address: {
+    ...typography.body,
+    color: colors.textSecondary,
+    marginTop: spacing.sm,
+  },
+  contact: {
+    ...typography.bodySmall,
+    color: colors.textSecondary,
+    marginTop: spacing.xs,
+  },
+  distance: {
+    ...typography.labelSmall,
+    color: colors.primaryDeep,
+    marginTop: spacing.xs,
+  },
   orderButton: { marginTop: spacing.lg },
   empty: {
     textAlign: "center",

@@ -1,6 +1,14 @@
-import { createContext, useCallback, useContext, useMemo, useRef, useState } from "react";
+import {
+  createContext,
+  useCallback,
+  useContext,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import * as Location from "expo-location";
+import { DEMO_MODE } from "../config/runtime";
 
 const LocationContext = createContext(null);
 
@@ -18,7 +26,9 @@ const FIX_TIMEOUT_MS = 10000;
 function withTimeout(promise, ms) {
   return Promise.race([
     promise,
-    new Promise((_, reject) => setTimeout(() => reject(new Error("location timeout")), ms)),
+    new Promise((_, reject) =>
+      setTimeout(() => reject(new Error("location timeout")), ms),
+    ),
   ]);
 }
 
@@ -32,18 +42,22 @@ function withTimeout(promise, ms) {
 export function LocationProvider({ children }) {
   const [coords, setCoords] = useState(null); // { lat, lng } | null
   const [status, setStatus] = useState("unknown"); // "unknown" | "granted" | "denied" | "unavailable"
+  const [areaLabel, setAreaLabel] = useState("");
   const inFlight = useRef(null);
 
-  const ensureLocation = useCallback(() => {
+  const ensureLocation = useCallback(({ userInitiated = false } = {}) => {
+    if (DEMO_MODE && !userInitiated) return Promise.resolve(null);
     if (inFlight.current) return inFlight.current;
 
     inFlight.current = (async () => {
       try {
+        setStatus("loading");
         let permission = await Location.getForegroundPermissionsAsync();
 
         if (permission.status !== "granted") {
-          const alreadyPrompted = (await AsyncStorage.getItem(PROMPTED_KEY)) === "true";
-          if (alreadyPrompted || !permission.canAskAgain) {
+          const alreadyPrompted =
+            (await AsyncStorage.getItem(PROMPTED_KEY)) === "true";
+          if ((alreadyPrompted && !userInitiated) || !permission.canAskAgain) {
             setStatus("denied");
             return null;
           }
@@ -58,18 +72,50 @@ export function LocationProvider({ children }) {
         setStatus("granted");
 
         const position =
-          (await Location.getLastKnownPositionAsync({ maxAge: LAST_KNOWN_MAX_AGE_MS })) ||
+          (await Location.getLastKnownPositionAsync({
+            maxAge: LAST_KNOWN_MAX_AGE_MS,
+          })) ||
           (await withTimeout(
-            Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced }),
-            FIX_TIMEOUT_MS
+            Location.getCurrentPositionAsync({
+              accuracy: Location.Accuracy.Balanced,
+            }),
+            FIX_TIMEOUT_MS,
           ));
 
-        const next = { lat: position.coords.latitude, lng: position.coords.longitude };
+        const next = {
+          lat: position.coords.latitude,
+          lng: position.coords.longitude,
+        };
         setCoords(next);
+        setStatus("granted");
+        setAreaLabel("Your current location");
+        try {
+          const places = await withTimeout(
+            Location.reverseGeocodeAsync({
+              latitude: next.lat,
+              longitude: next.lng,
+            }),
+            3000,
+          );
+          const place = places[0];
+          if (place)
+            setAreaLabel(
+              [
+                ...new Set(
+                  [
+                    place.district || place.subregion || place.name,
+                    place.city || place.region,
+                  ].filter(Boolean),
+                ),
+              ].join(", ") || "Your current location",
+            );
+        } catch {
+          /* Distance still works if the device cannot resolve an area name. */
+        }
         return next;
       } catch {
         // Location services off, timeout, etc. - fall back to no distance.
-        setStatus((s) => (s === "granted" ? "unavailable" : s));
+        setStatus("unavailable");
         return null;
       } finally {
         // Allow a later call (e.g. next visit) to try for a fresher fix.
@@ -80,9 +126,16 @@ export function LocationProvider({ children }) {
     return inFlight.current;
   }, []);
 
-  const value = useMemo(() => ({ coords, status, ensureLocation }), [coords, status, ensureLocation]);
+  const value = useMemo(
+    () => ({ coords, status, areaLabel, ensureLocation }),
+    [coords, status, areaLabel, ensureLocation],
+  );
 
-  return <LocationContext.Provider value={value}>{children}</LocationContext.Provider>;
+  return (
+    <LocationContext.Provider value={value}>
+      {children}
+    </LocationContext.Provider>
+  );
 }
 
 export const useLocation = () => useContext(LocationContext);

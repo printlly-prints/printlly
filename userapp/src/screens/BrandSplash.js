@@ -10,7 +10,6 @@ export default function BrandSplash() {
         accessibilityLabel="Paprout"
       />
       <Text style={styles.name}>Paprout</Text>
-      <Text style={styles.tagline}>Paprout pe bhej de</Text>
       <ActivityIndicator
         color={colors.primary}
         style={styles.loading}

@@ -23,7 +23,10 @@ export default function PrintPreferencesScreen({ route, navigation }) {
   // uploadedDocs - the same array shape the rest of the flow and the API
   // both expect.
   const [docSettings, setDocSettings] = useState(() =>
-    uploadedDocs.map(() => defaultDocumentSettings())
+    uploadedDocs.map(
+      (doc, index) =>
+        route.params.initialDocSettings?.[index] || defaultDocumentSettings(),
+    ),
   );
   const [notes, setNotes] = useState("");
   // Only the first card starts open - see DocumentSettingsCard's comment.
@@ -52,7 +55,9 @@ export default function PrintPreferencesScreen({ route, navigation }) {
   // there is nothing to offer: services are vendor-defined, so "which
   // services can I have" has no answer until a shop is picked. The
   // customer chooses them at the Select-shop step in that case.
-  const availableServices = (shopPricing?.services || []).filter((s) => s.enabled !== false);
+  const availableServices = (shopPricing?.services || []).filter(
+    (s) => s.enabled !== false,
+  );
 
   // platform_fee is the one global figure (GET /pricing-config). Fetched
   // only when there is a shop to price against - without it the estimate
@@ -77,7 +82,7 @@ export default function PrintPreferencesScreen({ route, navigation }) {
 
   const estimate = useMemo(
     () => estimateOrder(uploadedDocs, docSettings, shopPricing, platformFee),
-    [uploadedDocs, docSettings, shopPricing, platformFee]
+    [uploadedDocs, docSettings, shopPricing, platformFee],
   );
 
   // Where "Continue" goes depends on how the customer got here.
@@ -91,8 +96,16 @@ export default function PrintPreferencesScreen({ route, navigation }) {
   // choose between, and asking would be a pointless extra tap - so that
   // path goes straight to the comparison, exactly as it always has.
   const handleContinue = () => {
-    const params = { uploadedDocs, docSettings, notes: notes.trim(), preselectedShop };
-    navigation.navigate(preselectedShop ? "ChooseShopOption" : "SelectShop", params);
+    const params = {
+      uploadedDocs,
+      docSettings,
+      notes: notes.trim(),
+      preselectedShop,
+    };
+    navigation.navigate(
+      preselectedShop ? "ChooseShopOption" : "SelectShop",
+      params,
+    );
   };
 
   const multiple = uploadedDocs.length > 1;
@@ -115,7 +128,9 @@ export default function PrintPreferencesScreen({ route, navigation }) {
           settings={docSettings[index]}
           onChange={(next) => updateDoc(index, next)}
           expanded={expandedIndex === index}
-          onToggleExpanded={() => setExpandedIndex((cur) => (cur === index ? -1 : index))}
+          onToggleExpanded={() =>
+            setExpandedIndex((cur) => (cur === index ? -1 : index))
+          }
           onCopyToAll={() => copyToAll(index)}
           showCopyToAll={multiple}
           estimate={estimate?.documents[index]}
@@ -125,13 +140,15 @@ export default function PrintPreferencesScreen({ route, navigation }) {
 
       {!shopPricing ? (
         <Text style={styles.servicesNote}>
-          Finishing services (binding, lamination and so on) vary by shop &mdash; you&apos;ll be able to
-          add them once you&apos;ve chosen one.
+          Finishing services (binding, lamination and so on) vary by shop
+          &mdash; you&apos;ll be able to add them once you&apos;ve chosen one.
         </Text>
       ) : null}
 
       <Text style={styles.label}>Additional notes (optional)</Text>
-      <Text style={styles.helperText}>Applies to the whole order, not one document.</Text>
+      <Text style={styles.helperText}>
+        Applies to the whole order, not one document.
+      </Text>
       <TextInput
         style={styles.textArea}
         value={notes}
@@ -143,13 +160,17 @@ export default function PrintPreferencesScreen({ route, navigation }) {
 
       {estimate ? (
         <View style={styles.estimateBox}>
-          <Text style={styles.estimateTitle}>Estimated at {preselectedShop.shop_name}</Text>
+          <Text style={styles.estimateTitle}>
+            Estimated at {preselectedShop.shop_name}
+          </Text>
           {uploadedDocs.map((doc, i) => (
             <View key={doc.upload_id} style={styles.estimateRow}>
               <Text style={styles.estimateLabel} numberOfLines={1}>
                 {doc.original_name || `Document ${i + 1}`}
               </Text>
-              <Text style={styles.estimateValue}>₹{estimate.documents[i].document_total}</Text>
+              <Text style={styles.estimateValue}>
+                ₹{estimate.documents[i].document_total}
+              </Text>
             </View>
           ))}
           {estimate.platform_fee !== null ? (
@@ -160,22 +181,29 @@ export default function PrintPreferencesScreen({ route, navigation }) {
           ) : null}
           <View style={[styles.estimateRow, styles.estimateTotalRow]}>
             <Text style={styles.estimateTotalLabel}>
-              {estimate.total_amount === null ? "Before fees" : "Estimated total"}
+              {estimate.total_amount === null
+                ? "Before fees"
+                : "Estimated total"}
             </Text>
             <Text style={styles.estimateTotalValue}>
-              ₹{estimate.total_amount === null ? estimate.pre_fee_total : estimate.total_amount}
+              ₹
+              {estimate.total_amount === null
+                ? estimate.pre_fee_total
+                : estimate.total_amount}
             </Text>
           </View>
           {/* Said plainly: this shop's rates are known, but the customer
               can still pick a different shop on the next screen, and the
               charge is always recomputed server-side. */}
           <Text style={styles.estimateNote}>
-            Compare other shops on the next screen — the final price is confirmed before you pay.
+            Compare other shops on the next screen — the final price is
+            confirmed before you pay.
           </Text>
         </View>
       ) : (
         <Text style={styles.pricingNote}>
-          Each shop sets its own rates — you&apos;ll see prices from nearby shops on the next screen.
+          Each shop sets its own rates — you&apos;ll see prices from nearby
+          shops on the next screen.
         </Text>
       )}
 
@@ -189,10 +217,28 @@ const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: colors.background },
   content: { padding: spacing.lg, paddingBottom: 48 },
   title: { ...typography.h1, color: colors.textPrimary },
-  subtitle: { ...typography.body, color: colors.textSecondary, marginTop: spacing.xs, marginBottom: spacing.lg },
-  label: { ...typography.label, color: colors.textPrimary, marginTop: spacing.lg, marginBottom: spacing.xs },
-  helperText: { ...typography.caption, color: colors.textMuted, marginBottom: spacing.sm },
-  servicesNote: { ...typography.caption, color: colors.textMuted, marginTop: spacing.sm },
+  subtitle: {
+    ...typography.body,
+    color: colors.textSecondary,
+    marginTop: spacing.xs,
+    marginBottom: spacing.lg,
+  },
+  label: {
+    ...typography.label,
+    color: colors.textPrimary,
+    marginTop: spacing.lg,
+    marginBottom: spacing.xs,
+  },
+  helperText: {
+    ...typography.caption,
+    color: colors.textMuted,
+    marginBottom: spacing.sm,
+  },
+  servicesNote: {
+    ...typography.caption,
+    color: colors.textMuted,
+    marginTop: spacing.sm,
+  },
   textArea: {
     minHeight: 96,
     borderWidth: 1,
@@ -211,7 +257,11 @@ const styles = StyleSheet.create({
     padding: spacing.lg,
     marginBottom: spacing.md,
   },
-  estimateTitle: { ...typography.labelSmall, color: colors.primaryDeep, marginBottom: spacing.sm },
+  estimateTitle: {
+    ...typography.labelSmall,
+    color: colors.primaryDeep,
+    marginBottom: spacing.sm,
+  },
   estimateRow: {
     flexDirection: "row",
     justifyContent: "space-between",
@@ -219,7 +269,11 @@ const styles = StyleSheet.create({
     gap: spacing.md,
     paddingVertical: 3,
   },
-  estimateLabel: { ...typography.bodySmall, color: colors.textSecondary, flex: 1 },
+  estimateLabel: {
+    ...typography.bodySmall,
+    color: colors.textSecondary,
+    flex: 1,
+  },
   estimateValue: { ...typography.bodySmall, color: colors.textPrimary },
   estimateTotalRow: {
     borderTopWidth: 1,
@@ -229,7 +283,15 @@ const styles = StyleSheet.create({
   },
   estimateTotalLabel: { ...typography.label, color: colors.textPrimary },
   estimateTotalValue: { ...typography.label, color: colors.primaryDeep },
-  estimateNote: { ...typography.caption, color: colors.textSecondary, marginTop: spacing.sm },
-  pricingNote: { ...typography.bodySmall, color: colors.textSecondary, textAlign: "center" },
+  estimateNote: {
+    ...typography.caption,
+    color: colors.textSecondary,
+    marginTop: spacing.sm,
+  },
+  pricingNote: {
+    ...typography.bodySmall,
+    color: colors.textSecondary,
+    textAlign: "center",
+  },
   spacer: { height: spacing.md },
 });

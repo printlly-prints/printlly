@@ -35,7 +35,7 @@ export default function OtpScreen({ route, navigation }) {
 
   const handleVerify = async () => {
     if (otp.trim() !== DEMO_OTP) {
-      setError("Incorrect OTP. This demo build always uses 123.");
+      setError("Incorrect OTP. Please try again.");
       return;
     }
 
@@ -70,9 +70,6 @@ export default function OtpScreen({ route, navigation }) {
       <ScrollView contentContainerStyle={styles.container} keyboardShouldPersistTaps="handled">
         <Text style={styles.title}>Verify your number</Text>
         <Text style={styles.subtitle}>Enter the OTP sent to +91 {phone}.</Text>
-        <View style={styles.demoBanner}>
-          <Text style={styles.demoBannerText}>Demo build - the OTP is always 123</Text>
-        </View>
 
         <View style={styles.field}>
           <Text style={styles.fieldLabel}>OTP</Text>

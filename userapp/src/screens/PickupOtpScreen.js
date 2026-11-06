@@ -1,4 +1,4 @@
-import { ScrollView, Share, StyleSheet, Text, View } from "react-native";
+import { Image, ScrollView, Share, StyleSheet, Text, View } from "react-native";
 import Button from "../components/Button";
 import OtpCard from "../components/OtpCard";
 import ScreenBackground from "../components/ScreenBackground";
@@ -19,26 +19,49 @@ export default function PickupOtpScreen({ route, navigation }) {
   const shopName = shop?.shop_name || "the shop";
 
   const shareDetails = () => {
-    Share.share({ message: `My print is ready! Pickup OTP: ${order.otp} at ${shopName}` });
+    Share.share({
+      message: `My print is ready! Pickup OTP: ${order.otp} at ${shopName}`,
+    });
   };
 
   return (
     <ScreenBackground tone="deep">
       <ScrollView style={styles.scroll} contentContainerStyle={styles.content}>
-        <Text style={styles.title}>Your print is ready!</Text>
-        <Text style={styles.subtitle}>
-          Collect from {shopName} · Order {orderRef(order)}
-        </Text>
+        <View style={styles.readyHeader}>
+          <View style={{ flex: 1 }}>
+            <Text style={styles.title}>Ready to collect.</Text>
+            <Text style={styles.subtitle}>
+              Collect from {shopName} · Order {orderRef(order)}
+            </Text>
+          </View>
+          <Image
+            source={require("../../assets/art/paper-pal-success.png")}
+            style={styles.readyCharacter}
+            resizeMode="contain"
+            accessible={false}
+          />
+        </View>
 
-        <OtpCard otp={order.otp} />
+        <OtpCard
+          otp={order.otp}
+          shopName={shopName}
+          reference={orderRef(order)}
+        />
 
         {/* Where to take it, with the photo - at a counter, recognising
             the shopfront matters more than reading its name. */}
         <ShopCard shop={shop} showContact showActions style={styles.shop} />
 
         <View style={styles.actions}>
-          <Button title="View order details" onPress={() => navigation.replace("OrderTracking", { order })} />
-          <Button title="Share OTP" variant="secondary" onPress={shareDetails} />
+          <Button
+            title="View order details"
+            onPress={() => navigation.replace("OrderTracking", { order })}
+          />
+          <Button
+            title="Share OTP"
+            variant="secondary"
+            onPress={shareDetails}
+          />
         </View>
       </ScrollView>
     </ScreenBackground>
@@ -47,14 +70,23 @@ export default function PickupOtpScreen({ route, navigation }) {
 
 const styles = StyleSheet.create({
   scroll: { flex: 1 },
-  content: { padding: spacing.lg, paddingTop: spacing.xl, paddingBottom: spacing.xxl },
-  title: { ...typography.h1, color: colors.textPrimary, textAlign: "center" },
+  readyHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.md,
+    marginBottom: spacing.lg,
+  },
+  readyCharacter: { width: 56, height: 64 },
+  content: {
+    padding: spacing.lg,
+    paddingTop: spacing.xl,
+    paddingBottom: spacing.xxl,
+  },
+  title: { ...typography.h2, color: colors.textPrimary },
   subtitle: {
     ...typography.bodySmall,
     color: colors.textSecondary,
-    textAlign: "center",
     marginTop: spacing.xs,
-    marginBottom: spacing.xl,
   },
   shop: { marginTop: spacing.lg },
   actions: { marginTop: spacing.lg, gap: spacing.md },

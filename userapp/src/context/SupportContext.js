@@ -11,6 +11,7 @@ import { AppState } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { io } from "socket.io-client";
 import api from "../api/client";
+import { DEMO_MODE } from "../config/runtime";
 import { useAuth } from "./AuthContext";
 
 const SupportContext = createContext(null);
@@ -99,7 +100,7 @@ export function SupportProvider({ children }) {
 
   // --- the socket ---------------------------------------------------
   useEffect(() => {
-    if (!isAuthenticated) {
+    if (!isAuthenticated || DEMO_MODE) {
       socketRef.current?.disconnect();
       socketRef.current = null;
       setConnected(false);

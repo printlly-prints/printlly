@@ -1,15 +1,14 @@
-// Type scale built on the two Google Fonts loaded in App.js: Manrope
-// (600/700/800) for headings and anything CTA-like, Inter (400/500)
-// for body copy and labels.
+// Inter across the app: 600/700 for headings, 400/500 for body copy.
+// The weights match the approved mobile reference and App.js font loading.
 //
 // Font family names must match the keys passed to useFonts in App.js
 // exactly, or React Native silently falls back to the system font - so
 // they live here as constants rather than being retyped as string
 // literals in screen styles.
 export const fonts = {
-  headingSemiBold: "Manrope_600SemiBold",
-  headingBold: "Manrope_700Bold",
-  headingExtraBold: "Manrope_800ExtraBold",
+  headingSemiBold: "Inter_600SemiBold",
+  headingBold: "Inter_700Bold",
+  headingExtraBold: "Inter_700Bold",
   bodyRegular: "Inter_400Regular",
   bodyMedium: "Inter_500Medium",
 };
@@ -17,6 +16,12 @@ export const fonts = {
 // Compose with a colour from theme/colors.js separately - these tokens
 // intentionally don't hardcode text colour.
 export const typography = {
+  production: {
+    fontFamily: fonts.bodyMedium,
+    fontSize: 10,
+    lineHeight: 16,
+    letterSpacing: 1.5,
+  },
   // Headings - Manrope. Negative tracking on the larger sizes
   // keeps big headlines from looking loose.
   display: {

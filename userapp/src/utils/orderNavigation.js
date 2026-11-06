@@ -1,5 +1,4 @@
-// Shared routing rule for "tap on an order", used by HomeScreen,
-// MyOrdersScreen and NotificationsScreen so they stay consistent. In order:
+// Shared order-detail routing for Orders and Notifications. In order:
 //   1. Expired/cancelled -> OrderTracking, whatever payment_status says.
 //      These can never be paid for (the backend refuses, and an expired
 //      order's documents are already deleted); OrderTracking already
@@ -12,7 +11,9 @@ export const CLOSED_STATUSES = ["expired", "cancelled"];
 
 export function isAwaitingPayment(order) {
   return Boolean(
-    order.payment_status && order.payment_status !== "paid" && !CLOSED_STATUSES.includes(order.status)
+    order.payment_status &&
+      order.payment_status !== "paid" &&
+      !CLOSED_STATUSES.includes(order.status),
   );
 }
 
@@ -29,13 +30,21 @@ export function navigateToOrder(navigation, order) {
     // only place that does). The breakdown mirrors what
     // ReviewCheckoutScreen would have shown, built from the order's own
     // stored itemized fields since there's nothing left to recompute here.
-    navigation.navigate("Payment", {
-      orderId: order._id,
-      estimatedAmount: order.total_amount,
-      breakdown: {
-        subtotal: order.base_subtotal,
-        platformFee: order.platform_fee,
-        total: order.total_amount,
+    navigation.navigate("PrintFlow", {
+      screen: "Payment",
+      params: {
+        orderId: order._id,
+        estimatedAmount: order.total_amount,
+        shopName: order.shop_id?.shop_name,
+        documentCount: order.documents?.length,
+        breakdown: {
+          subtotal: order.base_subtotal,
+          paperSize: order.paper_size_charge,
+          sides: order.sides_charge,
+          services: order.services_charge,
+          platformFee: order.platform_fee,
+          total: order.total_amount,
+        },
       },
     });
     return;
