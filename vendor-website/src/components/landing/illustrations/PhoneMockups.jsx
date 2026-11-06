@@ -1,4 +1,4 @@
-// Two phone frames showing the actual Printlly customer app screens —
+// Two phone frames showing the actual Paprout customer app screens —
 // Home and Ready-for-pickup — rebuilt as markup rather than dropped in
 // as screenshots, so they stay sharp at any size and track the real UI
 // if it changes. Decorative as a whole: the surrounding section states

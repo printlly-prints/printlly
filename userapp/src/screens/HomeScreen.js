@@ -154,15 +154,15 @@ export default function HomeScreen({ navigation }) {
             stays the rightmost thing on every screen that has one. */}
         <View style={styles.brandRow}>
           <Image
-            source={require("../../assets/printlly-mark.png")}
+            source={require("../../assets/paprout-mark.png")}
             style={styles.brandMark}
             resizeMode="contain"
             accessible={false}
           />
           <View style={styles.brandText}>
-            <Text style={styles.brandName}>Printlly</Text>
+            <Text style={styles.brandName}>Paprout</Text>
             <Text style={styles.brandTagline} numberOfLines={1}>
-              Print Smarter. Skip the Wait.
+              Paprout pe bhej de
             </Text>
           </View>
 

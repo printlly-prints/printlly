@@ -2,7 +2,7 @@
 //
 // ===================================================================
 // PLACEHOLDERS - REPLACE BEFORE PUBLISHING THESE PAGES.
-// Printlly has no registered entity details anywhere in this codebase:
+// Paprout has no registered entity details anywhere in this codebase:
 // no legal name, no GSTIN, no registered address, no support inbox that
 // a real person reads. None of it is invented here. Every value below
 // falls back to an obvious placeholder, and the pages render a visible

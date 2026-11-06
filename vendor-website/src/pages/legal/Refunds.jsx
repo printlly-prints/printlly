@@ -21,13 +21,13 @@ export default function Refunds() {
   return (
     <LegalPage
       title="Cancellation & Refund Policy"
-      description="When a Printlly order can be cancelled, when a refund is due, and how refunds are handled."
+      description="When a Paprout order can be cancelled, when a refund is due, and how refunds are handled."
       toc={TOC}
       intro={
         <>
           <P>
             This policy explains when an order can be cancelled and when money
-            is returned. It is written to match how Printlly actually works
+            is returned. It is written to match how Paprout actually works
             today, including where the product does not yet do something
             automatically.
           </P>
@@ -36,7 +36,7 @@ export default function Refunds() {
     >
       <Section id="summary" number="1" title="Summary">
         <Note>
-          Printlly does not process refunds automatically. There is no
+          Paprout does not process refunds automatically. There is no
           self-service cancel-and-refund button, and the platform does not
           trigger refunds through Razorpay on its own. Every refund is reviewed
           and arranged by our support team on request. Please read the sections
@@ -94,7 +94,7 @@ export default function Refunds() {
 
       <Section id="after-payment" number="4" title="Cancelling after payment">
         <P>
-          Printlly does not currently provide a customer-facing cancel button
+          Paprout does not currently provide a customer-facing cancel button
           for a paid order. If you need an order stopped - you ordered the wrong
           file, chose the wrong shop, or no longer need it - contact support as
           soon as possible.
@@ -171,13 +171,13 @@ export default function Refunds() {
       <Section id="quality" number="8" title="Quality problems">
         <P>
           Printing is carried out by the independent print partner, not by
-          Printlly. If a print is wrong - missing pages, wrong colour setting,
+          Paprout. If a print is wrong - missing pages, wrong colour setting,
           poor quality - raise it with the shop at the counter first. They are
           usually able to reprint on the spot, which is faster and better than a
           refund.
         </P>
         <P>
-          If the shop will not help, contact Printlly support. We can see the
+          If the shop will not help, contact Paprout support. We can see the
           order, the options you selected and the amounts charged, and we will
           try to reach a fair outcome. We cannot compel an independent business
           to reprint or refund.
@@ -206,7 +206,7 @@ export default function Refunds() {
         <Note>
           To be explicit: this step is carried out manually by our team. The
           platform does not currently issue refunds by itself, and nothing on
-          Printlly will automatically return money to you without a support
+          Paprout will automatically return money to you without a support
           request being raised and reviewed.
         </Note>
       </Section>
@@ -215,7 +215,7 @@ export default function Refunds() {
         <P>
           Once a refund has been initiated with Razorpay, how long it takes to
           appear is determined by Razorpay and by your bank or card issuer, not
-          by Printlly. It is commonly several working days.
+          by Paprout. It is commonly several working days.
         </P>
         <P>
           We are deliberately not publishing a guaranteed turnaround for
@@ -246,7 +246,7 @@ export default function Refunds() {
       <Section id="how-to-ask" number="13" title="How to raise a refund request">
         <P>
           Customers can message us from the Help &amp; Support screen in the
-          Printlly app, which reaches our support team directly. You can also
+          Paprout app, which reaches our support team directly. You can also
           email {SUPPORT_EMAIL}.
         </P>
         <P>Please include:</P>

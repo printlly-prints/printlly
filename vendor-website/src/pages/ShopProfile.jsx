@@ -501,7 +501,7 @@ export default function ShopProfile() {
             <div className="min-w-0">
               <h2 className="font-heading font-bold text-error-text">Danger zone</h2>
               <p className="text-xs text-text-secondary mt-0.5 max-w-xl">
-                Deactivate your shop from Printlly. This takes it off the platform entirely — separate
+                Deactivate your shop from Paprout. This takes it off the platform entirely — separate
                 from, and much bigger than, the Open/Closed toggle in the sidebar.
               </p>
             </div>

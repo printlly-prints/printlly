@@ -28,11 +28,13 @@ export default function BrandSplash() {
         {/* The lockup already carries the wordmark and the tagline, so
             neither is repeated as text here. */}
         <Image
-          source={require("../../assets/printlly-lockup.png")}
+          source={require("../../assets/paprout-mark.png")}
           style={styles.lockup}
           resizeMode="contain"
-          accessibilityLabel="Printlly — Print Smarter. Skip the Wait."
+          accessibilityLabel="Paprout"
         />
+        <Text style={styles.brandName}>Paprout</Text>
+        <Text style={styles.brandTagline}>Paprout pe bhej de</Text>
 
         <View style={styles.loadingBlock}>
           <ActivityIndicator size="large" color={colors.primaryBright} />
@@ -54,7 +56,7 @@ export default function BrandSplash() {
         </View>
       </View>
 
-      <Text style={styles.footer}>Same Documents. Better Days.</Text>
+      <Text style={styles.footer}>Print karna hai? Paprout kar le.</Text>
     </View>
   );
 }
@@ -88,7 +90,9 @@ const styles = StyleSheet.create({
     opacity: 0.75,
   },
   center: { alignItems: "center", paddingHorizontal: spacing.xl },
-  lockup: { width: 236, height: 236 },
+  lockup: { width: 112, height: 132 },
+  brandName: { ...typography.h1, color: colors.textPrimary, marginTop: spacing.md },
+  brandTagline: { ...typography.bodySmall, color: colors.textSecondary, marginTop: spacing.sm },
   loadingBlock: { alignItems: "center", marginTop: spacing.xxxl, gap: spacing.md },
   loadingText: { ...typography.bodySmall, color: colors.textSecondary },
   steps: { flexDirection: "row", alignItems: "flex-start", marginTop: spacing.section },

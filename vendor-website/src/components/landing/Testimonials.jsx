@@ -8,7 +8,7 @@ import Reveal from "./Reveal";
 const TESTIMONIALS = [
   {
     quote:
-      "Printlly has made my college life so much easier. No more standing in long queues!",
+      "Paprout has made my college life so much easier. No more standing in long queues!",
     name: "Riya Sharma",
     role: "Student",
     initials: "RS",

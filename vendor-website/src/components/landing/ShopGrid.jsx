@@ -114,7 +114,7 @@ export default function ShopGrid() {
 
         <p className="mt-7 text-[12.5px] text-text-muted">
           Shops shown for illustration. Ratings, distances and prices are sample values — live
-          listings open in the Printlly app.
+          listings open in the Paprout app.
         </p>
       </div>
     </section>

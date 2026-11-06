@@ -3,7 +3,7 @@ import Reveal from "./Reveal";
 import { SingleLeaf } from "./illustrations/Leaves";
 
 // The paper stack in the CTA panel, carrying a handwritten note and the
-// Printlly mark — the same "printed locally" idea the hero sheet uses.
+// Paprout mark — the same "printed locally" idea the hero sheet uses.
 function PaperStack({ className = "" }) {
   return (
     <svg viewBox="0 0 300 230" className={className} role="img" aria-label="A stack of printed pages">
@@ -28,7 +28,7 @@ function PaperStack({ className = "" }) {
         <rect width="16" height="16" rx="5" fill="#087F8C" />
         <path d="M5.2 3.6h3.2l2.1 2.1v3.8H5.2z" fill="#FFFFFF" />
         <rect x="3.6" y="9.5" width="8.8" height="3.3" rx="1.3" fill="#FFFFFF" opacity=".62" />
-        <text x="21" y="12.8" fontFamily="'Plus Jakarta Sans', sans-serif" fontSize="11.5" fontWeight="800" fill="#123326">Printlly</text>
+        <text x="21" y="12.8" fontFamily="'Plus Jakarta Sans', sans-serif" fontSize="11.5" fontWeight="800" fill="#123326">Paprout</text>
       </g>
 
       {/* sparkle marks */}

@@ -1,15 +1,11 @@
-// The Printlly mark, served from /public so it is a plain <img> rather
-// than bundled into the JS. `logo.png` is the printer-and-page symbol on
-// its own; the full vertical lockup (mark + wordmark + tagline) lives at
-// /printlly-lockup.png and is used where there is room for it, such as
-// the login card.
+// Shared app mark for the partner dashboard and registration screens.
 export default function Logo({ size = 32, className = "" }) {
   return (
     <img
-      src="/printlly-mark.png"
+      src="/brand/paprout-mark.png"
       width={size}
       height={size}
-      alt="Printlly"
+      alt="Paprout"
       className={`shrink-0 object-contain ${className}`}
       style={{ height: size, width: size }}
     />
@@ -20,11 +16,15 @@ export default function Logo({ size = 32, className = "" }) {
 // follows the artwork, so give it room vertically.
 export function LogoLockup({ width = 200, className = "" }) {
   return (
-    <img
-      src="/printlly-lockup.png"
-      alt="Printlly — Print Smarter. Skip the Wait."
-      className={`object-contain ${className}`}
+    <span
+      className={`inline-flex flex-col items-center gap-2 ${className}`}
       style={{ width }}
-    />
+    >
+      <Logo size={64} />
+      <strong className="font-heading text-2xl">Paprout</strong>
+      <span className="text-sm" lang="hi-Latn">
+        Paprout pe bhej de
+      </span>
+    </span>
   );
 }

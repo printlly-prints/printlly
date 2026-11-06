@@ -24,13 +24,13 @@ export default function VendorTerms() {
   return (
     <LegalPage
       title="Print Partner Terms"
-      description="Terms for print shops fulfilling orders on Printlly: verification, pricing, documents, pickup and settlement."
+      description="Terms for print shops fulfilling orders on Paprout: verification, pricing, documents, pickup and settlement."
       toc={TOC}
       intro={
         <>
           <P>
             These terms apply to print shops ("print partners") who register on
-            Printlly and fulfil customer orders. They are in addition to the
+            Paprout and fulfil customer orders. They are in addition to the
             general Terms &amp; Conditions.
           </P>
           <P>
@@ -44,8 +44,8 @@ export default function VendorTerms() {
     >
       <Section id="who" number="1" title="Who these terms apply to">
         <P>
-          Anyone who registers a shop on Printlly. You operate as an independent
-          business, not as an employee, agent or franchisee of Printlly. You
+          Anyone who registers a shop on Paprout. You operate as an independent
+          business, not as an employee, agent or franchisee of Paprout. You
           decide your own prices, your own hours, and which orders you take.
         </P>
       </Section>
@@ -62,14 +62,14 @@ export default function VendorTerms() {
             threshold is not required to have one.
           </li>
           <li>
-            Your shop is reviewed by a Printlly administrator and becomes
+            Your shop is reviewed by a Paprout administrator and becomes
             visible to customers only once approved. An application may be
             rejected, with a reason, and you may resubmit.
           </li>
           <li>
             Verification confirms the documents you submitted. It is not an
             inspection of your premises, equipment or output quality, and
-            Printlly makes no warranty to customers about either.
+            Paprout makes no warranty to customers about either.
           </li>
         </List>
       </Section>
@@ -91,7 +91,7 @@ export default function VendorTerms() {
             printing, and any add-on services you choose to offer.
           </li>
           <li>
-            The rates you publish are the rates charged. Printlly calculates
+            The rates you publish are the rates charged. Paprout calculates
             each order total on the server from your published rates and the
             page count it measured, and freezes that total onto the order.
           </li>
@@ -151,7 +151,7 @@ export default function VendorTerms() {
           ready when you say it is.
         </P>
         <P>
-          Printlly does not inspect your output. If a customer raises a quality
+          Paprout does not inspect your output. If a customer raises a quality
           problem, we expect you to deal with it fairly - usually by
           reprinting.
         </P>
@@ -183,7 +183,7 @@ export default function VendorTerms() {
         <P>You must:</P>
         <List>
           <li>
-            access documents only through the Printlly dashboard, and only for
+            access documents only through the Paprout dashboard, and only for
             orders assigned to you;
           </li>
           <li>
@@ -195,7 +195,7 @@ export default function VendorTerms() {
           </li>
         </List>
         <P>
-          Printlly deletes a document from its storage when the order is
+          Paprout deletes a document from its storage when the order is
           completed or expires. That deletion cannot reach a copy you made,
           which is why these obligations exist. Breaching them is grounds for
           immediate removal from the platform, and may expose you to liability
@@ -237,12 +237,12 @@ export default function VendorTerms() {
 
       <Section id="settlement" number="11" title="Settlement and platform fees">
         <P>
-          Customers pay Printlly, not you directly. Printlly then settles with
+          Customers pay Paprout, not you directly. Paprout then settles with
           you for the orders you have completed.
         </P>
         <List>
           <li>
-            Your amount for an order is the order total minus the Printlly
+            Your amount for an order is the order total minus the Paprout
             platform fee. It is fixed at the moment the customer's payment is
             confirmed and is never recalculated afterwards - so a later change
             to the platform fee cannot alter what you are owed for work already
@@ -258,7 +258,7 @@ export default function VendorTerms() {
           <li>
             Settlements are made by UPI or bank transfer outside the platform
             and then recorded against your account, with a reference where one
-            is available. Printlly does not currently make automated payouts.
+            is available. Paprout does not currently make automated payouts.
           </li>
         </List>
         <Note>
@@ -271,7 +271,7 @@ export default function VendorTerms() {
       <Section id="payout" number="12" title="Payout details">
         <P>
           You must provide accurate payout details - account holder name,
-          account number and IFSC, and optionally a UPI ID. Printlly cannot
+          account number and IFSC, and optionally a UPI ID. Paprout cannot
           settle with you until these are filled in.
         </P>
         <P>
@@ -285,7 +285,7 @@ export default function VendorTerms() {
         <P>
           You are responsible for operating lawfully: your own business
           registration, any tax obligations including GST where applicable, and
-          any local licensing. Printlly does not provide tax documentation on
+          any local licensing. Paprout does not provide tax documentation on
           your behalf.
         </P>
         <P>
@@ -297,7 +297,7 @@ export default function VendorTerms() {
 
       <Section id="suspension" number="14" title="Suspension and deactivation">
         <P>
-          Printlly may deactivate a shop that breaches these terms, mishandles
+          Paprout may deactivate a shop that breaches these terms, mishandles
           customer documents, repeatedly fails to fulfil accepted orders,
           misrepresents its pricing or location, or behaves abusively.
           Deactivation removes the shop from customer search; outstanding
@@ -307,9 +307,9 @@ export default function VendorTerms() {
 
       <Section id="disputes" number="15" title="Disputes">
         <P>
-          Where a customer disputes an order, Printlly can see the order record,
+          Where a customer disputes an order, Paprout can see the order record,
           its status history and the amounts, and will try to reach a fair
-          outcome between you. Printlly is not an arbitrator and cannot compel
+          outcome between you. Paprout is not an arbitrator and cannot compel
           either side.
         </P>
         <P>

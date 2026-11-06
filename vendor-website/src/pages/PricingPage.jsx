@@ -205,7 +205,7 @@ export default function PricingPage() {
             <h1 className="font-heading text-2xl font-bold text-text-primary">Services &amp; Pricing</h1>
             <p className="text-sm text-text-secondary mt-1 max-w-2xl">
               Set your shop&rsquo;s rates and services. Customers pay these rates plus the platform fee,
-              which is set by Printlly and isn&rsquo;t editable here.
+              which is set by Paprout and isn&rsquo;t editable here.
             </p>
           </div>
 

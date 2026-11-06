@@ -1,6 +1,6 @@
 // Maps each order status to a token pair from tailwind.config.js so shop
 // staff can scan the list at a glance. Deliberately not all teal - a
-// queue needs distinguishable states - but drawn from the Printlly
+// queue needs distinguishable states - but drawn from the Paprout
 // status tokens rather than Tailwind's stock palette.
 //
 // Colour is never the only signal: every badge carries its label too, so

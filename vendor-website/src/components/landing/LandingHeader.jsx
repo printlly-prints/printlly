@@ -1,16 +1,17 @@
 import { useEffect, useRef, useState } from "react";
 import { Link, useLocation } from "react-router-dom";
-import { ArrowUpRight, Files, Menu, Search, X } from "lucide-react";
+import { ArrowUpRight, Menu, Search, X } from "lucide-react";
 import "../../styles/paper.css";
 
 const NAV = [
   { label: "How it works", href: "/#how-it-works" },
   { label: "Find a shop", href: "/#shops" },
-  { label: "Print partners", to: "/auth/vendor" },
 ];
 const COMMANDS = [
   ...NAV,
-  { label: "Get the Printlly app", to: "/auth/get-app" },
+  { label: "For print shops", to: "/print-partners" },
+  { label: "Partner sign-in", to: "/auth/vendor" },
+  { label: "Get the Paprout app", to: "/auth/get-app" },
   { label: "Help & questions", to: "/faq" },
   { label: "Contact us", to: "/contact" },
 ];
@@ -18,10 +19,8 @@ const COMMANDS = [
 export function PaperWordmark() {
   return (
     <span className="paper-wordmark">
-      <Files size={28} strokeWidth={1.7} />
-      <span>
-        printlly<span className="wordmark-period">.</span>
-      </span>
+      <img src="/brand/paprout-mark.png" width="34" height="40" alt="" />
+      <span>Paprout</span>
     </span>
   );
 }
@@ -99,7 +98,7 @@ export default function LandingHeader() {
           Skip to content
         </a>
         <div className="paper-wrap paper-nav-row">
-          <a href="/#top" aria-label="Printlly home">
+          <a href="/#top" aria-label="Paprout home">
             <PaperWordmark />
           </a>
           <nav className="paper-desktop-nav" aria-label="Main navigation">
@@ -117,6 +116,10 @@ export default function LandingHeader() {
               <Search size={17} />
               <kbd>Ctrl K</kbd>
             </button>
+            <Link to="/print-partners" className="paper-partner-link">
+              <span className="partner-label-desktop">For print shops</span>
+              <span className="partner-label-mobile">For shops</span>
+            </Link>
             <Link to="/auth/get-app" className="paper-button nav-app-button">
               Get the app <ArrowUpRight size={17} />
             </Link>
@@ -142,6 +145,12 @@ export default function LandingHeader() {
             {NAV.map((item) =>
               navLink(item, { onClick: () => setOpen(false) }),
             )}
+            <Link to="/print-partners" onClick={() => setOpen(false)}>
+              For print shops
+            </Link>
+            <Link to="/auth/vendor" onClick={() => setOpen(false)}>
+              Partner sign-in
+            </Link>
             <Link to="/faq" onClick={() => setOpen(false)}>
               Help & questions
             </Link>

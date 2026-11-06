@@ -32,7 +32,7 @@ export default function GetApp() {
         <div className="download-copy">
           <Link to="/" className="paper-text-link back-link">
             <ArrowLeft size={16} />
-            Back to Printlly
+            Back to Paprout
           </Link>
           <p className="paper-kicker">Your print desk, in your pocket</p>
           <h1>
@@ -42,7 +42,7 @@ export default function GetApp() {
           </h1>
           <p>
             Choose your files, set your preferences and find a nearby shop.
-            Printlly takes care of the back-and-forth.
+            Paprout takes care of the back-and-forth.
           </p>
           <div className="download-features">
             <span>
@@ -68,7 +68,7 @@ export default function GetApp() {
                   fgColor="#242426"
                   marginSize={2}
                 />
-                <span>Scan to get Printlly</span>
+                <span>Scan to get Paprout</span>
               </div>
               <div className="download-links">
                 {DOWNLOAD && (
@@ -79,7 +79,7 @@ export default function GetApp() {
                     rel="noopener noreferrer"
                   >
                     <Download size={17} />
-                    Download Printlly <ArrowUpRight size={17} />
+                    Download Paprout <ArrowUpRight size={17} />
                   </a>
                 )}
                 {PLAY && (
@@ -127,7 +127,7 @@ export default function GetApp() {
             src="/art/themes/student-cmyk.webp"
             width="1024"
             height="1536"
-            alt="Printlly’s illustrated student using her phone while carrying documents"
+            alt="Paprout’s illustrated student using her phone while carrying documents"
           />
           <span className="download-art-label">Your files. Your way.</span>
         </div>

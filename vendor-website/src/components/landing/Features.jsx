@@ -64,7 +64,7 @@ export default function Features() {
             <span className="text-primary-bright">better printing experience</span>
           </h2>
           <p className="mt-3.5 text-center text-[15px] text-text-secondary">
-            Simple. Secure. Reliable. That's Printlly.
+            Simple. Secure. Reliable. That's Paprout.
           </p>
         </Reveal>
 

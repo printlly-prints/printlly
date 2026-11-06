@@ -93,7 +93,7 @@ export default function Hero() {
             width="1400"
             height="933"
             fetchPriority="high"
-            alt="A Printlly printer producing a page reading “Good Ideas Print Better”, beside a stack of finished prints. Callouts read “12 Pages Detected” and “Order Ready — OTP 4827”."
+            alt="A Paprout printer producing a page reading “Good Ideas Print Better”, beside a stack of finished prints. Callouts read “12 Pages Detected” and “Order Ready — OTP 4827”."
             className="float-slow relative w-full h-auto select-none"
             // The image carries its own pale-teal background, a shade off
             // the section's. Feathering the edges lets it bleed into the

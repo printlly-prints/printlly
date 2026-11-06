@@ -36,7 +36,7 @@ export default function AppPromo() {
         <Reveal>
           <SectionLabel>On the go</SectionLabel>
           <h2 className="mt-5 font-heading font-bold text-text-primary tracking-[-0.03em] text-[30px] leading-[1.2] sm:text-[36px]">
-            Printlly in your pocket
+            Paprout in your pocket
           </h2>
           <p className="mt-3.5 text-[15px] text-text-secondary">
             Same convenience. Anytime. Anywhere.

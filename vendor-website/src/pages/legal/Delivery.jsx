@@ -18,11 +18,11 @@ export default function Delivery() {
   return (
     <LegalPage
       title="Shipping & Delivery Policy"
-      description="Printlly orders are collected in person from the print shop you choose. How pickup works."
+      description="Paprout orders are collected in person from the print shop you choose. How pickup works."
       toc={TOC}
       intro={
         <P>
-          Printlly is a print-and-collect service, not a shipping service. This
+          Paprout is a print-and-collect service, not a shipping service. This
           page explains how an order reaches you.
         </P>
       }
@@ -37,7 +37,7 @@ export default function Delivery() {
 
       <Section id="no-delivery" number="2" title="Home delivery">
         <Note>
-          Printlly does not currently offer home delivery. There is no delivery
+          Paprout does not currently offer home delivery. There is no delivery
           option at checkout, no delivery address is collected, and no delivery
           charge exists. Every order is collected from the shop you selected.
         </Note>
@@ -76,7 +76,7 @@ export default function Delivery() {
       <Section id="timing" number="4" title="Preparation time">
         <P>
           Preparation time is set by each shop and depends on their current
-          queue. Printlly does not set, guarantee or enforce a turnaround time.
+          queue. Paprout does not set, guarantee or enforce a turnaround time.
         </P>
         <P>
           A shop can mark itself busy when it has a high volume of work. When it
@@ -85,7 +85,7 @@ export default function Delivery() {
           open and still accepting orders.
         </P>
         <P>
-          The only timing Printlly enforces is expiry: an order that has not
+          The only timing Paprout enforces is expiry: an order that has not
           been completed within {FACTS.acceptedOrderExpiryHours} hours is marked
           expired.
         </P>
@@ -107,7 +107,7 @@ export default function Delivery() {
 
       <Section id="someone-else" number="6" title="Someone else collecting">
         <P>
-          Printlly has no separate feature for nominating another person to
+          Paprout has no separate feature for nominating another person to
           collect. In practice, anyone who has your OTP can collect your order.
           If you share it with someone, you are authorising them to collect on
           your behalf, and you are responsible for that choice. Treat the OTP as
@@ -127,7 +127,7 @@ export default function Delivery() {
             estimate.
           </li>
           <li>
-            A shop may be deactivated by its owner or by Printlly, which removes
+            A shop may be deactivated by its owner or by Paprout, which removes
             it from search. Orders already placed with it are unaffected.
           </li>
         </List>
@@ -142,7 +142,7 @@ export default function Delivery() {
         <P>
           Because printing is carried out by independent shops, delays can
           happen - equipment faults, paper shortages, an unexpected queue.
-          Printlly shows you the order's current status but does not control the
+          Paprout shows you the order's current status but does not control the
           shop's workload and does not guarantee a completion time.
         </P>
       </Section>
@@ -160,7 +160,7 @@ export default function Delivery() {
         </P>
         <P>
           What a shop does with uncollected printouts is a matter for that shop.
-          Printlly does not hold or store physical printouts at any point.
+          Paprout does not hold or store physical printouts at any point.
         </P>
       </Section>
 
@@ -168,7 +168,7 @@ export default function Delivery() {
         <P>
           Speak to the shop first - they have your job in front of them and can
           usually fix it immediately. If that does not resolve it, contact
-          Printlly support from the Help &amp; Support screen in the app, or at{" "}
+          Paprout support from the Help &amp; Support screen in the app, or at{" "}
           {SUPPORT_EMAIL}.
         </P>
       </Section>

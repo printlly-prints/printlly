@@ -54,7 +54,7 @@ export default function OrderPlacedScreen({ route, navigation }) {
 
         <Animated.View style={{ opacity: fade, transform: [{ translateY: lift }] }}>
           <Text style={styles.title}>Order placed successfully!</Text>
-          <Text style={styles.subtitle}>Thank you for choosing Printlly.</Text>
+          <Text style={styles.subtitle}>Thank you for choosing Paprout.</Text>
 
           <Card style={styles.summary}>
             <View style={styles.summaryRow}>

@@ -1,0 +1,47 @@
+{
+  "layouts": [
+    {
+      "logoLoaded": true,
+      "overflow": false,
+      "page": "/print-partners",
+      "width": 1440
+    },
+    {
+      "overflow": false,
+      "page": "/",
+      "partnerEntryVisible": true,
+      "width": 390
+    },
+    {
+      "overflow": false,
+      "page": "/print-partners",
+      "width": 390
+    },
+    {
+      "overflow": false,
+      "page": "/print-partners",
+      "width": 320
+    },
+    {
+      "overflow": false,
+      "page": "/auth/vendor",
+      "registrationFields": 4,
+      "width": 390
+    },
+    {
+      "headerOverflow": false,
+      "overflow": false,
+      "page": "/",
+      "width": 1024
+    }
+  ],
+  "registration": {
+    "isolatedApi": true,
+    "duplicateErrorShown": true,
+    "shopOwnerRoleVerified": true,
+    "nameTrimVerified": true,
+    "newAccountReachedShopSetup": true,
+    "typedShortPasswordBlocked": true
+  },
+  "footer": "Print karna hai?\nPaprout pe bhej de"
+}

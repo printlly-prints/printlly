@@ -16,6 +16,7 @@ import "./styles/paper.css";
 // splitting them would only add a loading flash before anything can be
 // decided.
 const LandingPage = lazy(() => import("./pages/LandingPage"));
+const PrintPartners = lazy(() => import("./pages/PrintPartners"));
 const AuthEntry = lazy(() => import("./pages/AuthEntry"));
 const GetApp = lazy(() => import("./pages/GetApp"));
 const Login = lazy(() => import("./pages/Login"));
@@ -77,7 +78,7 @@ export default function App() {
     <Suspense
       fallback={
         <div className="route-loading" role="status" aria-label="Loading page">
-          <span>printlly.</span>
+          <span>Paprout</span>
           <div className="route-loading-bars" aria-hidden="true">
             <i />
             <i />
@@ -91,6 +92,7 @@ export default function App() {
       <Routes>
         {/* Public marketing page - never gated behind auth. */}
         <Route path="/" element={<LandingPage />} />
+        <Route path="/print-partners" element={<PrintPartners />} />
 
         {/* Public: "are you a customer or a vendor?" chooser. Already-
             authenticated vendors skip straight past it. */}

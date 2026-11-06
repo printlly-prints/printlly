@@ -31,7 +31,7 @@ const FAQS = [
   {
     q: "Why does the same document cost different amounts at different shops?",
     a:
-      "Because each shop sets its own prices. A shop chooses its own per-page rate for black & white and for colour, what it charges for A3, its surcharge for double-sided, and which add-on services it offers and at what price. Printlly adds a platform fee on top, and that part is the same everywhere. The shop-selection screen prices your exact documents at every nearby shop, so the totals you compare there are the real ones.",
+      "Because each shop sets its own prices. A shop chooses its own per-page rate for black & white and for colour, what it charges for A3, its surcharge for double-sided, and which add-on services it offers and at what price. Paprout adds a platform fee on top, and that part is the same everywhere. The shop-selection screen prices your exact documents at every nearby shop, so the totals you compare there are the real ones.",
   },
   {
     q: "I asked for a service and a shop didn't show up",
@@ -85,7 +85,7 @@ export default function HelpSupportScreen({ navigation }) {
             <Text style={styles.chatSubtitle}>
               {unreadCount > 0
                 ? `You have ${unreadCount} new repl${unreadCount === 1 ? "y" : "ies"}`
-                : "Talk to the Printlly team about an order, a payment or a shop"}
+                : "Talk to the Paprout team about an order, a payment or a shop"}
             </Text>
           </View>
         </View>

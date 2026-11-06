@@ -1,10 +1,10 @@
 {
   "expo": {
-    "name": "Printlly",
+    "name": "Paprout",
     "slug": "printlly",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/icon.png",
+    "icon": "./assets/paprout-icon.png",
     "userInterfaceStyle": "light",
     "ios": {
       "supportsTablet": true
@@ -12,35 +12,35 @@
     "android": {
       "adaptiveIcon": {
         "backgroundColor": "#FFFFFF",
-        "foregroundImage": "./assets/android-icon-foreground.png",
-        "monochromeImage": "./assets/android-icon-monochrome.png"
+        "foregroundImage": "./assets/paprout-adaptive.png",
+        "monochromeImage": "./assets/paprout-monochrome.png"
       }
     },
     "web": {
-      "favicon": "./assets/favicon.png"
+      "favicon": "./assets/paprout-favicon.png"
     },
     "plugins": [
       [
         "expo-splash-screen",
         {
-          "image": "./assets/printlly-mark.png",
+          "image": "./assets/paprout-mark.png",
           "imageWidth": 180,
           "resizeMode": "contain",
-          "backgroundColor": "#F7FAFA"
+          "backgroundColor": "#FAFAF7"
         }
       ],
       "expo-font",
       [
         "expo-notifications",
         {
-          "icon": "./assets/android-icon-monochrome.png",
-          "color": "#087F8C"
+          "icon": "./assets/paprout-monochrome.png",
+          "color": "#007C9C"
         }
       ],
       [
         "expo-location",
         {
-          "locationWhenInUsePermission": "Printlly uses your location to show how far each print shop is and list the nearest ones first."
+          "locationWhenInUsePermission": "Paprout uses your location to show how far each print shop is and list the nearest ones first."
         }
       ]
     ]

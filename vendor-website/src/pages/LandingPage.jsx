@@ -37,7 +37,7 @@ const STEPS = [
 const QUESTIONS = [
   [
     "How do I order my prints?",
-    "Get the Printlly app, upload your PDFs, set your print preferences and choose a nearby shop. Review the itemised price and pay in the app.",
+    "Get the Paprout app, upload your PDFs, set your print preferences and choose a nearby shop. Review the itemised price and pay in the app.",
   ],
   [
     "Can I choose colour and paper size?",
@@ -55,7 +55,7 @@ const QUESTIONS = [
 
 function PrintPreview({ step }) {
   return (
-    <div className="print-preview" aria-label="Example of the Printlly app">
+    <div className="print-preview" aria-label="Example of the Paprout app">
       <div className="preview-top">
         <span className="preview-brand">Your print desk</span>
         <span className="example-label">App preview</span>
@@ -200,15 +200,25 @@ export default function LandingPage() {
               </p>
               <div className="paper-actions hero-enter">
                 <Link className="paper-button" to="/auth/get-app">
-                  Get Printlly <ArrowUpRight size={19} />
+                  Get Paprout <ArrowUpRight size={19} />
                 </Link>
                 <a className="paper-text-link" href="#how-it-works">
                   See how it works <ArrowDown size={17} />
                 </a>
               </div>
               <p className="hero-footnote hero-enter">
-                <MapPin size={15} />A little walk. A fresh stack of prints.
+                <MapPin size={15} />
+                <span lang="hi-Latn">Paprout pe bhej de</span>
               </p>
+              <Link
+                to="/print-partners"
+                className="hero-partner-link hero-enter"
+              >
+                Run a print shop?{" "}
+                <span>
+                  Meet Paprout for partners <ArrowUpRight size={15} />
+                </span>
+              </Link>
             </div>
             <div className="hero-visual hero-enter">
               <div className="hero-art">
@@ -225,7 +235,7 @@ export default function LandingPage() {
                   width="1024"
                   height="1536"
                   fetchpriority="high"
-                  alt="Printlly’s illustrated customer carrying freshly printed pages and a pickup ticket, in cyan and yellow"
+                  alt="Paprout’s illustrated customer carrying freshly printed pages and a pickup ticket, in cyan and yellow"
                 />
                 <div className="hero-file-label">
                   <span className="label-icon">
@@ -250,7 +260,7 @@ export default function LandingPage() {
               <p className="hero-art-note">Paperwork, with personality.</p>
             </div>
           </section>
-          <div className="print-service-rail" aria-label="Printlly features">
+          <div className="print-service-rail" aria-label="Paprout features">
             <span>
               <FileText size={18} />
               Everyday documents
@@ -334,7 +344,7 @@ export default function LandingPage() {
                 src="/art/themes/shopkeeper-cmyk.webp"
                 width="1024"
                 height="1536"
-                alt="Printlly’s illustrated shopkeeper holding a customer’s finished print order"
+                alt="Paprout’s illustrated shopkeeper holding a customer’s finished print order"
                 loading="lazy"
               />
               <span className="shop-art-ticket">
@@ -415,7 +425,7 @@ export default function LandingPage() {
                 one place.
               </p>
             </div>
-            <Link to="/auth/vendor" className="paper-text-link">
+            <Link to="/print-partners" className="paper-text-link">
               Become a print partner <ArrowUpRight size={20} />
             </Link>
           </aside>

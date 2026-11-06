@@ -15,18 +15,18 @@ export default function Cookies() {
   return (
     <LegalPage
       title="Cookie Policy"
-      description="Printlly does not use cookies, analytics or tracking. What it does store in your browser."
+      description="Paprout does not use cookies, analytics or tracking. What it does store in your browser."
       toc={TOC}
       intro={
         <P>
           Most cookie policies are long because most sites track their visitors.
-          This one is short because Printlly does not.
+          This one is short because Paprout does not.
         </P>
       }
     >
       <Section id="summary" number="1" title="Summary">
         <Note>
-          Printlly does not set cookies, and does not use analytics,
+          Paprout does not set cookies, and does not use analytics,
           advertising or tracking of any kind. This website stores two values in
           your browser, both required for you to stay signed in, and neither
           used to follow you anywhere.
@@ -46,7 +46,7 @@ export default function Cookies() {
           <li>
             <strong className="text-text-primary">token</strong> - your signed
             session token. Without it you would be signed out every time the
-            page reloads. It is sent to the Printlly API with each request to
+            page reloads. It is sent to the Paprout API with each request to
             prove who you are.
           </li>
           <li>
@@ -65,7 +65,7 @@ export default function Cookies() {
 
       <Section id="app" number="3" title="The mobile app">
         <P>
-          The Printlly customer app is not a website and does not use cookies at
+          The Paprout customer app is not a website and does not use cookies at
           all. It stores your session token, your account details and your push
           notification token on your device, so you stay signed in and can be
           notified about your orders. Uninstalling the app removes them.

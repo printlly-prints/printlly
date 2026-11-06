@@ -46,7 +46,7 @@ export default function OrderTrackingScreen({ route, navigation }) {
     (status === "pending" || status === "accepted") && typeof order.queue_position === "number";
 
   const shareDetails = () => {
-    Share.share({ message: `My Printlly order\nOrder: ${orderRef(order)}\nPickup OTP: ${order.otp}` });
+    Share.share({ message: `My Paprout order\nOrder: ${orderRef(order)}\nPickup OTP: ${order.otp}` });
   };
 
   const onRefresh = async ({ silent } = {}) => {

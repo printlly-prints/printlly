@@ -23,14 +23,14 @@ export default function Privacy() {
   return (
     <LegalPage
       title="Privacy Policy"
-      description="What Printlly collects, how uploaded documents are handled, and when they are deleted."
+      description="What Paprout collects, how uploaded documents are handled, and when they are deleted."
       toc={TOC}
       intro={
         <>
           <P>
             This policy explains what {LEGAL_BUSINESS_NAME} collects when you
-            use Printlly, what we do with it, and when it is deleted. Because
-            Printlly handles documents you upload for printing, the sections on
+            use Paprout, what we do with it, and when it is deleted. Because
+            Paprout handles documents you upload for printing, the sections on
             documents are the most important ones here.
           </P>
           <P>
@@ -43,8 +43,8 @@ export default function Privacy() {
     >
       <Section id="scope" number="1" title="Scope">
         <P>
-          This policy covers the Printlly customer app, the print partner
-          dashboard, and the Printlly backend. It does not cover the practices
+          This policy covers the Paprout customer app, the print partner
+          dashboard, and the Paprout backend. It does not cover the practices
           of the print shops themselves outside the platform, or of the
           third-party services listed below, each of which has its own policy.
         </P>
@@ -136,14 +136,14 @@ export default function Privacy() {
         </Sub>
 
         <Note>
-          Printlly does not use cookies, analytics, advertising or tracking
+          Paprout does not use cookies, analytics, advertising or tracking
           pixels. See the Cookie Policy for the browser storage that is used.
         </Note>
       </Section>
 
       <Section id="documents" number="3" title="Your uploaded documents">
         <P>
-          This is the part of Printlly that handles the most sensitive material,
+          This is the part of Paprout that handles the most sensitive material,
           so here is precisely what happens to a document you upload.
         </P>
         <List ordered>
@@ -162,7 +162,7 @@ export default function Privacy() {
             nobody else. Another shop cannot reach it.
           </li>
           <li>
-            The print partner opens the document through the Printlly dashboard
+            The print partner opens the document through the Paprout dashboard
             in order to print it. The dashboard streams the file through our
             server rather than linking to storage directly, so the raw storage
             address is not exposed to them.
@@ -181,7 +181,7 @@ export default function Privacy() {
           Being honest about the limit of this: a print partner can see and
           print your document while the order is live, because that is the
           service. They are bound by the Print Partner Terms not to keep,
-          copy or use it for anything other than your order, but Printlly
+          copy or use it for anything other than your order, but Paprout
           cannot technically prevent someone from keeping a printed page.
         </Note>
       </Section>
@@ -287,7 +287,7 @@ export default function Privacy() {
 
       <Section id="payments" number="7" title="Payment information">
         <P>
-          Printlly does not collect or store your card number, UPI PIN, CVV,
+          Paprout does not collect or store your card number, UPI PIN, CVV,
           bank credentials or any other payment instrument details. Those are
           entered into Razorpay's checkout and never reach our servers.
         </P>
@@ -298,7 +298,7 @@ export default function Privacy() {
           if you query it. They cannot be used to charge you.
         </P>
         <Note>
-          Printlly makes no claim of PCI-DSS certification. Payment card data is
+          Paprout makes no claim of PCI-DSS certification. Payment card data is
           handled by Razorpay precisely so that it does not pass through our
           systems.
         </Note>
@@ -313,7 +313,7 @@ export default function Privacy() {
             password, your location or your other orders.
           </li>
           <li>
-            <strong className="text-text-primary">Printlly administrators</strong>{" "}
+            <strong className="text-text-primary">Paprout administrators</strong>{" "}
             can see orders, shops, settlements and support conversations in
             order to run the platform and resolve disputes.
           </li>
@@ -397,7 +397,7 @@ export default function Privacy() {
 
       <Section id="deletion" number="12" title="Account and data deletion">
         <P>
-          Printlly does not currently have a self-service "delete my account"
+          Paprout does not currently have a self-service "delete my account"
           control in the app or the dashboard. Deletion is handled manually on
           request. The Account &amp; Data Deletion page explains how to ask, what
           is deleted, and what has to be kept.
@@ -406,7 +406,7 @@ export default function Privacy() {
 
       <Section id="children" number="13" title="Children">
         <P>
-          Printlly is not directed at children. Accounts should be created by
+          Paprout is not directed at children. Accounts should be created by
           people able to enter into a contract under Indian law.
         </P>
       </Section>

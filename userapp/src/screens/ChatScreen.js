@@ -120,7 +120,7 @@ export default function ChatScreen({ route }) {
               <Ionicons name="chatbubbles-outline" size={40} color={colors.textMuted} />
               <Text style={styles.emptyTitle}>No messages yet</Text>
               <Text style={styles.emptyBody}>
-                Tell us what's going on and someone from the Printlly team will reply here.
+                Tell us what's going on and someone from the Paprout team will reply here.
               </Text>
             </View>
           }

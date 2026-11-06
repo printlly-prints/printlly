@@ -1,4 +1,4 @@
-// Printlly design tokens - the single source of truth for colour in the
+// Paprout design tokens - the single source of truth for colour in the
 // mobile app. Kept identical to the web dashboard's Tailwind config
 // (vendor-website/tailwind.config.js) so both surfaces read as one product.
 // Every screen imports from here; there are no hardcoded hex values
@@ -8,7 +8,7 @@
 // DARK THEME
 // ===========================================================================
 //
-// Printlly runs dark. Only the NEUTRAL and SURFACE tokens below were
+// Paprout runs dark. Only the NEUTRAL and SURFACE tokens below were
 // darkened; every brand and semantic colour is byte-for-byte what it was in
 // the light theme - primary, primaryDeep, primaryAccent, leaf, success,
 // danger, and every status/availability dot. Those are the product's
@@ -16,7 +16,7 @@
 //
 // WHERE THE DARK VALUES COME FROM
 //
-// They are not invented. Printlly already contained its own dark greens
+// They are not invented. Paprout already contained its own dark greens
 // before this theme existed:
 //
 //   #0C2419  the deep green in the landing page's app-promo panel

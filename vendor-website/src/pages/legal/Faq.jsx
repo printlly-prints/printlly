@@ -50,11 +50,11 @@ export default function Faq() {
   return (
     <LegalPage
       title="Frequently Asked Questions"
-      description="How ordering, paying, pickup, refunds and document handling work on Printlly."
+      description="How ordering, paying, pickup, refunds and document handling work on Paprout."
       toc={TOC}
       intro={
         <P>
-          Answers describe what Printlly does today. Where a feature does not
+          Answers describe what Paprout does today. Where a feature does not
           exist yet, the answer says so rather than describing something
           planned.
         </P>
@@ -62,12 +62,12 @@ export default function Faq() {
     >
       <Section id="basics" number="1" title="Getting started">
         <Group>
-          <Q q="What is Printlly?">
+          <Q q="What is Paprout?">
             <p>
               A marketplace connecting you with nearby print shops. You upload
               documents, choose how they should be printed, pay online, and
               collect the prints from the shop you picked. The printing is done
-              by independent shops, not by Printlly.
+              by independent shops, not by Paprout.
             </p>
           </Q>
           <Q q="Do I need an account?">
@@ -77,9 +77,9 @@ export default function Faq() {
               account.
             </p>
           </Q>
-          <Q q="Is there a Printlly app?">
+          <Q q="Is there a Paprout app?">
             <p>
-              Customers order through the Printlly mobile app. This website is
+              Customers order through the Paprout mobile app. This website is
               the print partner dashboard and the public information site.
             </p>
           </Q>
@@ -132,7 +132,7 @@ export default function Faq() {
           </Q>
           <Q q="Is there a platform fee?">
             <p>
-              Yes. Printlly adds a platform fee, shown as a separate line in the
+              Yes. Paprout adds a platform fee, shown as a separate line in the
               total before you pay.
             </p>
           </Q>
@@ -144,7 +144,7 @@ export default function Faq() {
           <Q q="How do I pay?">
             <p>
               Online through Razorpay, which supports UPI, cards, net banking
-              and wallets. Printlly never sees or stores your card or UPI
+              and wallets. Paprout never sees or stores your card or UPI
               details.
             </p>
           </Q>
@@ -168,7 +168,7 @@ export default function Faq() {
           </Q>
           <Q q="Do I get a GST invoice?">
             <p>
-              Printlly does not currently generate invoices or GST invoices
+              Paprout does not currently generate invoices or GST invoices
               through the platform. See the Payment &amp; Billing page.
             </p>
           </Q>
@@ -199,15 +199,15 @@ export default function Faq() {
               them. Treat it like any one-time password.
             </p>
           </Q>
-          <Q q="Does Printlly deliver to my home?">
+          <Q q="Does Paprout deliver to my home?">
             <p>
-              No. Printlly is collect-in-person only. There is no delivery
+              No. Paprout is collect-in-person only. There is no delivery
               option, no delivery address and no delivery charge.
             </p>
           </Q>
           <Q q="How long will my order take?">
             <p>
-              That depends on the shop and its queue; Printlly does not set or
+              That depends on the shop and its queue; Paprout does not set or
               guarantee a turnaround. A shop can mark itself busy, in which case
               the app shows a longer preparation estimate that the shop chose.
             </p>
@@ -251,7 +251,7 @@ export default function Faq() {
           <Q q="The print quality is poor.">
             <p>
               Raise it with the shop at the counter - they can usually reprint
-              on the spot. If that does not work, contact Printlly support.
+              on the spot. If that does not work, contact Paprout support.
               Printing is done by independent shops, so we cannot compel a
               reprint, but we will try to reach a fair outcome.
             </p>
@@ -275,7 +275,7 @@ export default function Faq() {
               request is checked against the order.
             </p>
           </Q>
-          <Q q="Does Printlly read my documents?">
+          <Q q="Does Paprout read my documents?">
             <p>
               Only to count the pages, automatically, so the order can be
               priced. We do not open, index, analyse or share the contents.
@@ -325,7 +325,7 @@ export default function Faq() {
           </Q>
           <Q q="How and when do I get paid?">
             <p>
-              Customers pay Printlly, and Printlly settles with you separately.
+              Customers pay Paprout, and Paprout settles with you separately.
               Your Earnings page shows your unsettled balance and your
               settlement history. Transfers are made manually outside the
               platform by UPI or bank transfer and then recorded against your

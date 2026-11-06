@@ -21,9 +21,9 @@ export default function Navbar() {
           <Logo size={30} />
           <div className="flex flex-col min-w-0">
             <span className="font-heading font-bold text-text-primary leading-tight truncate">
-              {shop ? shop.shop_name : "Printlly for Shops"}
+              {shop ? shop.shop_name : "Paprout for Shops"}
             </span>
-            {shop && <span className="text-xs text-text-muted leading-tight">Printlly for Shops</span>}
+            {shop && <span className="text-xs text-text-muted leading-tight">Paprout for Shops</span>}
           </div>
         </div>
         <button

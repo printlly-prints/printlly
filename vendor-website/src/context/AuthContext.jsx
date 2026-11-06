@@ -1,4 +1,11 @@
-import { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
+import {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useState,
+} from "react";
 import api from "../api/axios";
 import { identifyUser, clearUser, trackEvent } from "../lib/observability";
 
@@ -73,7 +80,21 @@ export function AuthProvider({ children }) {
       const { data } = await api.post("/auth/login", { email, password });
       persistSession(data.token, data.user);
     },
-    [persistSession]
+    [persistSession],
+  );
+
+  const registerPartner = useCallback(
+    async ({ name, phone, email, password }) => {
+      const { data } = await api.post("/auth/register", {
+        name,
+        phone,
+        email,
+        password,
+        role: "shop_owner",
+      });
+      persistSession(data.token, data.user);
+    },
+    [persistSession],
   );
 
   // Used by the /auth/callback page after Google redirects back with a
@@ -85,7 +106,7 @@ export function AuthProvider({ children }) {
       const { data } = await api.post("/auth/exchange-code", { code });
       persistSession(data.token, data.user);
     },
-    [persistSession]
+    [persistSession],
   );
 
   const logout = useCallback(() => {
@@ -117,12 +138,24 @@ export function AuthProvider({ children }) {
       shop,
       shopLoading,
       login,
+      registerPartner,
       completeGoogleLogin,
       logout,
       registerShop,
       refreshShop: loadMyShop,
     }),
-    [token, user, shop, shopLoading, login, completeGoogleLogin, logout, registerShop, loadMyShop]
+    [
+      token,
+      user,
+      shop,
+      shopLoading,
+      login,
+      registerPartner,
+      completeGoogleLogin,
+      logout,
+      registerShop,
+      loadMyShop,
+    ],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

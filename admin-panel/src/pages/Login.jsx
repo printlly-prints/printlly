@@ -41,7 +41,7 @@ export default function Login() {
     <div className="min-h-screen flex items-center justify-center px-4 bg-background">
       <div className="w-full max-w-sm">
         <div className="mb-6 text-center">
-          <h1 className="font-heading text-2xl font-bold text-text-primary">Printlly Admin</h1>
+          <h1 className="font-heading text-2xl font-bold text-text-primary">Paprout Admin</h1>
           <p className="text-sm text-text-secondary mt-1">Internal tool. Sign in with an admin account.</p>
         </div>
 

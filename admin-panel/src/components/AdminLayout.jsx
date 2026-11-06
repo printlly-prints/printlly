@@ -100,7 +100,7 @@ export default function AdminLayout({ children }) {
       {/* Mobile top bar */}
       <div className="md:hidden sticky top-0 z-20 bg-surface border-b border-border">
         <div className="h-14 px-4 flex items-center justify-between">
-          <span className="font-heading font-bold text-text-primary">Printlly Admin</span>
+          <span className="font-heading font-bold text-text-primary">Paprout Admin</span>
           <button
             type="button"
             onClick={() => setMobileOpen((v) => !v)}
@@ -129,7 +129,7 @@ export default function AdminLayout({ children }) {
       {/* Desktop sidebar */}
       <aside className="hidden md:flex md:flex-col md:w-56 md:shrink-0 md:h-screen md:sticky md:top-0 bg-surface border-r border-border">
         <div className="h-14 px-5 flex items-center border-b border-border">
-          <span className="font-heading font-bold text-text-primary">Printlly Admin</span>
+          <span className="font-heading font-bold text-text-primary">Paprout Admin</span>
         </div>
 
         <nav className="flex-1 px-3 py-4 flex flex-col gap-1">{navLinks()}</nav>

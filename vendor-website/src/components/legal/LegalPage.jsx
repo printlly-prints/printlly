@@ -23,7 +23,7 @@ import {
 function useDocumentMeta(title, description) {
   useEffect(() => {
     const previousTitle = document.title;
-    document.title = `${title} · Printlly`;
+    document.title = `${title} · Paprout`;
 
     let tag = document.querySelector('meta[name="description"]');
     const created = !tag;

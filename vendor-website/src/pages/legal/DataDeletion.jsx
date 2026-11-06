@@ -17,11 +17,11 @@ export default function DataDeletion() {
   return (
     <LegalPage
       title="Account & Data Deletion"
-      description="How to ask Printlly to delete your account, what is removed, and what must be retained."
+      description="How to ask Paprout to delete your account, what is removed, and what must be retained."
       toc={TOC}
       intro={
         <P>
-          You can ask us to delete your Printlly account and the personal
+          You can ask us to delete your Paprout account and the personal
           information attached to it. This page explains how to ask and what
           actually happens - including the parts that cannot be deleted.
         </P>
@@ -51,13 +51,13 @@ export default function DataDeletion() {
         </P>
         <P>
           Customers can also raise this through the Help &amp; Support chat in
-          the Printlly app.
+          the Paprout app.
         </P>
       </Section>
 
       <Section id="no-button" number="2" title="Why there is no delete button">
         <Note>
-          Printlly does not currently have a self-service "delete my account"
+          Paprout does not currently have a self-service "delete my account"
           control in the app or the dashboard. Deletion is handled manually by
           our team on request. We would rather say that plainly than put a
           button on this page that does not do anything.
@@ -111,7 +111,7 @@ export default function DataDeletion() {
           <li>
             <strong className="text-text-primary">Payment records held by
             Razorpay</strong> - these are Razorpay's own records of a payment
-            they processed. Deleting your Printlly account does not and cannot
+            they processed. Deleting your Paprout account does not and cannot
             delete them.
           </li>
           <li>
@@ -129,7 +129,7 @@ export default function DataDeletion() {
       <Section id="documents" number="5" title="Your uploaded documents">
         <P>
           Your documents are already deleted in the ordinary course of using
-          Printlly, without you having to ask:
+          Paprout, without you having to ask:
         </P>
         <List>
           <li>when the order is completed;</li>

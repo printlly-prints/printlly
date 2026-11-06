@@ -116,7 +116,7 @@ export default function Earnings() {
               {/* Said once, here, because "unsettled balance" otherwise
                   reads like a button is missing. */}
               <p className="text-xs text-text-muted mt-3 max-w-xl">
-                This is your share of completed, paid orders — the order total minus Printlly's fee.
+                This is your share of completed, paid orders — the order total minus Paprout's fee.
                 Payouts are sent manually, so there's nothing to request; this clears once a transfer
                 has been made.
               </p>

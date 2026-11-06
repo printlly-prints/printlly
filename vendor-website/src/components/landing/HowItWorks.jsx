@@ -58,7 +58,7 @@ export default function HowItWorks() {
 
       <div className="relative max-w-[1180px] mx-auto px-5 sm:px-6 py-16 lg:py-20">
         <Reveal className="text-center">
-          <SectionLabel>How Printlly Works</SectionLabel>
+          <SectionLabel>How Paprout Works</SectionLabel>
           <h2 className="mt-5 font-heading font-bold text-text-primary tracking-[-0.03em] text-[30px] leading-[1.2] sm:text-[36px]">
             Get your prints in <span className="text-primary-bright">4</span> simple steps
           </h2>

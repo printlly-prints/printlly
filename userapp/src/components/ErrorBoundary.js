@@ -52,7 +52,7 @@ export default class ErrorBoundary extends Component {
         <View style={styles.screen}>
           <Text style={styles.title}>Something went wrong</Text>
           <Text style={styles.body}>
-            Printlly ran into an unexpected problem on this screen. Your orders
+            Paprout ran into an unexpected problem on this screen. Your orders
             are safe - nothing has been lost or changed.
           </Text>
           <Text style={styles.note}>

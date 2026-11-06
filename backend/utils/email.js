@@ -89,7 +89,7 @@ function layout({ heading, lines, footerNote }) {
 
   return [
     '<div style="font-family:-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;max-width:560px;margin:0 auto;padding:24px">',
-    '<div style="font-size:19px;font-weight:700;color:#12463C;margin-bottom:4px">Printlly</div>',
+    '<div style="font-size:19px;font-weight:700;color:#12463C;margin-bottom:4px">Paprout</div>',
     '<div style="font-size:13px;color:#6B7B78;margin-bottom:22px">Print Smarter. Skip the Wait.</div>',
     '<h1 style="font-size:20px;color:#12463C;margin:0 0 16px">' + heading + "</h1>",
     body,
@@ -98,7 +98,7 @@ function layout({ heading, lines, footerNote }) {
       : "",
     '<hr style="border:none;border-top:1px solid #E3EAE8;margin:24px 0 12px">',
     '<p style="margin:0;font-size:11.5px;color:#8A9896;line-height:1.6">',
-    "This is an automated message about your Printlly account. Please do not reply to it.",
+    "This is an automated message about your Paprout account. Please do not reply to it.",
     "</p>",
     "</div>",
   ].join("");
@@ -141,7 +141,7 @@ const TEMPLATES = {
   // One email at the moment the order becomes real, serving as both order
   // confirmation and payment receipt.
   //
-  // There is deliberately no separate "order placed" email. A Printlly order
+  // There is deliberately no separate "order placed" email. A Paprout order
   // is created BEFORE payment (POST /orders leaves payment_status "created")
   // and a shop never sees an unpaid order, so an email at creation would
   // confirm something that may never happen, and would arrive seconds before
@@ -157,7 +157,7 @@ const TEMPLATES = {
           "Hi " + esc(p.customerName) + ", we have received your payment and sent your order to <strong>" + esc(p.shopName) + "</strong>.",
           "<strong>Order reference:</strong> " + esc(p.orderRef) + "<br><strong>Amount paid:</strong> " + money(p.amount),
           "The shop will accept your order shortly. You will be emailed again when it is ready to collect.",
-          "Your pickup code is shown in the Printlly app under this order. For your security we do not include it in email - you will need it at the counter to collect your prints.",
+          "Your pickup code is shown in the Paprout app under this order. For your security we do not include it in email - you will need it at the counter to collect your prints.",
         ],
         footerNote:
           "Your uploaded files are deleted automatically once the order is completed, and sooner if it expires.",
@@ -166,7 +166,7 @@ const TEMPLATES = {
 
   payment_failed: {
     audience: "customer",
-    subject: () => "Your Printlly payment did not go through",
+    subject: () => "Your Paprout payment did not go through",
     html: (p) =>
       layout({
         heading: "Payment unsuccessful",
@@ -201,7 +201,7 @@ const TEMPLATES = {
         lines: [
           "Your order is ready to collect at <strong>" + esc(p.shopName) + "</strong>.",
           "<strong>Order reference:</strong> " + esc(p.orderRef),
-          "Open the Printlly app to see your pickup code, and show it at the counter to collect.",
+          "Open the Paprout app to see your pickup code, and show it at the counter to collect.",
         ],
       }),
   },
@@ -213,7 +213,7 @@ const TEMPLATES = {
       layout({
         heading: "Order completed",
         lines: [
-          "Your order from <strong>" + esc(p.shopName) + "</strong> has been collected. Thank you for using Printlly.",
+          "Your order from <strong>" + esc(p.shopName) + "</strong> has been collected. Thank you for using Paprout.",
           "<strong>Order reference:</strong> " + esc(p.orderRef) + "<br><strong>Total paid:</strong> " + money(p.amount),
           "Your uploaded files have now been scheduled for deletion from our storage.",
         ],
@@ -222,7 +222,7 @@ const TEMPLATES = {
 
   order_expired: {
     audience: "customer",
-    subject: () => "Your Printlly order has expired",
+    subject: () => "Your Paprout order has expired",
     html: (p) =>
       layout({
         heading: "Order expired",
@@ -240,12 +240,12 @@ const TEMPLATES = {
   // becomes noticeable.
   password_changed: {
     audience: "any",
-    subject: () => "Your Printlly password was changed",
+    subject: () => "Your Paprout password was changed",
     html: (p) =>
       layout({
         heading: "Your password was changed",
         lines: [
-          "Hi " + esc(p.customerName) + ", the password on your Printlly account was changed just now, and you have been signed out on every device.",
+          "Hi " + esc(p.customerName) + ", the password on your Paprout account was changed just now, and you have been signed out on every device.",
           "If you did this, nothing further is needed.",
           "<strong>If this was not you</strong>, someone else may have had access to your account. Sign in and change your password again immediately, and contact support.",
         ],
@@ -256,12 +256,12 @@ const TEMPLATES = {
 
   vendor_welcome: {
     audience: "vendor",
-    subject: () => "Welcome to Printlly for print partners",
+    subject: () => "Welcome to Paprout for print partners",
     html: (p) =>
       layout({
         heading: "Your print partner account is ready",
         lines: [
-          "Hi " + esc(p.vendorName) + ", thank you for registering as a Printlly print partner.",
+          "Hi " + esc(p.vendorName) + ", thank you for registering as a Paprout print partner.",
           "The next step is to add your shop details, pricing and verification documents from the partner dashboard. Our team reviews each shop before it becomes visible to customers, and you will be emailed with the outcome.",
           "Until your shop is verified it will not appear in customer search and cannot take orders.",
         ],
@@ -323,7 +323,7 @@ const TEMPLATES = {
           "The breakdown is available in the partner dashboard under settlements.",
         ],
         footerNote:
-          "This records the settlement in Printlly. The transfer itself is made outside the platform - Printlly does not move money to partner accounts.",
+          "This records the settlement in Paprout. The transfer itself is made outside the platform - Paprout does not move money to partner accounts.",
       }),
   },
 };

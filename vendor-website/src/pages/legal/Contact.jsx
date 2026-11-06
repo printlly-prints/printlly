@@ -45,7 +45,7 @@ export default function Contact() {
   return (
     <LegalPage
       title="Contact Us"
-      description="How to reach Printlly support for orders, payments, refunds and partner enquiries."
+      description="How to reach Paprout support for orders, payments, refunds and partner enquiries."
       toc={TOC}
       intro={
         <P>
@@ -83,7 +83,7 @@ export default function Contact() {
         <P>
           Customers can message our support team directly from the{" "}
           <strong className="text-text-primary">Help &amp; Support</strong>{" "}
-          screen in the Printlly app. Messages are delivered in real time, your
+          screen in the Paprout app. Messages are delivered in real time, your
           account and order history are already attached, and replies appear in
           the same conversation.
         </P>
@@ -91,7 +91,7 @@ export default function Contact() {
           There is no contact form on this website. Rather than show a form that
           looks like it submits and does not, we are pointing you at the channel
           that genuinely reaches our team. The in-app chat is a real, working
-          feature of the Printlly app.
+          feature of the Paprout app.
         </Note>
       </Section>
 

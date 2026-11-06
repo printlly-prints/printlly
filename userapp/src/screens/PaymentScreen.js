@@ -30,7 +30,7 @@ function buildCheckoutHtml({ amountInPaise, currency, razorpayOrderId, keyId, us
     amount: amountInPaise,
     currency,
     order_id: razorpayOrderId,
-    name: "Printlly",
+    name: "Paprout",
     description: "Payment for your print order",
     prefill: {
       name: user?.name || "",

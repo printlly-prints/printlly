@@ -2,34 +2,34 @@ import LegalPage, { Section, P, List } from "../../components/legal/LegalPage";
 import { LEGAL_BUSINESS_NAME, SUPPORT_EMAIL, FACTS } from "../../config/legal";
 
 const TOC = [
-  { id: "what", title: "What Printlly is" },
+  { id: "what", title: "What Paprout is" },
   { id: "customers", title: "For customers" },
   { id: "partners", title: "For print partners" },
   { id: "documents", title: "How we treat your documents" },
-  { id: "where", title: "Where Printlly operates" },
-  { id: "who", title: "Who operates Printlly" },
+  { id: "where", title: "Where Paprout operates" },
+  { id: "who", title: "Who operates Paprout" },
 ];
 
 export default function About() {
   return (
     <LegalPage
-      title="About Printlly"
-      description="Printlly connects customers with nearby print shops: upload, pay online, collect in person."
+      title="About Paprout"
+      description="Paprout connects customers with nearby print shops: upload, pay online, collect in person."
       toc={TOC}
       intro={
         <P>
-          Printlly connects people who need something printed with nearby print
+          Paprout connects people who need something printed with nearby print
           shops. You upload your documents, choose how you want them printed,
           pay online, and collect them from the shop you picked - without
           queueing to explain what you need or waiting while it is done.
         </P>
       }
     >
-      <Section id="what" number="1" title="What Printlly is">
+      <Section id="what" number="1" title="What Paprout is">
         <P>
-          Printlly is a marketplace. The printing is done by independent print
+          Paprout is a marketplace. The printing is done by independent print
           shops who join the platform, set their own prices, and fulfil orders
-          themselves. Printlly provides the part in between: finding a shop,
+          themselves. Paprout provides the part in between: finding a shop,
           handling the files, pricing the job, taking payment, and verifying
           the handover.
         </P>
@@ -98,17 +98,17 @@ export default function About() {
         </P>
       </Section>
 
-      <Section id="where" number="5" title="Where Printlly operates">
+      <Section id="where" number="5" title="Where Paprout operates">
         <P>
-          Printlly is built for India. Prices are in Indian rupees and payments
+          Paprout is built for India. Prices are in Indian rupees and payments
           are processed through Razorpay. Which shops are available to you
           depends on which have joined and been verified near you.
         </P>
       </Section>
 
-      <Section id="who" number="6" title="Who operates Printlly">
+      <Section id="who" number="6" title="Who operates Paprout">
         <P>
-          Printlly is operated by {LEGAL_BUSINESS_NAME}. For business or press
+          Paprout is operated by {LEGAL_BUSINESS_NAME}. For business or press
           enquiries, write to {SUPPORT_EMAIL}.
         </P>
       </Section>

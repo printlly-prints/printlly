@@ -35,14 +35,14 @@ export default function Terms() {
   return (
     <LegalPage
       title="Terms & Conditions"
-      description="The terms that govern use of Printlly by customers and print partners."
+      description="The terms that govern use of Paprout by customers and print partners."
       toc={TOC}
       intro={
         <>
           <P>
-            These terms govern your use of Printlly, a platform that connects
+            These terms govern your use of Paprout, a platform that connects
             customers who need documents printed with independent print shops
-            ("print partners") who print them. Printlly is operated by{" "}
+            ("print partners") who print them. Paprout is operated by{" "}
             {LEGAL_BUSINESS_NAME}.
           </P>
           <P>
@@ -56,7 +56,7 @@ export default function Terms() {
       <Section id="introduction" number="1" title="Introduction and acceptance">
         <P>
           By creating an account, placing an order, or registering a shop on
-          Printlly, you agree to these terms. If you do not agree with them,
+          Paprout, you agree to these terms. If you do not agree with them,
           please do not use the service.
         </P>
       </Section>
@@ -65,7 +65,7 @@ export default function Terms() {
         <List>
           <li>
             You must be legally capable of entering into a contract under Indian
-            law to use Printlly.
+            law to use Paprout.
           </li>
           <li>
             Customers register with a name, phone number, email address and
@@ -84,14 +84,14 @@ export default function Terms() {
 
       <Section id="role" number="3" title="Our role as an intermediary">
         <P>
-          Printlly is a marketplace. The printing itself is carried out by
+          Paprout is a marketplace. The printing itself is carried out by
           independent print shops who set their own prices, decide which orders
           to accept, and are responsible for the quality and timeliness of the
           work they do.
         </P>
         <P>
-          Printlly is not the printer, and does not warrant the output of any
-          print partner. What Printlly provides is the platform: shop discovery,
+          Paprout is not the printer, and does not warrant the output of any
+          print partner. What Paprout provides is the platform: shop discovery,
           document handling, server-side pricing calculation, payment
           collection, order tracking and pickup verification.
         </P>
@@ -104,7 +104,7 @@ export default function Terms() {
             order, each up to {FACTS.maxFileSizeMb} MB.
           </li>
           <li>
-            Printlly reads each document on the server to count its pages. That
+            Paprout reads each document on the server to count its pages. That
             page count, not a number you supply, is what the order is priced
             on.
           </li>
@@ -150,7 +150,7 @@ export default function Terms() {
 
       <Section id="ip" number="6" title="Intellectual property and copyright">
         <P>
-          You keep all rights in the documents you upload. Printlly claims no
+          You keep all rights in the documents you upload. Paprout claims no
           ownership of them and uses them only to fulfil your order.
         </P>
         <P>
@@ -158,13 +158,13 @@ export default function Terms() {
             You are responsible for having the legal right to print what you
             upload.
           </strong>{" "}
-          Printlly does not review, verify or moderate the contents of customer
+          Paprout does not review, verify or moderate the contents of customer
           documents, and is not responsible for them. If you upload material you
           are not entitled to reproduce, that is your responsibility and not
           ours or the print partner's.
         </P>
         <P>
-          The Printlly name, logo, platform and software remain our property and
+          The Paprout name, logo, platform and software remain our property and
           may not be copied or reused without permission.
         </P>
       </Section>
@@ -180,7 +180,7 @@ export default function Terms() {
             has listed.
           </li>
           <li>
-            Printlly calculates the price on the server from the shop's own
+            Paprout calculates the price on the server from the shop's own
             rates and the page count it measured.
           </li>
           <li>You pay. Only then does the order reach the print partner.</li>
@@ -198,7 +198,7 @@ export default function Terms() {
             shops, which is why the total is shown before you pay.
           </li>
           <li>
-            Printlly adds a platform fee to each order. The fee is shown as a
+            Paprout adds a platform fee to each order. The fee is shown as a
             separate line in the order total before payment.
           </li>
           <li>
@@ -210,7 +210,7 @@ export default function Terms() {
         </List>
         <Sub title="Taxes">
           <P>
-            Any taxes that apply are included in the amounts displayed. Printlly
+            Any taxes that apply are included in the amounts displayed. Paprout
             does not currently issue GST invoices through the platform - see the
             Payment &amp; Billing page for what is and is not provided.
           </P>
@@ -219,7 +219,7 @@ export default function Terms() {
 
       <Section id="payment" number="9" title="Payment">
         <P>
-          Payments are processed by Razorpay. Printlly does not receive or store
+          Payments are processed by Razorpay. Paprout does not receive or store
           your card, UPI or bank credentials; those are handled by Razorpay on
           their own systems.
         </P>
@@ -230,7 +230,7 @@ export default function Terms() {
           claiming a payment succeeded is never sufficient on its own.
         </P>
         <P>
-          When payment is confirmed, Printlly generates a {FACTS.otpDigits}
+          When payment is confirmed, Paprout generates a {FACTS.otpDigits}
           -digit pickup OTP for the order and the order becomes visible to the
           print partner.
         </P>
@@ -257,7 +257,7 @@ export default function Terms() {
           </li>
         </List>
         <Note>
-          Printlly does not offer home delivery. All orders are collected from
+          Paprout does not offer home delivery. All orders are collected from
           the shop you selected.
         </Note>
       </Section>
@@ -281,7 +281,7 @@ export default function Terms() {
           </li>
         </List>
         <P>
-          Printlly does not currently provide a way for a customer to cancel an
+          Paprout does not currently provide a way for a customer to cancel an
           order themselves after paying. If you need an order stopped, contact
           support - see the Cancellation &amp; Refund Policy.
         </P>
@@ -311,7 +311,7 @@ export default function Terms() {
           they did the work and are usually able to fix it fastest.
         </P>
         <P>
-          If that does not resolve it, contact Printlly support. We can see the
+          If that does not resolve it, contact Paprout support. We can see the
           order record, its status history and the amounts charged, and we will
           try to help both sides reach a fair outcome. We cannot compel a print
           partner to reprint or compensate, as they are independent businesses.
@@ -325,7 +325,7 @@ export default function Terms() {
           preparation will take longer. A closed shop cannot be ordered from.
         </P>
         <P>
-          Printlly is provided on an "as available" basis. We do not guarantee
+          Paprout is provided on an "as available" basis. We do not guarantee
           uninterrupted service, and the platform may be unavailable for
           maintenance or due to failures in services we depend on.
         </P>
@@ -351,7 +351,7 @@ export default function Terms() {
 
       <Section id="liability" number="18" title="Limitation of liability">
         <P>
-          To the extent permitted by law, Printlly is not liable for the quality
+          To the extent permitted by law, Paprout is not liable for the quality
           or timeliness of printing carried out by a print partner, for the
           contents of documents you upload, or for loss arising from a shop
           being closed, busy or declining an order.
@@ -364,7 +364,7 @@ export default function Terms() {
 
       <Section id="indemnity" number="19" title="Indemnification">
         <P>
-          You agree to indemnify Printlly against claims, losses and reasonable
+          You agree to indemnify Paprout against claims, losses and reasonable
           costs arising from your breach of these terms, or from documents you
           uploaded that you did not have the right to print.
         </P>
@@ -373,7 +373,7 @@ export default function Terms() {
       <Section id="changes" number="20" title="Changes to these terms">
         <P>
           We may update these terms. The date at the top of this page shows when
-          they were last changed. Continuing to use Printlly after a change
+          they were last changed. Continuing to use Paprout after a change
           means you accept the updated terms.
         </P>
       </Section>

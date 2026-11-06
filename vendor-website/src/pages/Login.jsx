@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { Link } from "react-router-dom";
@@ -21,31 +21,50 @@ export default function Login() {
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [name, setName] = useState("");
+  const [phone, setPhone] = useState("");
 
-  const { login } = useAuth();
+  const { login, registerPartner } = useAuth();
   const navigate = useNavigate();
 
   // /auth/callback redirects back here with ?error=... when Google
   // sign-in itself failed, or when the exchange-code call afterwards did.
   const [searchParams] = useSearchParams();
   const oauthError = searchParams.get("error");
+  const signingUp = searchParams.get("mode") === "signup";
+  useEffect(() => {
+    setError("");
+    setPassword("");
+  }, [signingUp]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!AUTH_AVAILABLE) {
       setError(
-        "Partner sign-in is currently unavailable. Please try again later.",
+        "Partner accounts are currently unavailable. Please try again later.",
       );
       return;
     }
     setError("");
     setLoading(true);
     try {
-      await login(email.trim(), password);
+      if (signingUp) {
+        await registerPartner({
+          name: name.trim(),
+          phone: phone.trim(),
+          email: email.trim(),
+          password,
+        });
+      } else {
+        await login(email.trim(), password);
+      }
       navigate("/app", { replace: true });
     } catch (err) {
       setError(
-        err.response?.data?.message || "Login failed. Please try again.",
+        err.response?.data?.message ||
+          (signingUp
+            ? "Could not create your account. Please try again."
+            : "Login failed. Please try again."),
       );
     } finally {
       setLoading(false);
@@ -74,7 +93,7 @@ export default function Login() {
               src="/art/themes/shopkeeper-cmyk.webp"
               width="1024"
               height="1536"
-              alt="Printlly’s illustrated print partner"
+              alt="Paprout’s illustrated print partner"
             />
           </div>
         </div>
@@ -82,10 +101,12 @@ export default function Login() {
           <PaperWordmark />
 
           <h1 className="font-heading text-2xl font-bold text-text-primary mt-4 text-center">
-            Shop owner login
+            {signingUp ? "Create your partner account" : "Shop owner login"}
           </h1>
           <p className="text-sm text-text-secondary mt-1.5 text-center">
-            Sign in to manage your print orders.
+            {signingUp
+              ? "Your first step to bringing your shop online."
+              : "Sign in to manage your print orders."}
           </p>
 
           <button
@@ -95,7 +116,7 @@ export default function Login() {
             className="mt-6 w-full flex items-center justify-center gap-2.5 min-h-11 rounded-control border border-border bg-surface text-sm font-medium text-text-primary hover:bg-background-soft focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
           >
             <GoogleIcon />
-            Sign in with Google
+            Continue with Google
           </button>
 
           <div className="mt-5 flex items-center gap-3">
@@ -105,6 +126,33 @@ export default function Login() {
           </div>
 
           <form onSubmit={handleSubmit} className="mt-5 space-y-4">
+            {signingUp && (
+              <>
+                <div>
+                  <label htmlFor="partner-name">Your name</label>
+                  <input
+                    id="partner-name"
+                    autoComplete="name"
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
+                    required
+                    pattern=".*\S.*"
+                  />
+                </div>
+                <div>
+                  <label htmlFor="partner-phone">Phone number</label>
+                  <input
+                    id="partner-phone"
+                    type="tel"
+                    autoComplete="tel"
+                    value={phone}
+                    onChange={(e) => setPhone(e.target.value)}
+                    required
+                    pattern=".*\S.*"
+                  />
+                </div>
+              </>
+            )}
             <div>
               <label
                 htmlFor="email"
@@ -133,12 +181,19 @@ export default function Login() {
               <input
                 id="password"
                 type="password"
-                autoComplete="current-password"
+                autoComplete={signingUp ? "new-password" : "current-password"}
+                minLength={signingUp ? 10 : undefined}
+                aria-describedby={signingUp ? "password-hint" : undefined}
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
                 className="w-full px-3.5 min-h-11 border border-border rounded-control text-sm text-text-primary bg-surface placeholder:text-text-muted focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
               />
+              {signingUp && (
+                <p className="login-password-hint" id="password-hint">
+                  Use at least 10 characters. Longer passphrases work well.
+                </p>
+              )}
             </div>
 
             {(error || oauthError) && (
@@ -156,16 +211,38 @@ export default function Login() {
               aria-busy={loading}
               className="w-full min-h-11 rounded-control bg-primary text-white font-heading text-sm font-bold hover:bg-primary-deep disabled:opacity-50 disabled:hover:bg-primary focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
             >
-              {loading ? "Signing in..." : "Sign in"}
+              {loading
+                ? signingUp
+                  ? "Creating account..."
+                  : "Signing in..."
+                : signingUp
+                  ? "Create partner account"
+                  : "Sign in"}
             </button>
+            {signingUp && (
+              <p className="login-password-hint">
+                By creating an account, you agree to the{" "}
+                <Link to="/vendor-terms">partner terms</Link> and{" "}
+                <Link to="/privacy">privacy policy</Link>.
+              </p>
+            )}
           </form>
           {!AUTH_AVAILABLE && (
             <p className="login-unavailable" role="status">
-              Partner sign-in is currently unavailable. Please try again later.
+              Partner accounts are currently unavailable. Please try again later.
             </p>
           )}
+          <p className="login-mode-switch">
+            {signingUp ? "Already a partner? " : "New to Paprout? "}
+            <Link to={signingUp ? "/auth/vendor" : "/auth/vendor?mode=signup"}>
+              {signingUp ? "Sign in" : "Create a partner account"}
+            </Link>
+          </p>
+          <Link to="/print-partners" className="paper-text-link">
+            Explore Paprout for shops →
+          </Link>
           <Link to="/" className="paper-text-link login-back-link">
-            ← Back to Printlly
+            ← Back to Paprout
           </Link>
         </div>
       </main>

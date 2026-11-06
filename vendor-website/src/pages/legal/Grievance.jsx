@@ -21,7 +21,7 @@ export default function Grievance() {
   return (
     <LegalPage
       title="Grievance & Legal Contact"
-      description="How to raise a formal complaint with Printlly, and where to send legal notices."
+      description="How to raise a formal complaint with Paprout, and where to send legal notices."
       toc={TOC}
       intro={
         <P>
@@ -44,7 +44,7 @@ export default function Grievance() {
           </li>
         </List>
         <Note>
-          Printlly has not yet appointed a named Grievance Officer, and no
+          Paprout has not yet appointed a named Grievance Officer, and no
           officer's name, designation or direct contact details are published
           here. Inventing them would be worse than their absence: a complaint
           addressed to a person who does not exist goes nowhere. Complaints sent
@@ -65,7 +65,7 @@ export default function Grievance() {
         </List>
         {!LEGAL_DETAILS_CONFIGURED ? (
           <Note>
-            The entity details above are placeholders. Printlly's registered
+            The entity details above are placeholders. Paprout's registered
             name and address have not been configured for this deployment, and
             none has been invented to fill the gap. These must be completed
             before this page is published.
@@ -113,7 +113,7 @@ export default function Grievance() {
         <Note>
           We are deliberately not publishing a guaranteed acknowledgement or
           resolution time. No such service commitment has been established for
-          Printlly yet, and a stated timeline we have not organised ourselves to
+          Paprout yet, and a stated timeline we have not organised ourselves to
           meet would be a promise rather than a fact. We will respond as quickly
           as we can.
         </Note>
@@ -121,12 +121,12 @@ export default function Grievance() {
 
       <Section id="takedown" number="6" title="Content and copyright complaints">
         <P>
-          If you believe someone has used Printlly to print material that
+          If you believe someone has used Paprout to print material that
           infringes your copyright or is otherwise unlawful, write to{" "}
           {LEGAL_EMAIL} with details of the material and your rights in it.
         </P>
         <P>
-          Please note what Printlly can and cannot do here. We do not review,
+          Please note what Paprout can and cannot do here. We do not review,
           moderate or retain the contents of customer documents, and documents
           are deleted once an order is completed or expires. By the time a
           complaint reaches us the file will usually no longer exist on our

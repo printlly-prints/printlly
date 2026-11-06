@@ -18,11 +18,11 @@ export default function Billing() {
   return (
     <LegalPage
       title="Payment & Billing"
-      description="How Printlly charges for print orders, what makes up the total, and how payments are confirmed."
+      description="How Paprout charges for print orders, what makes up the total, and how payments are confirmed."
       toc={TOC}
       intro={
         <P>
-          Payments on Printlly are processed by Razorpay. This page explains
+          Payments on Paprout are processed by Razorpay. This page explains
           what you are charged, when, and what documentation you do and do not
           receive.
         </P>
@@ -33,7 +33,7 @@ export default function Billing() {
           Payment is taken through Razorpay's checkout, which supports UPI,
           credit and debit cards, net banking and wallets. The exact set of
           options shown to you is determined by Razorpay and by your bank, not
-          by Printlly.
+          by Paprout.
         </P>
         <P>All amounts are in Indian rupees (INR).</P>
         <Note>
@@ -63,7 +63,7 @@ export default function Billing() {
             size, sides, copies and any add-on services you selected.
           </li>
           <li>
-            <strong className="text-text-primary">The Printlly platform
+            <strong className="text-text-primary">The Paprout platform
             fee</strong>, shown as its own line in the total.
           </li>
         </List>
@@ -118,14 +118,14 @@ export default function Billing() {
 
       <Section id="receipts" number="6" title="Receipts and invoices">
         <Note>
-          Printlly does not currently generate invoices, receipts or billing
+          Paprout does not currently generate invoices, receipts or billing
           documents through the platform. There is no download-invoice feature,
           and none is emailed to you.
         </Note>
         <P>What you do have as a record of payment:</P>
         <List>
           <li>
-            The order in the Printlly app, showing the shop, the itemised
+            The order in the Paprout app, showing the shop, the itemised
             charges, the platform fee and the total.
           </li>
           <li>
@@ -145,7 +145,7 @@ export default function Billing() {
           tax is added on top at checkout.
         </P>
         <Note>
-          Printlly does not currently issue GST invoices, and the platform's
+          Paprout does not currently issue GST invoices, and the platform's
           GSTIN has not been configured in this deployment (shown as {GSTIN}).
           No GSTIN has been invented to fill the gap. If you require a GST
           invoice, please contact us before relying on being able to claim
@@ -185,7 +185,7 @@ export default function Billing() {
 
       <Section id="security" number="10" title="Payment security">
         <P>
-          Printlly does not receive or store your card number, CVV, UPI PIN or
+          Paprout does not receive or store your card number, CVV, UPI PIN or
           bank credentials. Those are entered into Razorpay's checkout and
           handled on their systems.
         </P>
@@ -195,7 +195,7 @@ export default function Billing() {
           payment. They cannot be used to charge you.
         </P>
         <Note>
-          Printlly makes no claim to PCI-DSS certification. Card data is handled
+          Paprout makes no claim to PCI-DSS certification. Card data is handled
           by Razorpay precisely so that it never passes through our systems.
         </Note>
       </Section>
