@@ -3,7 +3,6 @@ import { useFocusEffect } from "@react-navigation/native";
 import {
   ActivityIndicator,
   Image,
-  ImageBackground,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -11,10 +10,11 @@ import {
   View,
   useWindowDimensions,
 } from "react-native";
-import { LinearGradient } from "expo-linear-gradient";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import Avatar from "../components/Avatar";
 import Button from "../components/Button";
+import Skeleton from "../components/Skeleton";
 import ScreenBackground from "../components/ScreenBackground";
 import StatusBadge from "../components/StatusBadge";
 import SavedShopHeart from "../components/SavedShopHeart";
@@ -28,7 +28,15 @@ import { formatDistanceShort } from "../utils/distance";
 import { shopAvailability } from "../utils/shopAvailability";
 import { isAwaitingPayment, navigateToOrder } from "../utils/orderNavigation";
 import useOpenStatusRefresh from "../hooks/useOpenStatusRefresh";
-import { colors, typography, fonts, spacing, radius, shadows, rushLabels } from "../theme";
+import {
+  colors,
+  typography,
+  fonts,
+  spacing,
+  radius,
+  shadows,
+  rushLabels,
+} from "../theme";
 
 const ACTIVE_STATUSES = ["pending", "accepted", "ready_for_pickup"];
 
@@ -52,11 +60,15 @@ const SHOP_CARD_MAX = 175;
 // gap) must never land on a whole number, or the next card would sit
 // exactly at the edge and the row would look like it ends there.
 export function shopCardWidth(width) {
-  return Math.min(Math.max(Math.round(width * SHOP_CARD_RATIO), SHOP_CARD_MIN), SHOP_CARD_MAX);
+  return Math.min(
+    Math.max(Math.round(width * SHOP_CARD_RATIO), SHOP_CARD_MIN),
+    SHOP_CARD_MAX,
+  );
 }
 
 export default function HomeScreen({ navigation }) {
   const { user } = useAuth();
+  const insets = useSafeAreaInsets();
   const { unreadCount } = useNotifications();
   const { coords, ensureLocation } = useLocation();
   const { width } = useWindowDimensions();
@@ -80,45 +92,49 @@ export default function HomeScreen({ navigation }) {
   const [shopsError, setShopsError] = useState("");
   const [orders, setOrders] = useState([]);
   const [ordersLoading, setOrdersLoading] = useState(true);
+  const [ordersError, setOrdersError] = useState("");
 
   // `silent` skips the spinners: used by the once-a-minute open/closed
   // refresh below, which shouldn't make the whole section flash while the
   // customer is looking at it.
-  const load = useCallback(async ({ silent } = {}) => {
-    if (!silent) {
-      setShopsLoading(true);
-      setOrdersLoading(true);
-    }
-    try {
-      // With coords, the backend returns nearest first - so the first 8
-      // shown below really are the nearby ones.
-      const { data } = await api.get("/shops", { params: geoParams(coords) });
-      setShops(data);
-      setShopsError("");
-    } catch (err) {
-      setShops([]);
-      setShopsError(
-        err.response?.data?.message ||
-          "Couldn't reach the server. Check your connection and try again."
-      );
-    } finally {
-      setShopsLoading(false);
-    }
+  const load = useCallback(
+    async ({ silent } = {}) => {
+      if (!silent) {
+        setShopsLoading(true);
+        setOrdersLoading(true);
+      }
+      try {
+        // With coords, the backend returns nearest first - so the first 8
+        // shown below really are the nearby ones.
+        const { data } = await api.get("/shops", { params: geoParams(coords) });
+        setShops(data);
+        setShopsError("");
+      } catch (err) {
+        setShopsError(
+          err.response?.data?.message ||
+            "Couldn't reach the server. Check your connection and try again.",
+        );
+      } finally {
+        setShopsLoading(false);
+      }
 
-    try {
-      const { data } = await api.get("/orders/customer");
-      setOrders(data);
-    } catch {
-      setOrders([]);
-    } finally {
-      setOrdersLoading(false);
-    }
-  }, [coords]);
+      try {
+        const { data } = await api.get("/orders/customer");
+        setOrders(data);
+        setOrdersError("");
+      } catch {
+        setOrdersError("We couldn’t refresh your orders.");
+      } finally {
+        setOrdersLoading(false);
+      }
+    },
+    [coords],
+  );
 
   useFocusEffect(
     useCallback(() => {
       load();
-    }, [load])
+    }, [load]),
   );
 
   // is_currently_open is computed server-side per request, so the only way
@@ -144,7 +160,10 @@ export default function HomeScreen({ navigation }) {
     <ScreenBackground>
       <ScrollView
         style={styles.scroll}
-        contentContainerStyle={styles.content}
+        contentContainerStyle={[
+          styles.content,
+          { paddingTop: Math.max(insets.top, 20) },
+        ]}
         showsVerticalScrollIndicator={false}
       >
         {/* --- brand row ---------------------------------------------- */}
@@ -174,9 +193,16 @@ export default function HomeScreen({ navigation }) {
                 ? `Notifications, ${unreadCount} unread`
                 : "Notifications"
             }
-            style={({ pressed }) => [styles.iconButton, pressed && styles.iconButtonPressed]}
+            style={({ pressed }) => [
+              styles.iconButton,
+              pressed && styles.iconButtonPressed,
+            ]}
           >
-            <Ionicons name="notifications-outline" size={20} color={colors.primaryDeep} />
+            <Ionicons
+              name="notifications-outline"
+              size={20}
+              color={colors.primaryDeep}
+            />
             {/* The same unread count the Profile tab badges - one source,
                 so the two can never disagree. */}
             {unreadCount > 0 ? (
@@ -189,7 +215,9 @@ export default function HomeScreen({ navigation }) {
           </Pressable>
 
           <Pressable
-            onPress={() => navigation.navigate("MainTabs", { screen: "Profile" })}
+            onPress={() =>
+              navigation.navigate("MainTabs", { screen: "Profile" })
+            }
             accessibilityRole="button"
             accessibilityLabel="Your profile"
             style={({ pressed }) => pressed && styles.pressed}
@@ -202,68 +230,48 @@ export default function HomeScreen({ navigation }) {
         <View style={styles.header}>
           <View style={styles.headerText}>
             <Text style={styles.greeting} numberOfLines={1}>
-              Hello, {user?.name?.split(" ")[0] || "there"} 👋
+              Hi, {user?.name?.split(" ")[0] || "there"}
             </Text>
-            <Text style={styles.greetingSub}>Ready to print something?</Text>
+            <Text style={styles.greetingSub}>
+              A little less running around.
+            </Text>
           </View>
         </View>
 
-        {/* --- hero --------------------------------------------------- */}
-        {/* The artwork belongs to THIS CARD ONLY - it is not the screen's
-            background (that is ScreenBackground, which draws no photo at
-            all). Three layers, and the order is what stops it reading as
-            a picture stuck onto a card:
-              1. the illustration, cover-cropped and clipped by the card's
-                 own rounded corners, so it IS the card's surface
-              2. a left-to-right wash in the card's own tones - enough
-                 under the words to keep them crisp, clearing away to
-                 nothing over the documents
-              3. the content, padded so it never crosses into the art
-            The illustration's palette is the app's own mint/teal, which
-            is why the seam disappears: the wash and the art meet on the
-            same colours. */}
-        {/* ImageBackground, not a hand-rolled absolute <Image>: it sizes
-            itself from its CHILDREN and paints the picture behind them.
-            An absolutely-positioned image with a percentage height inside
-            an auto-height card is over-constrained - the image falls back
-            to its own intrinsic size and drags the card open with it,
-            which is exactly what went wrong here. */}
-        <ImageBackground
-          source={require("../../assets/hero-print-without-wait.jpg")}
-          style={styles.heroCard}
-          imageStyle={styles.heroImage}
-          resizeMode="cover"
-          accessible={false}
-        >
-          <LinearGradient
-            colors={[
-              "rgba(233,246,236,0.86)",
-              "rgba(233,246,236,0.55)",
-              "rgba(232,247,247,0)",
-            ]}
-            locations={[0, 0.45, 0.82]}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 1, y: 0 }}
-            style={StyleSheet.absoluteFill}
-            pointerEvents="none"
-          />
-
-          <View style={styles.heroContent}>
-            {/* The whole journey in four words, so what the button starts
-                is obvious before it is pressed. These are the real steps:
-                upload, choose a shop, it prints, you collect with the OTP. */}
-            <Text style={styles.heroSteps}>Upload · Find · Print · Collect</Text>
-            <Text style={styles.heroTitle}>Print without the wait.</Text>
-            <Text style={styles.heroSubtitle}>
-              Upload your document and we'll handle the rest.
-            </Text>
-            <Button
-              title="Upload Document"
-              icon="arrow-forward"
-              onPress={() => navigation.navigate("UploadDocuments")}
+        <View style={styles.heroCard}>
+          <Text style={styles.heroSteps}>YOUR PRINT DESK</Text>
+          <Text style={styles.heroTitle}>
+            {"Your next print,\nminus the wait."}
+          </Text>
+          <View style={styles.heroBottom}>
+            <View style={styles.heroCopy}>
+              <Text style={styles.heroSubtitle}>
+                {"Send your PDFs.\nPick up around\nthe corner."}
+              </Text>
+              <Button
+                title="Add PDFs"
+                icon="add"
+                onPress={() => navigation.navigate("UploadDocuments")}
+              />
+            </View>
+            <Image
+              source={require("../../assets/art/pickup-cmyk.png")}
+              style={styles.heroCharacter}
+              resizeMode="contain"
+              accessible={false}
             />
           </View>
-        </ImageBackground>
+          <View style={styles.heroPrivacy}>
+            <Ionicons
+              name="shield-checkmark-outline"
+              size={13}
+              color={colors.primaryDeep}
+            />
+            <Text style={styles.heroPrivacyText}>
+              Files deleted after your order ends
+            </Text>
+          </View>
+        </View>
 
         {/* --- quick actions ------------------------------------------ */}
         <View style={styles.quickActionsRow}>
@@ -283,7 +291,9 @@ export default function HomeScreen({ navigation }) {
             icon="receipt-outline"
             label="My Orders"
             hint="View all orders"
-            onPress={() => navigation.navigate("MainTabs", { screen: "Orders" })}
+            onPress={() =>
+              navigation.navigate("MainTabs", { screen: "Orders" })
+            }
           />
           <QuickAction
             icon="navigate-outline"
@@ -297,7 +307,9 @@ export default function HomeScreen({ navigation }) {
         <View style={styles.sectionHeaderRow}>
           {/* Only truly "nearby" once location is shared - otherwise it's
               just the shop list, so the heading doesn't claim otherwise. */}
-          <Text style={styles.sectionTitle}>{coords ? "Nearby print shops" : "Print shops"}</Text>
+          <Text style={styles.sectionTitle}>
+            {coords ? "Nearby print shops" : "Print shops"}
+          </Text>
           <Pressable
             onPress={() => navigation.navigate("MainTabs", { screen: "Shops" })}
             style={({ pressed }) => pressed && styles.pressed}
@@ -307,11 +319,27 @@ export default function HomeScreen({ navigation }) {
         </View>
 
         {shopsLoading ? (
-          <ActivityIndicator color={colors.primaryBright} style={styles.sectionLoading} />
+          <View
+            accessibilityRole="progressbar"
+            accessibilityLabel="Loading print shops"
+            style={{ gap: 12 }}
+          >
+            <Skeleton height={96} />
+            <Skeleton width="65%" />
+          </View>
         ) : shopsError ? (
-          <Text style={styles.errorText}>{shopsError}</Text>
+          <View style={{ gap: 12 }}>
+            <Text style={styles.errorText}>{shopsError}</Text>
+            <Button
+              title="Try again"
+              variant="secondary"
+              onPress={() => load()}
+            />
+          </View>
         ) : shops.length === 0 ? (
-          <Text style={styles.emptyText}>No shops are available right now.</Text>
+          <Text style={styles.emptyText}>
+            No shops are available right now.
+          </Text>
         ) : (
           <ScrollView
             horizontal
@@ -346,11 +374,18 @@ export default function HomeScreen({ navigation }) {
                   <ShopPhoto
                     source={shopImageSource(shop)}
                     shopName={shop.shop_name}
-                    style={[styles.shopPhoto, { height: Math.round(cardWidth / 1.7) }]}
+                    style={[
+                      styles.shopPhoto,
+                      { height: Math.round(cardWidth / 1.7) },
+                    ]}
                     closed={closed}
                     iconSize={22}
                   />
-                  <SavedShopHeart shop={shop} overlay style={styles.heartCorner} />
+                  <SavedShopHeart
+                    shop={shop}
+                    overlay
+                    style={styles.heartCorner}
+                  />
 
                   <View style={styles.shopBody}>
                     <Text style={styles.shopName} numberOfLines={1}>
@@ -367,7 +402,9 @@ export default function HomeScreen({ navigation }) {
                         location is shared; open/closed and the queue's
                         rush level are always real. */}
                     <Text style={styles.shopAddress} numberOfLines={1}>
-                      {[shop.locality || shop.address, distanceLabel].filter(Boolean).join("  ·  ")}
+                      {[shop.locality || shop.address, distanceLabel]
+                        .filter(Boolean)
+                        .join("  ·  ")}
                     </Text>
 
                     {/* Status and its qualifier share one line as plain
@@ -381,14 +418,23 @@ export default function HomeScreen({ navigation }) {
                         thing the vendor is telling this customer, and it
                         supersedes the generic queue reading. */}
                     <View style={styles.shopMetaRow}>
-                      <View style={[styles.statusDot, { backgroundColor: availability.colors.dot }]} />
+                      <View
+                        style={[
+                          styles.statusDot,
+                          { backgroundColor: availability.colors.dot },
+                        ]}
+                      />
                       <Text
-                        style={[styles.shopStatus, { color: availability.colors.text }]}
+                        style={[
+                          styles.shopStatus,
+                          { color: availability.colors.text },
+                        ]}
                         numberOfLines={1}
                       >
                         {[
                           availability.label,
-                          availability.prepLine || rushLabels[shop.queue?.rush_level],
+                          availability.prepLine ||
+                            rushLabels[shop.queue?.rush_level],
                         ]
                           .filter(Boolean)
                           .join(" · ")}
@@ -404,12 +450,26 @@ export default function HomeScreen({ navigation }) {
         {/* --- recent orders ------------------------------------------- */}
         {/* Hidden entirely with zero orders, per spec - no "no orders yet"
             placeholder needed on the home screen specifically. */}
+        {ordersError ? (
+          <View style={{ gap: 12, marginTop: 24 }}>
+            <Text style={styles.errorText} accessibilityRole="alert">
+              {ordersError}
+            </Text>
+            <Button
+              title="Refresh orders"
+              variant="secondary"
+              onPress={() => load({ silent: true })}
+            />
+          </View>
+        ) : null}
         {!ordersLoading && recentOrders.length > 0 && (
           <>
             <View style={styles.sectionHeaderRow}>
               <Text style={styles.sectionTitle}>Recent orders</Text>
               <Pressable
-                onPress={() => navigation.navigate("MainTabs", { screen: "Orders" })}
+                onPress={() =>
+                  navigation.navigate("MainTabs", { screen: "Orders" })
+                }
                 style={({ pressed }) => pressed && styles.pressed}
               >
                 <Text style={styles.seeAll}>See all →</Text>
@@ -458,7 +518,11 @@ function RecentOrderRow({ order, onPress }) {
       onPress={onPress}
     >
       <View style={styles.orderGlyph}>
-        <Ionicons name="document-text-outline" size={18} color={colors.primaryDeep} />
+        <Ionicons
+          name="document-text-outline"
+          size={18}
+          color={colors.primaryDeep}
+        />
       </View>
 
       <View style={styles.orderBody}>
@@ -487,7 +551,10 @@ function RecentOrderRow({ order, onPress }) {
 function QuickAction({ icon, label, hint, onPress }) {
   return (
     <Pressable
-      style={({ pressed }) => [styles.quickAction, pressed && styles.quickActionPressed]}
+      style={({ pressed }) => [
+        styles.quickAction,
+        pressed && styles.quickActionPressed,
+      ]}
       onPress={onPress}
       accessibilityRole="button"
       // The hint is part of what this button promises, so a screen reader
@@ -503,9 +570,6 @@ function QuickAction({ icon, label, hint, onPress }) {
       {/* Two lines allowed: "Get live updates" cannot fit one line in a
           quarter of a 320px screen, and wrapping reads better than an
           ellipsis that hides half the sentence. */}
-      <Text style={styles.quickActionHint} numberOfLines={2}>
-        {hint}
-      </Text>
     </Pressable>
   );
 }
@@ -518,15 +582,20 @@ const styles = StyleSheet.create({
   content: { padding: spacing.lg, paddingBottom: spacing.xl },
 
   brandRow: { flexDirection: "row", alignItems: "center", gap: spacing.sm },
-  brandMark: { width: 30, height: 27 },
+  brandMark: { width: 30, height: 35 },
   // flex: 1 with minWidth: 0 so a long tagline ellipsises rather than
   // pushing the bell and avatar off the right edge at 320px.
   brandText: { flex: 1, minWidth: 0, marginLeft: 2 },
   brandName: { ...typography.h3, color: colors.textPrimary, lineHeight: 22 },
-  brandTagline: { ...typography.caption, color: colors.textSecondary, fontSize: 11, lineHeight: 15 },
+  brandTagline: {
+    ...typography.caption,
+    color: colors.textSecondary,
+    fontSize: 11,
+    lineHeight: 15,
+  },
   iconButton: {
-    width: 38,
-    height: 38,
+    width: 48,
+    height: 48,
     borderRadius: radius.pill,
     backgroundColor: colors.surface,
     borderWidth: 1,
@@ -556,51 +625,71 @@ const styles = StyleSheet.create({
     color: colors.surface,
   },
 
-  header: { flexDirection: "row", alignItems: "center", gap: spacing.md, marginTop: spacing.lg },
+  header: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.md,
+    marginTop: spacing.lg,
+  },
   headerText: { flex: 1, minWidth: 0 },
-  greeting: { ...typography.h2, color: colors.textPrimary },
-  greetingSub: { ...typography.bodySmall, color: colors.textSecondary, marginTop: 1 },
+  greeting: { ...typography.label, color: colors.textPrimary },
+  greetingSub: {
+    ...typography.bodySmall,
+    color: colors.textSecondary,
+    marginTop: 1,
+  },
   pressed: { opacity: 0.6 },
   cardPressed: { opacity: 0.9, transform: [{ scale: 0.995 }] },
 
   heroCard: {
-    borderRadius: 20,
-    marginTop: spacing.lg,
-    borderWidth: 1,
-    borderColor: colors.border,
-    // Clips the illustration to the card's corners - without it the
-    // image's square edges would show through the rounding.
+    marginTop: 24,
+    borderRadius: 24,
+    padding: 24,
+    backgroundColor: colors.primaryWash,
     overflow: "hidden",
-    // A floor under the artwork, so the card is never briefly a
-    // transparent hole while the image decodes.
-    backgroundColor: colors.leafSoft,
-    ...shadows.card,
   },
-  // imageStyle on ImageBackground: only the picture's own corner radius
-  // goes here, so it follows the card's rounding. No width/height - the
-  // component handles that, and setting them is what broke this before.
-  heroImage: { borderRadius: 20 },
-  // paddingRight is a percentage, not a fixed inset: the text column and
-  // the button keep clear of the documents at 320px and at 430px alike,
-  // rather than the button creeping over them on a narrow screen.
-  heroContent: { padding: spacing.xl, paddingRight: "36%" },
   heroSteps: {
-    ...typography.caption,
-    fontSize: 11,
-    letterSpacing: 0.4,
+    fontFamily: fonts.bodyMedium,
+    fontSize: 10,
+    letterSpacing: 1.4,
     color: colors.primaryDeep,
-    marginBottom: spacing.sm,
+    marginBottom: 12,
   },
-  heroTitle: { ...typography.h2, color: colors.textPrimary },
+  heroTitle: {
+    fontFamily: fonts.headingExtraBold,
+    fontSize: 32,
+    lineHeight: 36,
+    letterSpacing: -1.25,
+    color: colors.ink,
+  },
+  heroBottom: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+    marginTop: 8,
+  },
+  heroCopy: { flex: 1, paddingVertical: 16, gap: 20, minWidth: 0 },
   heroSubtitle: {
     ...typography.bodySmall,
     color: colors.textSecondary,
-    marginTop: spacing.xs,
-    marginBottom: spacing.lg,
+    lineHeight: 22,
   },
-
-  // alignItems: stretch so all four cards take the height of the tallest,
-  // rather than the one with a two-line hint standing proud of the rest.
+  heroCharacter: { width: "46%", height: 210 },
+  heroPrivacy: {
+    borderTopWidth: 1,
+    borderTopColor: colors.borderStrong,
+    paddingTop: 12,
+    marginTop: 8,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+  },
+  heroPrivacyText: {
+    ...typography.caption,
+    fontSize: 10.5,
+    color: colors.primaryDeep,
+    flexShrink: 1,
+  },
   quickActionsRow: {
     flexDirection: "row",
     alignItems: "stretch",
@@ -633,7 +722,7 @@ const styles = StyleSheet.create({
   },
   quickActionLabel: {
     fontFamily: fonts.headingBold,
-    fontSize: 11.5,
+    fontSize: 11,
     lineHeight: 15,
     color: colors.textPrimary,
     marginTop: spacing.sm,
@@ -670,7 +759,10 @@ const styles = StyleSheet.create({
   // Bleeds to both screen edges so the row reads as scrollable, while the
   // first card still lines up with the content above it.
   shopScroll: { marginHorizontal: -spacing.lg },
-  shopScrollContent: { paddingHorizontal: spacing.lg, paddingBottom: spacing.xs },
+  shopScrollContent: {
+    paddingHorizontal: spacing.lg,
+    paddingBottom: spacing.xs,
+  },
   shopCard: {
     position: "relative",
     backgroundColor: colors.surface,
@@ -688,7 +780,12 @@ const styles = StyleSheet.create({
   // Sized below the shared type scale on purpose: `typography.label` is
   // 15/20, which is a third of this card's text block on its own. These
   // three lines total 46px of line box instead of 62px.
-  shopName: { fontFamily: fonts.bodyMedium, fontSize: 13.5, lineHeight: 18, color: colors.textPrimary },
+  shopName: {
+    fontFamily: fonts.bodyMedium,
+    fontSize: 13.5,
+    lineHeight: 18,
+    color: colors.textPrimary,
+  },
   shopAddress: {
     fontFamily: fonts.bodyRegular,
     fontSize: 11,
@@ -738,7 +835,11 @@ const styles = StyleSheet.create({
   orderBody: { flex: 1, minWidth: 0 },
   orderTitle: { ...typography.labelSmall, color: colors.textPrimary },
   orderExtra: { ...typography.caption, color: colors.textMuted },
-  orderSub: { ...typography.caption, color: colors.textSecondary, marginTop: 1 },
+  orderSub: {
+    ...typography.caption,
+    color: colors.textSecondary,
+    marginTop: 1,
+  },
   orderStatusRow: { flexDirection: "row", marginTop: spacing.xs },
   orderAmount: { ...typography.label, color: colors.textPrimary },
 });

@@ -1,4 +1,5 @@
-import { Pressable, StyleSheet, Text, View } from "react-native";
+import { Platform, Pressable, StyleSheet, Text, View } from "react-native";
+import * as Haptics from "expo-haptics";
 import { colors, typography, spacing, radius, fonts } from "../theme";
 
 // Plus/minus stepper for numeric fields. Preferred over a keyboard input
@@ -9,17 +10,28 @@ import { colors, typography, spacing, radius, fonts } from "../theme";
 // its own row beside a label of its own - which is what
 // DocumentSettingsCard does to keep four print controls on four lines
 // instead of eight.
-export default function Stepper({ label, value, onChange, min = 1, max = 999 }) {
+export default function Stepper({
+  label,
+  value,
+  onChange,
+  min = 1,
+  max = 999,
+}) {
+  const change = (next) => {
+    onChange(next);
+    if (Platform.OS !== "web") Haptics.selectionAsync().catch(() => {});
+  };
   const control = (
     <View style={styles.row}>
       <Pressable
-        onPress={() => onChange(Math.max(min, value - 1))}
+        onPress={() => change(Math.max(min, value - 1))}
         disabled={value <= min}
         style={[styles.stepButton, value <= min && styles.disabled]}
         // The button is 40x40, but the glyph inside it is small - without
         // this the tappable area would feel smaller than it looks.
         hitSlop={4}
         accessibilityRole="button"
+        accessibilityState={{ disabled: value <= min }}
         accessibilityLabel="Decrease"
       >
         <Text style={styles.stepText}>−</Text>
@@ -28,11 +40,12 @@ export default function Stepper({ label, value, onChange, min = 1, max = 999 }) 
       <Text style={styles.value}>{value}</Text>
 
       <Pressable
-        onPress={() => onChange(Math.min(max, value + 1))}
+        onPress={() => change(Math.min(max, value + 1))}
         disabled={value >= max}
         style={[styles.stepButton, value >= max && styles.disabled]}
         hitSlop={4}
         accessibilityRole="button"
+        accessibilityState={{ disabled: value >= max }}
         accessibilityLabel="Increase"
       >
         <Text style={styles.stepText}>+</Text>
@@ -52,7 +65,11 @@ export default function Stepper({ label, value, onChange, min = 1, max = 999 }) 
 
 const styles = StyleSheet.create({
   wrapper: { marginBottom: spacing.xl },
-  label: { ...typography.label, color: colors.textPrimary, marginBottom: spacing.sm },
+  label: {
+    ...typography.label,
+    color: colors.textPrimary,
+    marginBottom: spacing.sm,
+  },
   row: { flexDirection: "row", alignItems: "center" },
   // 40x40: the floor for a control that needs an accurate tap. The old
   // 56x56 was sized for a screen showing one set of preferences; with a
@@ -74,6 +91,7 @@ const styles = StyleSheet.create({
     fontSize: 17,
     color: colors.textPrimary,
     minWidth: 44,
+    fontVariant: ["tabular-nums"],
     textAlign: "center",
   },
 });

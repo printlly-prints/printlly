@@ -1,9 +1,17 @@
-import { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
+import {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useState,
+} from "react";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 // Imported lazily inside logout rather than at module scope:
 // OrderEventsContext imports useAuth from here, so a top-level import
 // would be a require cycle.
 import api from "../api/client";
+import { assertCustomerSession } from "../utils/authValidation";
 import { identifyUser, clearUser } from "../lib/analytics";
 
 const AuthContext = createContext(null);
@@ -43,6 +51,7 @@ export function AuthProvider({ children }) {
   // freshly-created function identities would be recomputed on every
   // render anyway, which is no memoization at all.
   const persistSession = useCallback(async (data) => {
+    assertCustomerSession(data);
     await AsyncStorage.setItem("token", data.token);
     await AsyncStorage.setItem("user", JSON.stringify(data.user));
     setToken(data.token);
@@ -54,25 +63,33 @@ export function AuthProvider({ children }) {
 
   const login = useCallback(
     async (email, password) => {
-      const { data } = await api.post("/auth/login", { email, password });
+      const { data } = await api.post(
+        "/auth/login",
+        { email, password },
+        { timeout: 20000 },
+      );
       await persistSession(data);
     },
-    [persistSession]
+    [persistSession],
   );
 
   // Always registers as "customer" - shop owners use the web dashboard.
   const register = useCallback(
     async ({ name, phone, email, password }) => {
-      const { data } = await api.post("/auth/register", {
-        name,
-        phone,
-        email,
-        password,
-        role: "customer",
-      });
+      const { data } = await api.post(
+        "/auth/register",
+        {
+          name,
+          phone,
+          email,
+          password,
+          role: "customer",
+        },
+        { timeout: 20000 },
+      );
       await persistSession(data);
     },
-    [persistSession]
+    [persistSession],
   );
 
   const logout = useCallback(async () => {
@@ -95,8 +112,16 @@ export function AuthProvider({ children }) {
   // unmemoized object literal here meant every screen reading useAuth()
   // re-rendered on any state change anywhere above them.
   const value = useMemo(
-    () => ({ user, token, loading, isAuthenticated: !!token, login, register, logout }),
-    [user, token, loading, login, register, logout]
+    () => ({
+      user,
+      token,
+      loading,
+      isAuthenticated: !!token,
+      login,
+      register,
+      logout,
+    }),
+    [user, token, loading, login, register, logout],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

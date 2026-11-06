@@ -1,14 +1,20 @@
-import { Alert, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import {
+  Alert,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  View,
+} from "react-native";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import Avatar from "../components/Avatar";
-import Button from "../components/Button";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useAuth } from "../context/AuthContext";
 import { useSupport } from "../context/SupportContext";
 import { colors, typography, spacing, radius } from "../theme";
 
-const stub = (feature) => () => Alert.alert(feature, "This isn't available yet.");
-
 export default function ProfileScreen({ navigation }) {
+  const insets = useSafeAreaInsets();
   const { user, logout } = useAuth();
   // Unread admin replies, kept live by the support socket (see
   // SupportContext) rather than polled - a reply that arrives while the
@@ -16,21 +22,23 @@ export default function ProfileScreen({ navigation }) {
   const { unreadCount } = useSupport() || {};
 
   return (
-    <ScrollView style={styles.screen} contentContainerStyle={styles.content}>
+    <ScrollView
+      style={styles.screen}
+      contentContainerStyle={[
+        styles.content,
+        { paddingTop: Math.max(insets.top, 24) },
+      ]}
+    >
       <View style={styles.identity}>
         <Avatar name={user?.name} size={72} />
         <Text style={styles.name}>{user?.name || "Customer"}</Text>
         <Text style={styles.email}>{user?.email}</Text>
-        {/* No PATCH endpoint exists yet for editing a customer's profile -
-            this is a stub, not a fake success. */}
-        <Button title="Edit Profile" variant="secondary" onPress={stub("Edit Profile")} />
       </View>
 
       {/* Grouped rather than one long list: the old menu put "Help &
           Support" between Notifications and Settings, where a customer
           with a problem had to read past unrelated rows to find it. */}
       <Section title="Account">
-        <MenuItem icon="person-outline" label="My Profile" onPress={stub("My Profile")} />
         <MenuItem
           icon="receipt-outline"
           label="Order History"
@@ -78,7 +86,13 @@ export default function ProfileScreen({ navigation }) {
       {/* Its own group with nothing else in it, so Logout can't be hit
           while aiming for the row above. */}
       <Section>
-        <MenuItem icon="log-out-outline" label="Logout" onPress={logout} destructive last />
+        <MenuItem
+          icon="log-out-outline"
+          label="Logout"
+          onPress={logout}
+          destructive
+          last
+        />
       </Section>
     </ScrollView>
   );
@@ -97,9 +111,20 @@ function MenuItem({ icon, label, onPress, destructive, last, badge }) {
   const showBadge = typeof badge === "number" && badge > 0;
 
   return (
-    <Pressable style={[styles.menuItem, !last && styles.menuItemBorder]} onPress={onPress}>
-      <Ionicons name={icon} size={20} color={destructive ? colors.danger : colors.textSecondary} />
-      <Text style={[styles.menuLabel, destructive && styles.menuLabelDestructive]}>{label}</Text>
+    <Pressable
+      style={[styles.menuItem, !last && styles.menuItemBorder]}
+      onPress={onPress}
+    >
+      <Ionicons
+        name={icon}
+        size={20}
+        color={destructive ? colors.danger : colors.textSecondary}
+      />
+      <Text
+        style={[styles.menuLabel, destructive && styles.menuLabelDestructive]}
+      >
+        {label}
+      </Text>
       {/* A count, not a bare dot: "3 replies waiting" is a different
           decision from "1 reply waiting". Capped so a long-neglected
           thread can't stretch the row. */}
@@ -108,7 +133,13 @@ function MenuItem({ icon, label, onPress, destructive, last, badge }) {
           <Text style={styles.badgeText}>{badge > 9 ? "9+" : badge}</Text>
         </View>
       ) : null}
-      {!destructive && <Ionicons name="chevron-forward" size={18} color={colors.textSecondary} />}
+      {!destructive && (
+        <Ionicons
+          name="chevron-forward"
+          size={18}
+          color={colors.textSecondary}
+        />
+      )}
     </Pressable>
   );
 }
@@ -118,7 +149,12 @@ const styles = StyleSheet.create({
   content: { padding: spacing.lg, paddingBottom: spacing.xl },
   identity: { alignItems: "center", paddingVertical: spacing.xl },
   name: { ...typography.h2, color: colors.textPrimary, marginTop: spacing.md },
-  email: { ...typography.bodySmall, color: colors.textSecondary, marginTop: spacing.xs, marginBottom: spacing.lg },
+  email: {
+    ...typography.bodySmall,
+    color: colors.textSecondary,
+    marginTop: spacing.xs,
+    marginBottom: spacing.lg,
+  },
 
   section: { marginBottom: spacing.lg },
   sectionTitle: {

@@ -30,13 +30,13 @@ import { colors, fonts, radius, shadows } from "../theme";
 // height reported here, which is what guarantees the last card on any
 // tab is reachable. A floating bar would put that guarantee back in the
 // hands of every screen remembering its own bottom padding.
-const BASE_HEIGHT = 58;
+const BASE_HEIGHT = 68;
 
 const TABS = {
   Home: { icon: "home", label: "Home" },
-  Shops: { icon: "storefront", label: "Print Shops" },
-  Orders: { icon: "receipt", label: "My Orders" },
-  Profile: { icon: "person", label: "Profile" },
+  Shops: { icon: "storefront", label: "Shops" },
+  Orders: { icon: "receipt", label: "Orders" },
+  Profile: { icon: "person", label: "You" },
 };
 
 export default function BottomTabBar({ state, descriptors, navigation }) {
@@ -120,7 +120,6 @@ const styles = StyleSheet.create({
     backgroundColor: colors.surface,
     borderTopWidth: 1,
     borderTopColor: colors.border,
-    ...shadows.sheet,
   },
   tab: {
     flex: 1,
@@ -144,8 +143,8 @@ const styles = StyleSheet.create({
   iconWrapActive: { backgroundColor: colors.primaryWash },
   label: {
     fontFamily: fonts.bodyMedium,
-    fontSize: 10.5,
-    lineHeight: 14,
+    fontSize: 11,
+    lineHeight: 16,
     color: colors.textMuted,
     textAlign: "center",
   },

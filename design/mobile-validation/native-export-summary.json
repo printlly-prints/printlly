@@ -1,0 +1,13 @@
+{
+  "platforms": [
+    "android",
+    "ios"
+  ],
+  "result": "passed",
+  "kind": "Metro/Hermes JavaScript and asset export, not signed native binaries",
+  "fontAssets": 5,
+  "apiConfiguration": "unset",
+  "expo": "57.0.32",
+  "reactNative": "0.86.3",
+  "reanimated": "4.5.1"
+}

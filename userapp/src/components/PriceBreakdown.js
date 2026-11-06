@@ -11,11 +11,19 @@ import { colors, typography, spacing, fonts } from "../theme";
 //
 // `rows` is [{ label, value, note, free }] and `total` is the figure the
 // customer is agreeing to.
-export default function PriceBreakdown({ rows, total, totalLabel = "Total", compact }) {
+export default function PriceBreakdown({
+  rows,
+  total,
+  totalLabel = "Total",
+  compact,
+}) {
   return (
     <View>
       {rows.filter(Boolean).map((row) => (
-        <View key={row.label} style={[styles.row, compact && styles.rowCompact]}>
+        <View
+          key={row.label}
+          style={[styles.row, compact && styles.rowCompact]}
+        >
           <View style={styles.labelColumn}>
             <Text style={styles.label}>{row.label}</Text>
             {/* The working, not just the answer: "10 pages x 1 copy x ₹2".
@@ -59,7 +67,11 @@ const styles = StyleSheet.create({
   labelColumn: { flex: 1 },
   label: { ...typography.bodySmall, color: colors.textSecondary },
   note: { ...typography.caption, color: colors.textMuted, marginTop: 1 },
-  value: { ...typography.bodySmall, color: colors.textPrimary },
+  value: {
+    ...typography.bodySmall,
+    color: colors.textPrimary,
+    fontVariant: ["tabular-nums"],
+  },
   free: { color: colors.success, fontFamily: fonts.bodyMedium },
 
   totalRow: {
@@ -72,5 +84,10 @@ const styles = StyleSheet.create({
     paddingTop: spacing.md,
   },
   totalLabel: { ...typography.label, color: colors.textPrimary },
-  totalValue: { fontFamily: fonts.headingExtraBold, fontSize: 22, color: colors.primaryDeep },
+  totalValue: {
+    fontFamily: fonts.headingExtraBold,
+    fontSize: 22,
+    color: colors.primaryDeep,
+    fontVariant: ["tabular-nums"],
+  },
 });

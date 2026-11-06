@@ -1,28 +1,22 @@
-import { useEffect, useState } from "react";
-import { NavigationContainer } from "@react-navigation/native";
+import { useEffect } from "react";
+import { DefaultTheme, NavigationContainer } from "@react-navigation/native";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import { StatusBar } from "expo-status-bar";
 import { useFonts } from "expo-font";
 import * as SplashScreen from "expo-splash-screen";
-import {
-  PlusJakartaSans_600SemiBold,
-  PlusJakartaSans_700Bold,
-  PlusJakartaSans_800ExtraBold,
-} from "@expo-google-fonts/plus-jakarta-sans";
-import { Inter_400Regular, Inter_500Medium } from "@expo-google-fonts/inter";
 
 import { AuthProvider, useAuth } from "./src/context/AuthContext";
 import { SavedShopsProvider } from "./src/context/SavedShopsContext";
 import { LocationProvider } from "./src/context/LocationContext";
-import { NotificationsProvider, useNotifications } from "./src/context/NotificationsContext";
+import {
+  NotificationsProvider,
+  useNotifications,
+} from "./src/context/NotificationsContext";
 import { SupportProvider } from "./src/context/SupportContext";
 import { OrderEventsProvider } from "./src/context/OrderEventsContext";
-import PhoneEntryScreen from "./src/screens/PhoneEntryScreen";
-import OtpScreen from "./src/screens/OtpScreen";
-import AccountSetupScreen from "./src/screens/AccountSetupScreen";
-import AuthUnavailableScreen from "./src/screens/AuthUnavailableScreen";
+import AuthScreen from "./src/screens/AuthScreen";
 import HomeScreen from "./src/screens/HomeScreen";
 import ShopsScreen from "./src/screens/ShopsScreen";
 import ShopDetailsScreen from "./src/screens/ShopDetailsScreen";
@@ -54,11 +48,6 @@ import { colors, typography } from "./src/theme";
 // EXPO_PUBLIC_POSTHOG_KEY is unset - see src/lib/analytics.js.
 initAnalytics();
 
-// How long the branded splash stays up at minimum. Fonts and the stored
-// session usually resolve in well under this, so without a floor the
-// splash would flash past too fast to read.
-const MIN_SPLASH_MS = 1800;
-
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
 
@@ -87,13 +76,28 @@ function MainTabs() {
     >
       {/* Home and Profile build their own in-content header (greeting /
           avatar block), so the native stack header is hidden for them. */}
-      <Tab.Screen name="Home" component={HomeScreen} options={{ headerShown: false }} />
-      <Tab.Screen name="Shops" component={ShopsScreen} options={{ title: "Print Shops" }} />
-      <Tab.Screen name="Orders" component={MyOrdersScreen} options={{ title: "My Orders" }} />
+      <Tab.Screen
+        name="Home"
+        component={HomeScreen}
+        options={{ headerShown: false }}
+      />
+      <Tab.Screen
+        name="Shops"
+        component={ShopsScreen}
+        options={{ title: "Print Shops" }}
+      />
+      <Tab.Screen
+        name="Orders"
+        component={MyOrdersScreen}
+        options={{ title: "My Orders" }}
+      />
       <Tab.Screen
         name="Profile"
         component={ProfileScreen}
-        options={{ headerShown: false, tabBarBadge: unreadCount > 0 ? unreadCount : undefined }}
+        options={{
+          headerShown: false,
+          tabBarBadge: unreadCount > 0 ? unreadCount : undefined,
+        }}
       />
     </Tab.Navigator>
   );
@@ -111,7 +115,9 @@ function RootNavigator() {
   // unmounts as the customer navigates, and this must fire exactly once.
   useEffect(() => {
     if (!loading) {
-      trackEvent(EVENTS.APP_OPENED, { role: isAuthenticated ? "customer" : undefined });
+      trackEvent(EVENTS.APP_OPENED, {
+        role: isAuthenticated ? "customer" : undefined,
+      });
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [loading]);
@@ -132,42 +138,18 @@ function RootNavigator() {
       }}
     >
       {!isAuthenticated ? (
-        // The demo phone-login flow (PhoneEntry -> Otp -> AccountSetup,
-        // see constants/demoAuth.js) only exists in development - __DEV__
-        // is false in every built binary, dev/preview/production EAS
-        // profile alike (this project has no eas.json build-profile env
-        // vars yet to distinguish them more finely; see demoAuth.js's own
-        // comment on upgrading this check if one is added). Any such
-        // build gets AuthUnavailableScreen instead - registered under the
-        // same "PhoneEntry" route name since nothing else navigates to it
-        // by name, so there's only ever one branch's worth of route names
-        // to keep in sync. Otp/AccountSetup aren't registered at all in
-        // that case, so there's no route left for anything to reach even
-        // by name.
-        __DEV__ ? (
-          <>
-            <Stack.Screen
-              name="PhoneEntry"
-              component={PhoneEntryScreen}
-              options={{ headerShown: false }}
-            />
-            <Stack.Screen name="Otp" component={OtpScreen} options={{ title: "Verify" }} />
-            <Stack.Screen
-              name="AccountSetup"
-              component={AccountSetupScreen}
-              options={{ title: "Set up account", headerBackVisible: false }}
-            />
-          </>
-        ) : (
-          <Stack.Screen
-            name="PhoneEntry"
-            component={AuthUnavailableScreen}
-            options={{ headerShown: false }}
-          />
-        )
+        <Stack.Screen
+          name="SignIn"
+          component={AuthScreen}
+          options={{ headerShown: false }}
+        />
       ) : (
         <>
-          <Stack.Screen name="MainTabs" component={MainTabs} options={{ headerShown: false }} />
+          <Stack.Screen
+            name="MainTabs"
+            component={MainTabs}
+            options={{ headerShown: false }}
+          />
 
           {/* Order flow: Upload -> Preferences -> Select shop -> Review & pay -> Payment */}
           {/* The step between a shop card and the upload flow: a customer
@@ -201,7 +183,11 @@ function RootNavigator() {
             component={ChooseShopOptionScreen}
             options={{ title: "Order options" }}
           />
-          <Stack.Screen name="SelectShop" component={SelectShopScreen} options={{ title: "Select shop" }} />
+          <Stack.Screen
+            name="SelectShop"
+            component={SelectShopScreen}
+            options={{ title: "Select shop" }}
+          />
           {/* Cart -> Checkout -> Payment -> Order placed, matching the
               reference flow. ReviewCheckout is the cart; Checkout is the
               new step that collects fulfilment, shop, contact and
@@ -211,8 +197,16 @@ function RootNavigator() {
             component={ReviewCheckoutScreen}
             options={{ title: "Your cart" }}
           />
-          <Stack.Screen name="Checkout" component={CheckoutScreen} options={{ title: "Checkout" }} />
-          <Stack.Screen name="Payment" component={PaymentScreen} options={{ title: "Payment" }} />
+          <Stack.Screen
+            name="Checkout"
+            component={CheckoutScreen}
+            options={{ title: "Checkout" }}
+          />
+          <Stack.Screen
+            name="Payment"
+            component={PaymentScreen}
+            options={{ title: "Payment" }}
+          />
           {/* No back button: the whole checkout stack is cleared by the
               reset in PaymentScreen once payment is verified, so there is
               nothing behind this but Home. */}
@@ -233,10 +227,22 @@ function RootNavigator() {
               headerBackVisible: !route.params?.justPlaced,
             })}
           />
-          <Stack.Screen name="PickupOtp" component={PickupOtpScreen} options={{ title: "Pickup" }} />
+          <Stack.Screen
+            name="PickupOtp"
+            component={PickupOtpScreen}
+            options={{ title: "Pickup" }}
+          />
 
-          <Stack.Screen name="Settings" component={SettingsScreen} options={{ title: "Settings" }} />
-          <Stack.Screen name="SavedShops" component={SavedShopsScreen} options={{ title: "Saved Shops" }} />
+          <Stack.Screen
+            name="Settings"
+            component={SettingsScreen}
+            options={{ title: "Settings" }}
+          />
+          <Stack.Screen
+            name="SavedShops"
+            component={SavedShopsScreen}
+            options={{ title: "Saved Shops" }}
+          />
           <Stack.Screen
             name="Notifications"
             component={NotificationsScreen}
@@ -251,7 +257,11 @@ function RootNavigator() {
             component={HelpSupportScreen}
             options={{ title: "Help & Support" }}
           />
-          <Stack.Screen name="Chat" component={ChatScreen} options={{ title: "Support chat" }} />
+          <Stack.Screen
+            name="Chat"
+            component={ChatScreen}
+            options={{ title: "Support chat" }}
+          />
         </>
       )}
     </Stack.Navigator>
@@ -262,19 +272,12 @@ export default function App() {
   // Keys here must match theme/typography.js's `fonts` constants exactly,
   // or React Native falls back to the system font without warning.
   const [fontsLoaded, fontError] = useFonts({
-    PlusJakartaSans_600SemiBold,
-    PlusJakartaSans_700Bold,
-    PlusJakartaSans_800ExtraBold,
-    Inter_400Regular,
-    Inter_500Medium,
+    Manrope_600SemiBold: require("@expo-google-fonts/manrope/600SemiBold/Manrope_600SemiBold.ttf"),
+    Manrope_700Bold: require("@expo-google-fonts/manrope/700Bold/Manrope_700Bold.ttf"),
+    Manrope_800ExtraBold: require("@expo-google-fonts/manrope/800ExtraBold/Manrope_800ExtraBold.ttf"),
+    Inter_400Regular: require("@expo-google-fonts/inter/400Regular/Inter_400Regular.ttf"),
+    Inter_500Medium: require("@expo-google-fonts/inter/500Medium/Inter_500Medium.ttf"),
   });
-
-  const [minTimeElapsed, setMinTimeElapsed] = useState(false);
-
-  useEffect(() => {
-    const timer = setTimeout(() => setMinTimeElapsed(true), MIN_SPLASH_MS);
-    return () => clearTimeout(timer);
-  }, []);
 
   // Hand off from the native splash to BrandSplash as soon as the fonts
   // are ready - BrandSplash uses them, so showing it earlier would render
@@ -289,44 +292,48 @@ export default function App() {
     return null;
   }
 
-  if (!minTimeElapsed) {
-    return (
-      <SafeAreaProvider>
-        <StatusBar style="light" />
-        <BrandSplash />
-      </SafeAreaProvider>
-    );
-  }
-
   return (
     // Outermost, outside every provider: a throw while AuthProvider,
     // LocationProvider or any other context initialises would otherwise
     // unmount the root view and leave a blank screen with no way out but
     // force-quitting the app. See src/components/ErrorBoundary.js.
     <ErrorBoundary>
-    <SafeAreaProvider>
-      <AuthProvider>
-        {/* Above SavedShopsProvider, which reads coords to fetch distances. */}
-        <LocationProvider>
-          <SavedShopsProvider>
-            <NotificationsProvider>
-              {/* Owns the one support socket for the whole app, so an
+      <SafeAreaProvider>
+        <AuthProvider>
+          {/* Above SavedShopsProvider, which reads coords to fetch distances. */}
+          <LocationProvider>
+            <SavedShopsProvider>
+              <NotificationsProvider>
+                {/* Owns the one support socket for the whole app, so an
                   admin reply lights Profile's unread dot wherever the
                   customer happens to be. Inside AuthProvider because it
                   connects with the stored JWT and tears down on logout. */}
-              <OrderEventsProvider>
-              <SupportProvider>
-                <NavigationContainer>
-                  <StatusBar style="light" />
-                  <RootNavigator />
-                </NavigationContainer>
-              </SupportProvider>
-              </OrderEventsProvider>
-            </NotificationsProvider>
-          </SavedShopsProvider>
-        </LocationProvider>
-      </AuthProvider>
-    </SafeAreaProvider>
+                <OrderEventsProvider>
+                  <SupportProvider>
+                    <NavigationContainer
+                      theme={{
+                        ...DefaultTheme,
+                        colors: {
+                          ...DefaultTheme.colors,
+                          primary: colors.primary,
+                          background: colors.background,
+                          card: colors.surface,
+                          text: colors.textPrimary,
+                          border: colors.border,
+                          notification: colors.magenta,
+                        },
+                      }}
+                    >
+                      <StatusBar style="dark" />
+                      <RootNavigator />
+                    </NavigationContainer>
+                  </SupportProvider>
+                </OrderEventsProvider>
+              </NotificationsProvider>
+            </SavedShopsProvider>
+          </LocationProvider>
+        </AuthProvider>
+      </SafeAreaProvider>
     </ErrorBoundary>
   );
 }
