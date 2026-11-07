@@ -31,3 +31,9 @@ The shared admin theme uses Paprout's paper, cyan, magenta, yellow and ink palet
 Design refinement followed the Unslop guidance by [Damir Sokolovsky](https://heydamir.design/unslop), CC BY 4.0.
 
 Dashboard refinement adds a compact KPI band, recent orders, the vendor review queue and a proportional shop verification breakdown, all backed by existing API reads. Empty counts stay empty; no historical trend data is fabricated. Shared filters and the settings fee selector use Radix Select for keyboard navigation, typeahead, selection indicators, focus restoration and collision-aware menus. Lucide supplies navigation and action icons. Run npm run check for the zero/mixed/pending-only dashboard calculation checks. Desktop and 390px mobile layouts, filter resets and keyboard dismissal were checked without changing platform settings. Populated order and vendor rows have not been exercised against this empty local database.
+
+## Vendor and user directories
+
+The admin sidebar includes Vendors (/vendors) and Users (/users). Both are read-only directories with server-side name/email/phone search and 25-account pagination. Vendor rows include linked shop and verification/active status, including owners with no shop; user rows include all-time order counts. The new GET /admin/accounts endpoint accepts only role=shop_owner or role=customer and inherits the admin router's authentication and role checks. Explicit projections exclude passwords, OAuth IDs, KYC and payout data.
+
+From backend, run npm run check:admin-accounts while local MongoDB is running. This check creates and drops its own randomly named paprout_account_check_* database; it never uses paprout_local. It covers access control, role isolation, literal search, bounded pagination, missing-shop states, order counts and private-field exclusion. No fixture accounts are added to the application database.

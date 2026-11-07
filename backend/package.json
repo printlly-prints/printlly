@@ -5,7 +5,8 @@
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
-    "dev": "nodemon server.js"
+    "dev": "nodemon server.js",
+    "check:admin-accounts": "node scripts/checkAdminAccounts.js"
   },
   "dependencies": {
     "@sentry/node": "^11.4.0",

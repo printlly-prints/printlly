@@ -10,6 +10,7 @@ const Login = lazy(() => import("./pages/Login"));
 const Dashboard = lazy(() => import("./pages/Dashboard"));
 const VendorVerification = lazy(() => import("./pages/VendorVerification"));
 const Shops = lazy(() => import("./pages/Shops"));
+const AccountDirectory = lazy(() => import("./pages/AccountDirectory"));
 const Orders = lazy(() => import("./pages/Orders"));
 const Settlements = lazy(() => import("./pages/Settlements"));
 const SettlementDetail = lazy(() => import("./pages/SettlementDetail"));
@@ -61,6 +62,9 @@ export default function App() {
             </ProtectedRoute>
           }
         />
+
+        <Route path="/vendors" element={<ProtectedRoute><AccountDirectory key="vendors" role="shop_owner" /></ProtectedRoute>} />
+        <Route path="/users" element={<ProtectedRoute><AccountDirectory key="users" role="customer" /></ProtectedRoute>} />
 
         {/* The list, and one shop's detail. A real route rather than a
             modal over the list: an admin leaves this screen to actually

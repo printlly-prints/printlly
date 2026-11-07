@@ -4,10 +4,12 @@ import api from "../api/axios";
 import { useAuth } from "../context/AuthContext";
 import { useSupport } from "../context/SupportContext";
 import AdminBrand from "./AdminBrand";
-import { LayoutDashboard, ShieldCheck, Store, ReceiptText, Wallet, MessagesSquare, Settings2 } from "lucide-react";
+import { LayoutDashboard, ShieldCheck, Store, ReceiptText, Wallet, MessagesSquare, Settings2, ContactRound, UsersRound } from "lucide-react";
 
 const NAV_ITEMS = [
   { label: "Dashboard", to: "/", icon: LayoutDashboard },
+  { label: "Vendors", to: "/vendors", icon: ContactRound },
+  { label: "Users", to: "/users", icon: UsersRound },
   // The only nav item that carries a count - it's the one queue where
   // something is actively waiting on an admin to act.
   { label: "Vendor Verification", to: "/verification", icon: ShieldCheck, badgeKey: "shops_pending_verification" },

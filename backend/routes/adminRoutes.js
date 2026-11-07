@@ -24,6 +24,7 @@ const {
   listSettlements,
 } = require("../controllers/settlementController");
 const { verifyToken, requireRole } = require("../middleware/auth");
+const { listAccounts } = require("../controllers/adminAccountController");
 
 // Auth is applied ONCE here, to the whole router, rather than repeated on
 // each route below. Every route in this file is admin-only without
@@ -35,6 +36,9 @@ const { verifyToken, requireRole } = require("../middleware/auth");
 // reads. A request with no token gets 401 from the first, a valid
 // customer or shop_owner token gets 403 from the second.
 router.use(verifyToken, requireRole("admin"));
+
+// Separate customer/vendor directories, including vendors without a shop yet.
+router.get("/accounts", listAccounts);
 
 // --- Vendor verification -------------------------------------------------
 
