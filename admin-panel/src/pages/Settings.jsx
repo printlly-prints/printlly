@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import api from "../api/axios";
 import AdminLayout from "../components/AdminLayout";
 import ConfirmDialog from "../components/ConfirmDialog";
-import { ErrorNote, Loading, PageHeader } from "../components/ui";
+import { ErrorNote, FilterSelect, Loading, PageHeader } from "../components/ui";
 
 // The global Settings document - the only genuinely platform-wide pricing
 // left (every print rate is per-shop, set by each vendor).
@@ -117,17 +117,15 @@ export default function Settings() {
             </div>
 
             <div className="grid gap-4 sm:grid-cols-2">
-              <label className="flex flex-col gap-1">
-                <span className="text-sm font-medium text-text-primary">Fee type</span>
-                <select
-                  value={form.platform_fee_type}
-                  onChange={(e) => set("platform_fee_type", e.target.value)}
-                  className="px-3 py-2 border border-border rounded-control text-sm bg-surface focus:outline-none focus:ring-2 focus:border-primary focus:ring-primary/20"
-                >
-                  <option value="flat">Flat (₹ per order)</option>
-                  <option value="percentage">Percentage of order</option>
-                </select>
-              </label>
+              <FilterSelect
+                label="Fee type"
+                value={form.platform_fee_type}
+                onChange={(value) => set("platform_fee_type", value)}
+                options={[
+                  { value: "flat", label: "Flat (₹ per order)" },
+                  { value: "percentage", label: "Percentage of order" },
+                ]}
+              />
 
               <label className="flex flex-col gap-1">
                 <span className="text-sm font-medium text-text-primary">

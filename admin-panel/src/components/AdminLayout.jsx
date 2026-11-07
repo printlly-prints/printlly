@@ -3,41 +3,41 @@ import { NavLink, useNavigate } from "react-router-dom";
 import api from "../api/axios";
 import { useAuth } from "../context/AuthContext";
 import { useSupport } from "../context/SupportContext";
+import AdminBrand from "./AdminBrand";
+import { LayoutDashboard, ShieldCheck, Store, ReceiptText, Wallet, MessagesSquare, Settings2 } from "lucide-react";
 
 const NAV_ITEMS = [
-  { label: "Dashboard", to: "/" },
+  { label: "Dashboard", to: "/", icon: LayoutDashboard },
   // The only nav item that carries a count - it's the one queue where
   // something is actively waiting on an admin to act.
-  { label: "Vendor Verification", to: "/verification", badgeKey: "shops_pending_verification" },
-  { label: "Shops", to: "/shops" },
-  { label: "Orders", to: "/orders" },
+  { label: "Vendor Verification", to: "/verification", icon: ShieldCheck, badgeKey: "shops_pending_verification" },
+  { label: "Shops", to: "/shops", icon: Store },
+  { label: "Orders", to: "/orders", icon: ReceiptText },
   // Sits after Orders because that is where the money it settles comes
   // from. No badge: "shops awaiting payout" is a number an admin works
   // through on their own schedule, not a queue where a customer or
   // vendor is blocked waiting on a decision, which is what the two
   // badges above mean.
-  { label: "Settlements", to: "/settlements" },
+  { label: "Settlements", to: "/settlements", icon: Wallet },
   // Kept live by the support socket rather than polled - see
   // SupportContext. Counts THREADS waiting, not messages: "3" meaning
   // three people are waiting is what an admin can act on, where "3"
   // meaning one person sent three lines is not.
-  { label: "Support", to: "/support", badgeKey: "support_unread_threads" },
-  { label: "Settings", to: "/settings" },
+  { label: "Support", to: "/support", icon: MessagesSquare, badgeKey: "support_unread_threads" },
+  { label: "Settings", to: "/settings", icon: Settings2 },
 ];
 
 const linkClass = ({ isActive }) =>
-  `flex items-center justify-between gap-2 px-3 py-2 rounded-control text-sm font-medium transition-colors ${
+  `flex items-center justify-between gap-2 border-l-2 px-3 py-2.5 rounded-control text-sm font-medium transition-colors ${
     isActive
-      ? "bg-primary-wash text-primary-bright"
-      : "text-text-secondary hover:bg-background-soft hover:text-text-primary"
+      ? "bg-primary-wash text-primary-deep border-primary"
+      : "border-transparent text-text-secondary hover:bg-background-soft hover:text-text-primary"
   }`;
 
 // Shell for every authenticated page: a persistent sidebar on md+, a
 // collapsible top bar below that, and the page's own content beside it.
 //
-// Deliberately plainer than the vendor dashboard's equivalent - no
-// branding lockup, no marketing polish. This is an internal tool, so the
-// nav is a list of destinations and nothing else.
+// Shared Paprout branding with compact navigation for operational work.
 export default function AdminLayout({ children }) {
   const { user, logout } = useAuth();
   const { unreadThreads } = useSupport() || {};
@@ -86,7 +86,7 @@ export default function AdminLayout({ children }) {
   const navLinks = (onNavigate) =>
     NAV_ITEMS.map((item) => (
       <NavLink key={item.to} to={item.to} end={item.to === "/"} className={linkClass} onClick={onNavigate}>
-        <span>{item.label}</span>
+        <span className="flex items-center gap-3"><item.icon size={18} strokeWidth={1.7} aria-hidden="true" />{item.label}</span>
         {badgeFor(item) !== null && (
           <span className="min-w-[1.4rem] px-1.5 py-0.5 rounded-full bg-primary text-white text-xs font-semibold text-center">
             {badgeFor(item)}
@@ -99,8 +99,8 @@ export default function AdminLayout({ children }) {
     <div className="min-h-screen md:flex bg-background">
       {/* Mobile top bar */}
       <div className="md:hidden sticky top-0 z-20 bg-surface border-b border-border">
-        <div className="h-14 px-4 flex items-center justify-between">
-          <span className="font-heading font-bold text-text-primary">Paprout Admin</span>
+        <div className="h-20 px-4 flex items-center justify-between">
+          <AdminBrand />
           <button
             type="button"
             onClick={() => setMobileOpen((v) => !v)}
@@ -127,9 +127,9 @@ export default function AdminLayout({ children }) {
       </div>
 
       {/* Desktop sidebar */}
-      <aside className="hidden md:flex md:flex-col md:w-56 md:shrink-0 md:h-screen md:sticky md:top-0 bg-surface border-r border-border">
-        <div className="h-14 px-5 flex items-center border-b border-border">
-          <span className="font-heading font-bold text-text-primary">Paprout Admin</span>
+      <aside className="hidden md:flex md:flex-col md:w-64 md:shrink-0 md:h-screen md:sticky md:top-0 bg-surface border-r border-border">
+        <div className="h-24 px-6 flex items-center border-b border-border">
+          <AdminBrand />
         </div>
 
         <nav className="flex-1 px-3 py-4 flex flex-col gap-1">{navLinks()}</nav>

@@ -2,74 +2,41 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Base defaults, matching the vendor dashboard's own (vendor-website/src/index.css).
-   None of that file's scroll-reveal / ambient-float utilities are copied
-   over - those animate the marketing page, and an internal tool has
-   nothing to reveal on scroll. */
-body {
-  @apply bg-background text-text-primary font-sans;
-}
-/* ---------------------------------------------------------------------------
-   Dark theme base
-   ---------------------------------------------------------------------------
-   color-scheme is the single highest-leverage line in this file.
-
-   It tells the browser the page is dark, and the browser then renders every
-   piece of UI it owns and we cannot style to match: scrollbars, the dropdown
-   list a <select> opens, the native date picker, spinner buttons on a number
-   input, the autofill menu, and the default background of any form control
-   that was not given one.
-
-   That last case was a real bug rather than a hypothetical. Several inputs in
-   this app carry border and focus classes but no background class, so they
-   fell through to the browser default - which is white. Without this line they
-   would have been bright white boxes on a dark page. The explicit form-control
-   rules below fix those inputs directly; color-scheme is what covers the parts
-   of them the CSS cannot reach, and anything added later that forgets again.
-
-   It is also why there is NO custom scrollbar CSS here. With color-scheme set,
-   scrollbars are already dark and already native on every platform, so styling
-   them by hand would be replacing correct platform behaviour with a worse
-   imitation. */
-:root {
-  color-scheme: dark;
-}
-
-/* Form controls.
-
-   Stated once here rather than per input, because the inputs that were missing
-   a background are exactly the ones nobody would think to revisit. An input is
-   a WELL on dark - recessed below the card it sits in - which is the opposite
-   of the light theme, where it was a white tile on a tinted card. Both read as
-   "type here"; the direction just flips with the ground. */
-input,
-select,
-textarea {
-  @apply bg-input text-text-primary border-border;
-}
-
-input::placeholder,
-textarea::placeholder {
-  @apply text-text-muted;
-}
-
-/* Chrome paints an autofilled field with its own near-white background and
-   ignores background-color outright. The inset box-shadow is the only thing
-   that overrides it, and -webkit-text-fill-color the only thing that
-   overrides the text. Without these, saving a password turns the login form
-   into two white boxes. */
+:root { color-scheme: light; }
+body { @apply bg-background text-text-primary font-sans antialiased; margin: 0; }
+input, select, textarea { @apply bg-input text-text-primary border-border-strong; }
+:is(input, select, textarea).border-border { @apply border-border-strong; }
+input::placeholder, textarea::placeholder { @apply text-text-muted; }
 input:-webkit-autofill,
 input:-webkit-autofill:hover,
 input:-webkit-autofill:focus {
-  -webkit-box-shadow: 0 0 0 1000px #0c2824 inset;
-  -webkit-text-fill-color: #e6f2ec;
-  caret-color: #e6f2ec;
+  -webkit-box-shadow: 0 0 0 1000px #ffffff inset;
+  -webkit-text-fill-color: #242426;
+  caret-color: #007c9c;
 }
-
-/* Text selection. The browser default is a blue that belongs to no part of
-   this palette; teal at low opacity keeps a selection legible and on-brand. */
-::selection {
-  background-color: rgba(14, 165, 168, 0.3);
-  color: #e6f2ec;
+::selection { background-color: #b9e9f2; color: #242426; }
+:focus-visible { outline: 2px solid #007c9c; outline-offset: 3px; }
+button, a, input, select, textarea { -webkit-tap-highlight-color: transparent; }
+input[type="date"] { min-height: 44px; }
+.admin-select-trigger {
+  @apply flex min-h-11 w-full items-center justify-between gap-5 rounded-control border border-border-strong bg-surface px-3 py-2 text-left text-sm text-text-primary shadow-sm transition-colors hover:border-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/25;
 }
-
+.admin-select-trigger[data-state="open"] { @apply border-primary ring-2 ring-primary/15; }
+.admin-select-trigger svg { transition: transform 140ms ease-out; }
+.admin-select-trigger[data-state="open"] > span:last-child svg { transform: rotate(180deg); }
+.admin-select-menu {
+  @apply z-50 overflow-hidden rounded-xl border border-border bg-surface shadow-dropdown;
+  width: var(--radix-select-trigger-width);
+  max-height: var(--radix-select-content-available-height);
+  transform-origin: var(--radix-select-content-transform-origin);
+  animation: select-in 120ms ease-out;
+}
+.admin-select-option {
+  @apply relative flex min-h-10 cursor-default select-none items-center justify-between gap-4 rounded-lg px-3 py-2 text-sm text-text-primary outline-none;
+}
+.admin-select-option[data-highlighted] { @apply bg-primary-wash; }
+.admin-select-option[data-state="checked"] { @apply font-medium text-primary-deep; }
+@keyframes select-in { from { opacity: 0; transform: translateY(-3px); } to { opacity: 1; transform: translateY(0); } }
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { transition-duration: 0.01ms !important; animation-duration: 0.01ms !important; scroll-behavior: auto !important; }
+}

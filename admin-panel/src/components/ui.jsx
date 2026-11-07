@@ -1,3 +1,7 @@
+import { useId } from "react";
+import * as Select from "@radix-ui/react-select";
+import { Check, ChevronDown, ChevronUp } from "lucide-react";
+
 // The handful of primitives every table-heavy page here repeats. Kept in
 // one file rather than one file each: none of them is more than a styled
 // element, and splitting them further would be more imports than
@@ -24,7 +28,7 @@ export function TableShell({ headers, children, empty, colSpan }) {
   return (
     <div className="bg-surface border border-border rounded-panel overflow-hidden">
       <div className="overflow-x-auto">
-        <table className="w-full text-sm">
+        <table className="w-full text-sm tabular-nums">
           <thead>
             <tr className="border-b border-border bg-background-soft">
               {headers.map((h) => (
@@ -97,22 +101,37 @@ export function Badge({ value }) {
 }
 
 // Filter <select> with a consistent label, used across Shops and Orders.
-export function FilterSelect({ label, value, onChange, options }) {
+export function FilterSelect({ label, value, onChange, options, className = "" }) {
+  const id = useId();
+  // Radix reserves the empty string; the API uses it to mean no filter.
+  const empty = "__paprout_all__";
   return (
-    <label className="flex flex-col gap-1">
-      <span className="text-xs font-medium text-text-secondary">{label}</span>
-      <select
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-        className="px-3 py-1.5 border border-border rounded-control text-sm bg-surface focus:outline-none focus:ring-2 focus:border-primary focus:ring-primary/20"
+    <div className={`flex min-w-40 flex-col gap-1.5 ${className}`}>
+      <label htmlFor={id} className="text-xs font-medium text-text-secondary">{label}</label>
+      <Select.Root
+        value={value === "" ? empty : value}
+        onValueChange={(next) => onChange(next === empty ? "" : next)}
       >
-        {options.map((o) => (
-          <option key={o.value} value={o.value}>
-            {o.label}
-          </option>
-        ))}
-      </select>
-    </label>
+        <Select.Trigger id={id} aria-label={label} className="admin-select-trigger">
+          <Select.Value />
+          <Select.Icon><ChevronDown size={16} aria-hidden="true" /></Select.Icon>
+        </Select.Trigger>
+        <Select.Portal>
+          <Select.Content position="popper" sideOffset={6} collisionPadding={12} className="admin-select-menu">
+            <Select.ScrollUpButton className="flex justify-center p-1 text-primary"><ChevronUp size={16} /></Select.ScrollUpButton>
+            <Select.Viewport className="p-1.5">
+              {options.map((option) => (
+                <Select.Item key={option.value} value={option.value === "" ? empty : option.value} className="admin-select-option">
+                  <Select.ItemText>{option.label}</Select.ItemText>
+                  <Select.ItemIndicator><Check size={16} aria-hidden="true" /></Select.ItemIndicator>
+                </Select.Item>
+              ))}
+            </Select.Viewport>
+            <Select.ScrollDownButton className="flex justify-center p-1 text-primary"><ChevronDown size={16} /></Select.ScrollDownButton>
+          </Select.Content>
+        </Select.Portal>
+      </Select.Root>
+    </div>
   );
 }
 
@@ -124,7 +143,7 @@ export function TextFilter({ label, value, onChange, placeholder }) {
         value={value}
         onChange={(e) => onChange(e.target.value)}
         placeholder={placeholder}
-        className="px-3 py-1.5 border border-border rounded-control text-sm focus:outline-none focus:ring-2 focus:border-primary focus:ring-primary/20"
+        className="min-h-11 px-3 py-2 border border-border rounded-control text-sm focus:outline-none focus:ring-2 focus:border-primary focus:ring-primary/20"
       />
     </label>
   );
