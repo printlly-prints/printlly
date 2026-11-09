@@ -46,7 +46,7 @@ export function describeDocumentSettings(settings) {
   if (!settings) return "";
   const parts = [settings.color_mode === "bw" ? "B&W" : "Colour"];
   parts.push(`${settings.copies} cop${settings.copies === 1 ? "y" : "ies"}`);
-  if (settings.paper_size === "A3") parts.push("A3");
+  parts.push(settings.paper_size || "A4");
   if (settings.sides === "double") parts.push("Double-sided");
   // Services are the shop's own names, chosen by the customer from that
   // shop's list - there is no fixed set to look up.

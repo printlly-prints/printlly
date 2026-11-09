@@ -1,3 +1,5 @@
+import { PressableScale } from "pressto";
+import { useReducedMotion } from "react-native-reanimated";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 import { colors, typography, spacing, radius, shadows } from "../theme";
 
@@ -8,12 +10,16 @@ import { colors, typography, spacing, radius, shadows } from "../theme";
 //
 // Pressable only when an onPress is given; otherwise a plain View, so a
 // static card is not announced to a screen reader as something tappable.
-export default function Card({ children, style, onPress, selected, disabled, ...rest }) {
-  const content = (
-    <>
-      {children}
-    </>
-  );
+export default function Card({
+  children,
+  style,
+  onPress,
+  selected,
+  disabled,
+  ...rest
+}) {
+  const reduced = useReducedMotion();
+  const content = <>{children}</>;
 
   if (!onPress) {
     return (
@@ -24,22 +30,23 @@ export default function Card({ children, style, onPress, selected, disabled, ...
   }
 
   return (
-    <Pressable
+    <PressableScale
       onPress={onPress}
       disabled={disabled}
-      style={({ pressed }) => [
+      accessibilityRole="button"
+      accessibilityState={{ disabled: Boolean(disabled) }}
+      config={{ minScale: reduced ? 1 : 0.99 }}
+      animationConfig={{ duration: reduced ? 1 : 120 }}
+      style={[
         styles.card,
         selected && styles.selected,
-        // scale rather than translate: on a card that already carries a
-        // shadow, a lift reads as the shadow breaking away from it.
-        pressed && !disabled && styles.pressed,
         disabled && styles.disabled,
         style,
       ]}
       {...rest}
     >
       {content}
-    </Pressable>
+    </PressableScale>
   );
 }
 
@@ -61,14 +68,12 @@ export function CardHeader({ title, actionLabel, onAction }) {
 const styles = StyleSheet.create({
   card: {
     backgroundColor: colors.surface,
-    borderRadius: radius.md,
+    borderRadius: radius.card,
     borderWidth: 1,
     borderColor: colors.border,
     padding: spacing.lg,
-    ...shadows.card,
   },
   selected: { borderColor: colors.primary, borderWidth: 2 },
-  pressed: { transform: [{ scale: 0.99 }] },
   disabled: { opacity: 0.55 },
 
   header: {

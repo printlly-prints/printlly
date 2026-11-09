@@ -1,7 +1,15 @@
-import { Linking, Platform, Pressable, StyleSheet, Text, View } from "react-native";
+import {
+  Linking,
+  Platform,
+  Pressable,
+  StyleSheet,
+  Text,
+  View,
+} from "react-native";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import ShopPhoto from "./ShopPhoto";
 import Card from "./Card";
+import { DEMO_MODE } from "../config/runtime";
 import { shopImageSource } from "../utils/shopImages";
 import { formatDistance } from "../utils/distance";
 import { shopAvailability } from "../utils/shopAvailability";
@@ -34,12 +42,16 @@ export default function ShopCard({
   // Open / Busy / Closed from the one shared resolver. `hasStatus` keeps
   // the old behaviour of showing nothing at all when the caller fetched a
   // shop without its status, rather than guessing at "open".
-  const hasStatus = typeof shop.is_currently_open === "boolean" || !!shop.shop_status;
+  const hasStatus =
+    typeof shop.is_currently_open === "boolean" || !!shop.shop_status;
   const availability = shopAvailability(shop);
   const distance = formatDistance(distanceKm ?? shop.distance_km);
 
   const call = () => {
-    if (shop.contact) Linking.openURL(`tel:${String(shop.contact).replace(/\s/g, "")}`).catch(() => {});
+    if (shop.contact)
+      Linking.openURL(`tel:${String(shop.contact).replace(/\s/g, "")}`).catch(
+        () => {},
+      );
   };
 
   const openMap = () => {
@@ -61,7 +73,12 @@ export default function ShopCard({
   return (
     <Card style={style}>
       <View style={styles.row}>
-        <ShopPhoto source={shopImageSource(shop)} shopName={shop.shop_name} style={styles.photo} iconSize={22} />
+        <ShopPhoto
+          source={shopImageSource(shop)}
+          shopName={shop.shop_name}
+          style={styles.photo}
+          iconSize={22}
+        />
 
         <View style={styles.details}>
           <Text style={styles.name} numberOfLines={1}>
@@ -70,7 +87,11 @@ export default function ShopCard({
 
           {shop.address ? (
             <View style={styles.metaRow}>
-              <Ionicons name="location-outline" size={13} color={colors.textMuted} />
+              <Ionicons
+                name="location-outline"
+                size={13}
+                color={colors.textMuted}
+              />
               <Text style={styles.meta} numberOfLines={2}>
                 {shop.address}
               </Text>
@@ -79,7 +100,11 @@ export default function ShopCard({
 
           {showContact && shop.contact ? (
             <View style={styles.metaRow}>
-              <Ionicons name="call-outline" size={13} color={colors.textMuted} />
+              <Ionicons
+                name="call-outline"
+                size={13}
+                color={colors.textMuted}
+              />
               <Text style={styles.meta}>{shop.contact}</Text>
             </View>
           ) : null}
@@ -93,18 +118,31 @@ export default function ShopCard({
               <View
                 style={[
                   styles.badge,
-                  { backgroundColor: availability.colors.bg, borderColor: availability.colors.border },
+                  {
+                    backgroundColor: availability.colors.bg,
+                    borderColor: availability.colors.border,
+                  },
                 ]}
               >
-                <View style={[styles.dot, { backgroundColor: availability.colors.dot }]} />
-                <Text style={[styles.badgeText, { color: availability.colors.text }]}>
+                <View
+                  style={[
+                    styles.dot,
+                    { backgroundColor: availability.colors.dot },
+                  ]}
+                />
+                <Text
+                  style={[
+                    styles.badgeText,
+                    { color: availability.colors.text },
+                  ]}
+                >
                   {availability.isBusy
                     ? availability.prepLine
                       ? `Busy · ${availability.prepLine}`
                       : "Busy"
                     : availability.isClosed
-                    ? "Closed"
-                    : "Open now"}
+                      ? "Closed"
+                      : "Open now"}
                 </Text>
               </View>
             ) : null}
@@ -119,21 +157,37 @@ export default function ShopCard({
         ) : null}
       </View>
 
-      {showActions ? (
+      {showActions && (!DEMO_MODE || shop.contact) ? (
         <View style={styles.actions}>
           <Pressable
-            style={({ pressed }) => [styles.actionButton, pressed && styles.actionButtonPressed]}
+            style={({ pressed }) => [
+              styles.actionButton,
+              pressed && styles.actionButtonPressed,
+            ]}
             onPress={call}
             disabled={!shop.contact}
           >
-            <Ionicons name="call-outline" size={16} color={colors.primaryBright} />
+            <Ionicons
+              name="call-outline"
+              size={16}
+              color={colors.primaryBright}
+            />
             <Text style={styles.actionButtonLabel}>Call shop</Text>
           </Pressable>
           <Pressable
-            style={({ pressed }) => [styles.actionButton, pressed && styles.actionButtonPressed]}
+            style={({ pressed }) => [
+              styles.actionButton,
+              pressed && styles.actionButtonPressed,
+            ]}
             onPress={openMap}
+            disabled={DEMO_MODE}
+            accessibilityState={{ disabled: DEMO_MODE }}
           >
-            <Ionicons name="map-outline" size={16} color={colors.primaryBright} />
+            <Ionicons
+              name="map-outline"
+              size={16}
+              color={colors.primaryBright}
+            />
             <Text style={styles.actionButtonLabel}>View on map</Text>
           </Pressable>
         </View>
@@ -149,10 +203,20 @@ const styles = StyleSheet.create({
   photo: { width: 64, height: 64, borderRadius: radius.sm },
   details: { flex: 1 },
   name: { ...typography.label, color: colors.textPrimary },
-  metaRow: { flexDirection: "row", alignItems: "flex-start", gap: 5, marginTop: 3 },
+  metaRow: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    gap: 5,
+    marginTop: 3,
+  },
   meta: { ...typography.caption, color: colors.textSecondary, flex: 1 },
 
-  badgeRow: { flexDirection: "row", alignItems: "center", gap: spacing.sm, marginTop: spacing.sm },
+  badgeRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.sm,
+    marginTop: spacing.sm,
+  },
   badge: {
     flexDirection: "row",
     alignItems: "center",
@@ -191,6 +255,9 @@ const styles = StyleSheet.create({
     borderColor: colors.border,
     backgroundColor: colors.surface,
   },
-  actionButtonPressed: { backgroundColor: colors.primaryWash, borderColor: colors.primary },
+  actionButtonPressed: {
+    backgroundColor: colors.primaryWash,
+    borderColor: colors.primary,
+  },
   actionButtonLabel: { ...typography.labelSmall, color: colors.primaryBright },
 });

@@ -1,6 +1,18 @@
 import { useCallback, useState } from "react";
 import { useFocusEffect } from "@react-navigation/native";
-import { ActivityIndicator, FlatList, Pressable, StyleSheet, Text, View } from "react-native";
+import {
+  ActivityIndicator,
+  FlatList,
+  Image,
+  Pressable,
+  StyleSheet,
+  Text,
+  View,
+} from "react-native";
+import PrintState from "../components/PrintState";
+import OrderJourney from "../components/OrderJourney";
+import Ionicons from "@expo/vector-icons/Ionicons";
+import { orderRef } from "../utils/orderRef";
 import StatusBadge from "../components/StatusBadge";
 import api from "../api/client";
 import { isAwaitingPayment, navigateToOrder } from "../utils/orderNavigation";
@@ -41,7 +53,7 @@ export default function MyOrdersScreen({ navigation }) {
   useFocusEffect(
     useCallback(() => {
       loadOrders();
-    }, [loadOrders])
+    }, [loadOrders]),
   );
 
   // Status here changes on the vendor's side (accepted / ready for
@@ -51,7 +63,9 @@ export default function MyOrdersScreen({ navigation }) {
   useFocusedPoll(loadOrders, ORDER_POLL_MS);
 
   const visibleOrders = orders.filter((o) =>
-    tab === "active" ? ACTIVE_STATUSES.includes(o.status) : !ACTIVE_STATUSES.includes(o.status)
+    tab === "active"
+      ? ACTIVE_STATUSES.includes(o.status)
+      : !ACTIVE_STATUSES.includes(o.status),
   );
 
   if (loading) {
@@ -65,8 +79,19 @@ export default function MyOrdersScreen({ navigation }) {
   return (
     <View style={styles.screen}>
       <View style={styles.tabRow}>
-        <TabButton label="Active" selected={tab === "active"} onPress={() => setTab("active")} />
-        <TabButton label="Completed" selected={tab === "completed"} onPress={() => setTab("completed")} />
+        <TabButton
+          label={
+            "Active · " +
+            orders.filter((o) => ACTIVE_STATUSES.includes(o.status)).length
+          }
+          selected={tab === "active"}
+          onPress={() => setTab("active")}
+        />
+        <TabButton
+          label="Past"
+          selected={tab === "completed"}
+          onPress={() => setTab("completed")}
+        />
       </View>
 
       <FlatList
@@ -79,15 +104,32 @@ export default function MyOrdersScreen({ navigation }) {
           setRefreshing(true);
           loadOrders();
         }}
-        ListHeaderComponent={error ? <Text style={styles.error}>{error}</Text> : null}
-        ListEmptyComponent={
-          !error ? (
-            <Text style={styles.empty}>
-              {tab === "active" ? "No active orders right now." : "No completed orders yet."}
-            </Text>
+        ListHeaderComponent={
+          error ? (
+            <PrintState
+              kind="offline"
+              title="Orders couldn’t refresh"
+              body={error}
+              action="Try again"
+              onAction={loadOrders}
+            />
           ) : null
         }
-        renderItem={({ item }) => {
+        ListEmptyComponent={
+          !error ? (
+            <PrintState
+              title={
+                tab === "active" ? "No active orders" : "No completed orders"
+              }
+              body={
+                tab === "active"
+                  ? "Orders appear here after you place a print. Use the Print tab when you're ready."
+                  : "Collected, cancelled and expired orders appear here."
+              }
+            />
+          ) : null
+        }
+        renderItem={({ item, index }) => {
           // payment_status isn't a `status` value - it's a separate field
           // (see models/Order.js) - but the badge needs to show it in
           // place of the real status ("pending") while a payment hasn't
@@ -100,20 +142,39 @@ export default function MyOrdersScreen({ navigation }) {
               ? "payment_failed"
               : "payment_pending"
             : item.status;
+          const ready =
+            displayStatus === "ready_for_pickup" && Boolean(item.otp);
 
           const cardBody = (
             <>
               <View style={styles.cardTop}>
-                <Text style={styles.shopName}>{item.shop_id?.shop_name || "Print shop"}</Text>
                 <StatusBadge status={displayStatus} />
+                <Text style={[styles.reference, ready && styles.readyMuted]}>
+                  #{orderRef(item)}
+                </Text>
               </View>
-              <Text style={styles.meta}>
+              <Text style={[styles.shopName, ready && styles.readyText]}>
+                {item.shop_id?.shop_name || "Print shop"}
+              </Text>
+              <Text style={[styles.meta, ready && styles.readyMuted]}>
                 {/* Settings vary per document now, so a list row counts
                     the files and leaves the detail to OrderTracking. */}
                 {item.documents?.length ?? 0} doc
-                {(item.documents?.length ?? 0) === 1 ? "" : "s"} · ₹{item.total_amount ?? 0}
+                {(item.documents?.length ?? 0) === 1 ? "" : "s"} ·{" "}
+                {(item.documents || []).reduce(
+                  (sum, doc) => sum + (doc.page_count || 0),
+                  0,
+                )}{" "}
+                pages · ₹{item.total_amount ?? 0}
               </Text>
-              <Text style={styles.date}>{new Date(item.createdAt).toLocaleString()}</Text>
+
+              {!paymentUnresolved && tab === "active" ? (
+                <OrderJourney
+                  status={item.status}
+                  compact
+                  illustrated={index === 0}
+                />
+              ) : null}
             </>
           );
 
@@ -123,15 +184,19 @@ export default function MyOrdersScreen({ navigation }) {
           // Pressable-as-button inside a Pressable-as-card.
           if (paymentUnresolved) {
             return (
-              <View style={styles.card}>
+              <View style={[styles.card, styles.paymentCard]}>
                 {cardBody}
                 {item.payment_status === "failed" ? (
                   <Text style={styles.paymentNote}>
-                    Your last payment attempt didn't go through - no charge was made.
+                    Your last payment attempt didn't go through - no charge was
+                    made.
                   </Text>
                 ) : null}
                 <Pressable
-                  style={({ pressed }) => [styles.payButton, pressed && styles.payButtonPressed]}
+                  style={({ pressed }) => [
+                    styles.payButton,
+                    pressed && styles.payButtonPressed,
+                  ]}
                   onPress={() => navigateToOrder(navigation, item)}
                 >
                   <Text style={styles.payButtonLabel}>Complete payment</Text>
@@ -142,17 +207,54 @@ export default function MyOrdersScreen({ navigation }) {
 
           return (
             <Pressable
-              style={({ pressed }) => [styles.card, pressed && styles.cardPressed]}
+              accessibilityRole="button"
+              accessibilityLabel={
+                (ready ? "View pickup code at " : "View order at ") +
+                (item.shop_id?.shop_name || "print shop")
+              }
+              style={({ pressed }) => [
+                styles.card,
+                ready && styles.readyCard,
+                pressed && (ready ? { opacity: 0.85 } : styles.cardPressed),
+              ]}
               onPress={() => navigateToOrder(navigation, item)}
             >
               {cardBody}
-              <Text style={styles.tapHint}>
-                {item.status === "ready_for_pickup"
-                  ? "Tap to view OTP"
-                  : item.status === "expired"
-                    ? "Tap for details"
-                    : "Tap to track"}
-              </Text>
+              {ready ? (
+                <View style={styles.pickupPanel}>
+                  <View style={{ flex: 1 }}>
+                    <Text style={styles.pickupLabel}>
+                      {new Date(item.createdAt).toLocaleString("en-IN", {
+                        day: "numeric",
+                        month: "short",
+                        hour: "numeric",
+                        minute: "2-digit",
+                      })}
+                    </Text>
+                  </View>
+                  <View style={styles.viewCode}>
+                    <Text style={styles.viewCodeText}>Pickup ticket</Text>
+                    <Ionicons
+                      name="arrow-forward"
+                      size={16}
+                      color={colors.onPrimary}
+                    />
+                  </View>
+                </View>
+              ) : (
+                <View style={styles.detailAction}>
+                  <Text style={styles.tapHint}>
+                    {item.status === "completed" || item.status === "expired"
+                      ? "View details"
+                      : "Track order"}
+                  </Text>
+                  <Ionicons
+                    name="arrow-forward"
+                    size={18}
+                    color={colors.primary}
+                  />
+                </View>
+              )}
             </Pressable>
           );
         }}
@@ -163,8 +265,21 @@ export default function MyOrdersScreen({ navigation }) {
 
 function TabButton({ label, selected, onPress }) {
   return (
-    <Pressable style={[styles.tabButton, selected && styles.tabButtonSelected]} onPress={onPress}>
-      <Text style={[styles.tabButtonLabel, selected && styles.tabButtonLabelSelected]}>{label}</Text>
+    <Pressable
+      accessibilityRole="radio"
+      accessibilityState={{ checked: selected }}
+      aria-checked={selected}
+      style={[styles.tabButton, selected && styles.tabButtonSelected]}
+      onPress={onPress}
+    >
+      <Text
+        style={[
+          styles.tabButtonLabel,
+          selected && styles.tabButtonLabelSelected,
+        ]}
+      >
+        {label}
+      </Text>
     </Pressable>
   );
 }
@@ -174,8 +289,11 @@ const styles = StyleSheet.create({
   tabRow: {
     flexDirection: "row",
     gap: spacing.sm,
-    paddingHorizontal: spacing.lg,
-    paddingTop: spacing.lg,
+    marginHorizontal: 20,
+    paddingHorizontal: 4,
+    paddingTop: 4,
+    borderRadius: 18,
+    backgroundColor: colors.backgroundSoft,
     paddingBottom: spacing.sm,
   },
   tabButton: {
@@ -183,31 +301,121 @@ const styles = StyleSheet.create({
     paddingVertical: spacing.sm,
     borderRadius: radius.lg,
     alignItems: "center",
-    backgroundColor: colors.surface,
-    borderWidth: 1,
-    borderColor: colors.border,
+    backgroundColor: "transparent",
   },
-  tabButtonSelected: { backgroundColor: colors.primaryWash, borderColor: colors.primary },
+  tabButtonSelected: {
+    backgroundColor: colors.surface,
+  },
   tabButtonLabel: { ...typography.labelSmall, color: colors.textSecondary },
   tabButtonLabelSelected: { color: colors.primaryDeep },
   list: { flex: 1 },
-  listContent: { padding: spacing.lg },
-  center: { flex: 1, alignItems: "center", justifyContent: "center", backgroundColor: colors.background },
+  listContent: { padding: 20 },
+  center: {
+    flex: 1,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: colors.background,
+  },
   card: {
     backgroundColor: colors.surface,
-    borderRadius: radius.md,
+    borderRadius: 26,
     borderWidth: 1,
     borderColor: colors.border,
     padding: spacing.lg,
     marginBottom: spacing.md,
+    overflow: "hidden",
   },
-  cardPressed: { backgroundColor: colors.primaryWash, borderColor: colors.primary },
-  cardTop: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", gap: spacing.sm },
-  shopName: { ...typography.h3, color: colors.textPrimary, flexShrink: 1 },
-  meta: { ...typography.body, color: colors.textSecondary, marginTop: spacing.sm },
-  date: { ...typography.caption, color: colors.textMuted, marginTop: spacing.xs },
-  tapHint: { ...typography.labelSmall, color: colors.primaryBright, marginTop: spacing.sm },
-  paymentNote: { ...typography.caption, color: colors.textSecondary, marginTop: spacing.sm },
+  cardPressed: {
+    backgroundColor: colors.primaryWash,
+    borderColor: colors.primary,
+  },
+  cardTop: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    gap: spacing.sm,
+  },
+  shopName: {
+    ...typography.h3,
+    fontSize: 18,
+    color: colors.textPrimary,
+    flexShrink: 1,
+    marginTop: spacing.sm,
+  },
+  reference: { ...typography.caption, fontSize: 11, color: colors.textMuted },
+  readyCard: {
+    backgroundColor: colors.primaryWash,
+    borderColor: colors.primaryWash,
+  },
+  readyText: { color: colors.primaryDeep },
+  readyMuted: { color: colors.textSecondary },
+  paymentCard: {
+    backgroundColor: colors.pinkWash,
+    borderColor: colors.pinkWash,
+  },
+  orderCharacter: {
+    position: "absolute",
+    right: 12,
+    top: 47,
+    width: 70,
+    height: 88,
+  },
+  pickupPanel: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.sm,
+    backgroundColor: "transparent",
+    borderRadius: 20,
+    padding: 0,
+    marginTop: spacing.sm,
+  },
+  pickupLabel: {
+    ...typography.caption,
+    fontSize: 11,
+    color: colors.textSecondary,
+  },
+  pickupCode: {
+    ...typography.h2,
+    fontSize: 25,
+    letterSpacing: 2,
+    color: colors.onPrimary,
+    fontVariant: ["tabular-nums"],
+  },
+  viewCode: {
+    flexDirection: "row",
+    gap: spacing.xs,
+    alignItems: "center",
+    backgroundColor: colors.primary,
+    padding: 10,
+    borderRadius: 18,
+  },
+  viewCodeText: { ...typography.labelSmall, color: colors.onPrimary },
+  detailAction: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    marginTop: spacing.sm,
+  },
+  meta: {
+    ...typography.bodySmall,
+    color: colors.textSecondary,
+    marginTop: spacing.sm,
+  },
+  date: {
+    ...typography.caption,
+    color: colors.textMuted,
+    marginTop: spacing.xs,
+  },
+  tapHint: {
+    ...typography.labelSmall,
+    color: colors.primaryBright,
+    marginTop: spacing.sm,
+  },
+  paymentNote: {
+    ...typography.caption,
+    color: colors.textSecondary,
+    marginTop: spacing.sm,
+  },
   payButton: {
     marginTop: spacing.md,
     minHeight: 44,
@@ -219,7 +427,12 @@ const styles = StyleSheet.create({
   },
   payButtonPressed: { backgroundColor: colors.primaryDeep },
   payButtonLabel: { ...typography.button, color: colors.surface },
-  empty: { textAlign: "center", color: colors.textSecondary, ...typography.body, marginTop: 40 },
+  empty: {
+    textAlign: "center",
+    color: colors.textSecondary,
+    ...typography.body,
+    marginTop: 40,
+  },
   error: {
     color: colors.danger,
     backgroundColor: colors.dangerBg,

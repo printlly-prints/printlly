@@ -1,0 +1,28 @@
+{
+  "platform": "React Native web preview",
+  "layouts": [
+    {
+      "inputs": 2,
+      "overflow": false,
+      "screen": "sign-in",
+      "unconfiguredNotice": true,
+      "width": 390
+    },
+    {
+      "inputs": 4,
+      "overflow": false,
+      "screen": "create-account",
+      "width": 320
+    },
+    {
+      "inputs": 2,
+      "overflow": false,
+      "screen": "sign-in",
+      "width": 390
+    }
+  ],
+  "accountModeSwitchPassed": true,
+  "passwordShowHidePassed": true,
+  "liveApiTested": false,
+  "isolatedApiPreviewBlockedByApprovalReview": true
+}

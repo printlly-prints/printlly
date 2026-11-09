@@ -5,6 +5,7 @@ import * as Notifications from "expo-notifications";
 import Constants from "expo-constants";
 import { io } from "socket.io-client";
 import api from "../api/client";
+import { DEMO_MODE } from "../config/runtime";
 import { useAuth } from "./AuthContext";
 import { useNotifications } from "./NotificationsContext";
 
@@ -45,6 +46,7 @@ Notifications.setNotificationHandler({
 // error worth surfacing to the user, because the app works without push; they
 // just get no background notifications.
 async function registerForPush() {
+  if (DEMO_MODE) return null;
   try {
     // Push is not available on a simulator/emulator at all, so asking would
     // only produce a confusing permission prompt.
@@ -116,7 +118,7 @@ export function OrderEventsProvider({ children }) {
 
   // ---- the socket ----
   useEffect(() => {
-    if (!isAuthenticated) {
+    if (!isAuthenticated || DEMO_MODE) {
       socketRef.current?.disconnect();
       socketRef.current = null;
       setConnected(false);

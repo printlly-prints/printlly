@@ -1,61 +1,107 @@
-import { useState } from "react";
-import { ScrollView, StyleSheet, Switch, Text, View } from "react-native";
-import { colors, typography, spacing, radius } from "../theme";
+import {
+  Linking,
+  Platform,
+  ScrollView,
+  StyleSheet,
+  Text,
+  View,
+} from "react-native";
+import { PressableScale } from "pressto";
+import Ionicons from "@expo/vector-icons/Ionicons";
+import { toast } from "react-native-sonner";
+import config from "../../app.json";
+import { colors, typography, spacing } from "../theme";
 
 export default function SettingsScreen() {
-  const [notificationsEnabled, setNotificationsEnabled] = useState(true);
-
+  const openSettings = () =>
+    Linking.openSettings().catch(() =>
+      toast.error("Couldn't open device settings"),
+    );
   return (
     <ScrollView style={styles.screen} contentContainerStyle={styles.content}>
-      <Text style={styles.sectionTitle}>Document handling</Text>
-      <View style={styles.box}>
-        <Text style={styles.paragraph}>
-          Your uploaded documents are used only to fulfil your print order. Once an order is
-          marked completed, the file is automatically deleted from our servers - it is never
-          shared, sold, or kept around any longer than that.
-        </Text>
+      <View style={styles.privacyIcon}>
+        <Ionicons
+          name="shield-checkmark-outline"
+          size={28}
+          color={colors.primary}
+        />
       </View>
-
-      <Text style={styles.sectionTitle}>Preferences</Text>
-      <View style={styles.box}>
-        <View style={styles.row}>
-          <View style={styles.rowText}>
-            <Text style={styles.rowLabel}>Notifications</Text>
-            <Text style={styles.rowNote}>Not wired up yet - has no effect</Text>
-          </View>
-          <Switch
-            value={notificationsEnabled}
-            onValueChange={setNotificationsEnabled}
-            trackColor={{ false: colors.border, true: colors.primary }}
-            thumbColor={colors.textPrimary}
+      <Text accessibilityRole="header" style={styles.title}>
+        Your files stay yours.
+      </Text>
+      <Text style={styles.paragraph}>
+        Uploaded documents are used to fulfil your print order. Files are
+        automatically deleted when the order is completed.
+      </Text>
+      <Text style={styles.section}>APP PREFERENCES</Text>
+      {Platform.OS !== "web" ? (
+        <PressableScale
+          accessibilityRole="button"
+          accessibilityLabel="Open device permissions"
+          onPress={openSettings}
+          style={styles.row}
+        >
+          <Ionicons
+            name="phone-portrait-outline"
+            size={22}
+            color={colors.primary}
           />
-        </View>
-        <View style={[styles.row, styles.rowBorder]}>
-          <View style={styles.rowText}>
-            <Text style={styles.rowLabel}>Language</Text>
-            <Text style={styles.rowNote}>English only for now</Text>
+          <View style={styles.copy}>
+            <Text style={styles.label}>Device permissions</Text>
+            <Text style={styles.note}>
+              Manage Paprout’s access in your device settings
+            </Text>
           </View>
-        </View>
+          <Ionicons name="open-outline" size={18} color={colors.textMuted} />
+        </PressableScale>
+      ) : null}
+      <View style={styles.row}>
+        <Ionicons name="language-outline" size={22} color={colors.primary} />
+        <Text style={[styles.label, styles.copy]}>Language</Text>
+        <Text style={styles.note}>English</Text>
+      </View>
+      <View style={styles.row}>
+        <Ionicons
+          name="information-circle-outline"
+          size={22}
+          color={colors.primary}
+        />
+        <Text style={[styles.label, styles.copy]}>Paprout</Text>
+        <Text style={styles.note}>Version {config.expo.version}</Text>
       </View>
     </ScrollView>
   );
 }
-
 const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: colors.background },
-  content: { padding: spacing.lg, paddingBottom: spacing.xl },
-  sectionTitle: { ...typography.h3, color: colors.textPrimary, marginBottom: spacing.sm, marginTop: spacing.lg },
-  box: {
-    backgroundColor: colors.surface,
-    borderRadius: radius.md,
-    borderWidth: 1,
-    borderColor: colors.border,
-    padding: spacing.lg,
+  content: { padding: spacing.xl, paddingBottom: spacing.xxl },
+  privacyIcon: {
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: colors.primaryWash,
+    marginBottom: spacing.lg,
   },
-  paragraph: { ...typography.body, color: colors.textSecondary },
-  row: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingVertical: spacing.sm },
-  rowBorder: { borderTopWidth: 1, borderTopColor: colors.border, marginTop: spacing.sm },
-  rowText: { flex: 1, marginRight: spacing.md },
-  rowLabel: { ...typography.bodyMedium, color: colors.textPrimary },
-  rowNote: { ...typography.caption, color: colors.textSecondary, marginTop: 2 },
+  title: { ...typography.h2, color: colors.ink, marginBottom: spacing.md },
+  paragraph: { ...typography.bodySmall, color: colors.textSecondary },
+  section: {
+    ...typography.labelSmall,
+    fontSize: 11,
+    letterSpacing: 1.2,
+    color: colors.textMuted,
+    marginTop: spacing.xxl,
+    marginBottom: spacing.sm,
+  },
+  row: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.md,
+    minHeight: 76,
+    paddingVertical: spacing.md,
+  },
+  copy: { flex: 1, gap: spacing.xs },
+  label: { ...typography.bodyMedium, color: colors.ink },
+  note: { ...typography.caption, color: colors.textSecondary },
 });

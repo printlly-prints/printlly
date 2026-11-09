@@ -1,11 +1,19 @@
+import { finishPrintFlow } from "../utils/confirmationNavigation";
 import { useEffect, useState } from "react";
-import { ActivityIndicator, ScrollView, StyleSheet, Text, View } from "react-native";
+import {
+  ActivityIndicator,
+  ScrollView,
+  StyleSheet,
+  Text,
+  View,
+} from "react-native";
 import { WebView } from "react-native-webview";
 import Button from "../components/Button";
 import api from "../api/client";
 import { useAuth } from "../context/AuthContext";
 import { trackEvent, EVENTS } from "../lib/analytics";
 import { colors, typography, spacing, radius } from "../theme";
+import { upiCheckoutDisplay } from "../utils/upiPayments";
 
 // Razorpay's checkout is loaded inside a WebView rather than through
 // react-native-razorpay, because that package is a native module and does
@@ -24,7 +32,14 @@ import { colors, typography, spacing, radius } from "../theme";
 //      and only then marks the order paid and generates the pickup OTP.
 // A modified client can report whatever it likes from its own checkout
 // handler; none of it matters unless step 3's signature check passes.
-function buildCheckoutHtml({ amountInPaise, currency, razorpayOrderId, keyId, user, preferredMethod }) {
+function buildCheckoutHtml({
+  amountInPaise,
+  currency,
+  razorpayOrderId,
+  keyId,
+  user,
+  preferredUpiApp,
+}) {
   const options = {
     key: keyId,
     amount: amountInPaise,
@@ -36,14 +51,9 @@ function buildCheckoutHtml({ amountInPaise, currency, razorpayOrderId, keyId, us
       name: user?.name || "",
       email: user?.email || "",
       contact: user?.phone || "",
-      // Whatever was chosen on the checkout screen. A preference only -
-      // Razorpay still shows every method, and the real UPI QR, card
-      // form and wallet list all live inside its own window. This app
-      // never displays a UPI ID or QR of its own: it has no merchant VPA
-      // to show, and printing a plausible-looking one on screen would be
-      // inviting customers to send money into the void.
-      ...(preferredMethod ? { method: preferredMethod } : {}),
+      method: "upi",
     },
+    config: { display: upiCheckoutDisplay(preferredUpiApp) },
     theme: { color: colors.primaryBright },
   };
 
@@ -83,7 +93,7 @@ function buildCheckoutHtml({ amountInPaise, currency, razorpayOrderId, keyId, us
 // "Complete payment" button, or a HomeScreen order card). Either way this
 // screen's only job from here is to get that one order paid.
 export default function PaymentScreen({ route, navigation }) {
-  const { orderId, estimatedAmount, breakdown, preferredMethod } = route.params;
+  const { orderId, estimatedAmount, breakdown, preferredUpiApp } = route.params;
   const { user } = useAuth();
 
   // "preparing" (asking the backend for a Razorpay order) -> "checkout"
@@ -100,9 +110,12 @@ export default function PaymentScreen({ route, navigation }) {
     setPhase("preparing");
     setError("");
     try {
-      const { data: rzpOrder } = await api.post("/payments/razorpay/create-order", {
-        order_id: orderId,
-      });
+      const { data: rzpOrder } = await api.post(
+        "/payments/razorpay/create-order",
+        {
+          order_id: orderId,
+        },
+      );
 
       setCheckoutParams({
         amountInPaise: rzpOrder.amount_in_paise,
@@ -112,7 +125,10 @@ export default function PaymentScreen({ route, navigation }) {
       });
       setPhase("checkout");
     } catch (err) {
-      setError(err.response?.data?.message || "Could not start payment. Please try again.");
+      setError(
+        err.response?.data?.message ||
+          "Could not start payment. Please try again.",
+      );
       setPhase("error");
     }
   };
@@ -147,32 +163,11 @@ export default function PaymentScreen({ route, navigation }) {
       // The order returned here is the one place otp actually exists -
       // it was generated server-side by the verify call above.
       //
-      // reset(), not replace(): replace() only swaps THIS screen out, so
-      // Review -> SelectShop -> PrintPreferences -> UploadDocuments all
-      // stayed underneath and Android back walked straight into a
-      // checkout for an order that has already been paid for. Once money
-      // has changed hands that whole flow is spent - re-entering it could
-      // only produce a second order or a confusing dead end.
-      //
-      // The new stack is Home underneath, the placed order on top: so
-      // back (hardware or gesture) lands on Home, which is exactly what
-      // "Continue Shopping" does. Home is named explicitly rather than
-      // left to whichever tab the customer started from, so back after
-      // paying always means the same thing.
-      navigation.reset({
-        index: 1,
-        routes: [
-          { name: "MainTabs", params: { screen: "Home" } },
-          // The dedicated confirmation screen, which is also where the
-          // two forward actions live. OrderTracking is one tap further
-          // on, from "View order details".
-          { name: "OrderPlaced", params: { order: data.order } },
-        ],
-      });
+      finishPrintFlow(navigation, data.order);
     } catch (err) {
       setError(
         err.response?.data?.message ||
-          "Payment could not be verified. Please try again or contact support."
+          "Payment could not be verified. Please try again or contact support.",
       );
       setPhase("error");
     }
@@ -228,6 +223,15 @@ export default function PaymentScreen({ route, navigation }) {
         {breakdown && (
           <View style={styles.breakdownBox}>
             <BreakdownRow label="Subtotal" value={breakdown.subtotal} />
+            {breakdown.paperSize > 0 ? (
+              <BreakdownRow label="Paper size" value={breakdown.paperSize} />
+            ) : null}
+            {breakdown.sides > 0 ? (
+              <BreakdownRow label="Double-sided" value={breakdown.sides} />
+            ) : null}
+            {breakdown.services > 0 ? (
+              <BreakdownRow label="Finishing" value={breakdown.services} />
+            ) : null}
             <BreakdownRow label="Platform fee" value={breakdown.platformFee} />
             <View style={styles.breakdownDivider} />
             <BreakdownRow label="Total" value={breakdown.total} emphasized />
@@ -236,7 +240,11 @@ export default function PaymentScreen({ route, navigation }) {
         <Text style={styles.error}>{error}</Text>
         <Button title="Retry payment" onPress={prepare} />
         <View style={styles.spacer} />
-        <Button title="Go back" variant="secondary" onPress={() => navigation.goBack()} />
+        <Button
+          title="Go back"
+          variant="secondary"
+          onPress={() => navigation.goBack()}
+        />
       </ScrollView>
     );
   }
@@ -246,7 +254,7 @@ export default function PaymentScreen({ route, navigation }) {
     <WebView
       originWhitelist={["*"]}
       source={{
-        html: buildCheckoutHtml({ ...checkoutParams, user, preferredMethod }),
+        html: buildCheckoutHtml({ ...checkoutParams, user, preferredUpiApp }),
         baseUrl: "https://checkout.razorpay.com",
       }}
       onMessage={handleMessage}
@@ -265,8 +273,20 @@ export default function PaymentScreen({ route, navigation }) {
 function BreakdownRow({ label, value, emphasized }) {
   return (
     <View style={styles.breakdownRow}>
-      <Text style={emphasized ? styles.breakdownLabelEmphasized : styles.breakdownLabel}>{label}</Text>
-      <Text style={emphasized ? styles.breakdownValueEmphasized : styles.breakdownValue}>₹{value}</Text>
+      <Text
+        style={
+          emphasized ? styles.breakdownLabelEmphasized : styles.breakdownLabel
+        }
+      >
+        {label}
+      </Text>
+      <Text
+        style={
+          emphasized ? styles.breakdownValueEmphasized : styles.breakdownValue
+        }
+      >
+        ₹{value}
+      </Text>
     </View>
   );
 }
@@ -278,9 +298,24 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     backgroundColor: colors.background,
   },
-  centerText: { marginTop: spacing.lg, ...typography.body, color: colors.textSecondary },
-  fallback: { padding: spacing.xl, paddingTop: 48, backgroundColor: colors.background, flexGrow: 1 },
-  amount: { ...typography.display, fontSize: 40, color: colors.textPrimary, textAlign: "center", marginBottom: spacing.xl },
+  centerText: {
+    marginTop: spacing.lg,
+    ...typography.body,
+    color: colors.textSecondary,
+  },
+  fallback: {
+    padding: spacing.xl,
+    paddingTop: 48,
+    backgroundColor: colors.background,
+    flexGrow: 1,
+  },
+  amount: {
+    ...typography.display,
+    fontSize: 40,
+    color: colors.textPrimary,
+    textAlign: "center",
+    marginBottom: spacing.xl,
+  },
   error: {
     color: colors.danger,
     backgroundColor: colors.dangerBg,
@@ -299,10 +334,18 @@ const styles = StyleSheet.create({
     padding: spacing.lg,
     marginBottom: spacing.lg,
   },
-  breakdownRow: { flexDirection: "row", justifyContent: "space-between", marginBottom: spacing.xs },
+  breakdownRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    marginBottom: spacing.xs,
+  },
   breakdownLabel: { ...typography.bodySmall, color: colors.textSecondary },
   breakdownValue: { ...typography.labelSmall, color: colors.textPrimary },
-  breakdownDivider: { height: 1, backgroundColor: colors.border, marginVertical: spacing.xs },
+  breakdownDivider: {
+    height: 1,
+    backgroundColor: colors.border,
+    marginVertical: spacing.xs,
+  },
   breakdownLabelEmphasized: { ...typography.label, color: colors.textPrimary },
   breakdownValueEmphasized: { ...typography.label, color: colors.textPrimary },
 });

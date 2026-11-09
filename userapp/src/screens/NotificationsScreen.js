@@ -1,13 +1,22 @@
+import { PressableScale } from "pressto";
+import { toast } from "react-native-sonner";
 import { useCallback, useState } from "react";
 import { useFocusEffect } from "@react-navigation/native";
-import { ActivityIndicator, FlatList, Pressable, StyleSheet, Text, View } from "react-native";
+import {
+  ActivityIndicator,
+  FlatList,
+  Pressable,
+  StyleSheet,
+  Text,
+  View,
+} from "react-native";
 import api from "../api/client";
 import { useNotifications } from "../context/NotificationsContext";
 import { navigateToOrder } from "../utils/orderNavigation";
 import { formatRelativeTime } from "../utils/time";
 import { colors, typography, spacing, radius } from "../theme";
 
-// Reached from the Profile menu. Pull-based only - no push notifications
+// Reached from the header notification bell. Pull-based only - no push notifications
 // yet, so this list is only ever as fresh as the last refresh/foreground
 // event (see NotificationsContext).
 //
@@ -15,14 +24,15 @@ import { colors, typography, spacing, radius } from "../theme";
 // endpoint (same constraint OrderTrackingScreen already works around), so
 // tapping one fetches the customer's order list and finds the match there.
 export default function NotificationsScreen({ navigation }) {
-  const { notifications, loading, refresh, markRead, markAllRead } = useNotifications();
+  const { notifications, loading, refresh, markRead, markAllRead } =
+    useNotifications();
   const [refreshing, setRefreshing] = useState(false);
   const [openingId, setOpeningId] = useState(null);
 
   useFocusEffect(
     useCallback(() => {
       refresh();
-    }, [refresh])
+    }, [refresh]),
   );
 
   const handleRefresh = async () => {
@@ -40,6 +50,10 @@ export default function NotificationsScreen({ navigation }) {
       // If the order can't be found, the notification is still marked
       // read above - there's just nowhere left to navigate to.
       if (order) navigateToOrder(navigation, order);
+    } catch {
+      toast.error("Couldn’t open this order", {
+        description: "Please try again.",
+      });
     } finally {
       setOpeningId(null);
     }
@@ -65,14 +79,20 @@ export default function NotificationsScreen({ navigation }) {
       onRefresh={handleRefresh}
       ListHeaderComponent={
         hasUnread ? (
-          <Pressable onPress={markAllRead} style={styles.markAllRow} hitSlop={8}>
+          <PressableScale
+            onPress={markAllRead}
+            style={styles.markAllRow}
+            hitSlop={8}
+          >
             <Text style={styles.markAllText}>Mark all as read</Text>
-          </Pressable>
+          </PressableScale>
         ) : null
       }
-      ListEmptyComponent={<Text style={styles.empty}>No notifications yet.</Text>}
+      ListEmptyComponent={
+        <Text style={styles.empty}>No notifications yet.</Text>
+      }
       renderItem={({ item }) => (
-        <Pressable
+        <PressableScale
           style={[styles.card, !item.read && styles.cardUnread]}
           onPress={() => handlePress(item)}
           disabled={openingId === item._id}
@@ -83,9 +103,9 @@ export default function NotificationsScreen({ navigation }) {
               {item.title}
             </Text>
           </View>
-          <Text style={styles.body}>{item.body}</Text>
+          <Text style={styles.body}>{item.body || item.message}</Text>
           <Text style={styles.time}>{formatRelativeTime(item.created_at)}</Text>
-        </Pressable>
+        </PressableScale>
       )}
     />
   );
@@ -94,25 +114,55 @@ export default function NotificationsScreen({ navigation }) {
 const styles = StyleSheet.create({
   list: { flex: 1, backgroundColor: colors.background },
   listContent: { padding: spacing.lg, flexGrow: 1 },
-  center: { flex: 1, alignItems: "center", justifyContent: "center", backgroundColor: colors.background },
-  markAllRow: { alignSelf: "flex-end", paddingVertical: spacing.sm, marginBottom: spacing.sm },
+  center: {
+    flex: 1,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: colors.background,
+  },
+  markAllRow: {
+    alignSelf: "flex-end",
+    paddingVertical: spacing.sm,
+    marginBottom: spacing.sm,
+  },
   markAllText: { ...typography.labelSmall, color: colors.primaryBright },
   card: {
     backgroundColor: colors.surface,
-    borderRadius: radius.md,
-    borderWidth: 1,
+    borderRadius: 22,
+    borderWidth: 0,
     borderColor: colors.border,
     padding: spacing.lg,
     marginBottom: spacing.md,
   },
-  cardUnread: { backgroundColor: colors.primaryWash, borderColor: colors.primary },
+  cardUnread: {
+    backgroundColor: colors.primaryWash,
+    borderColor: colors.primary,
+  },
   cardHeader: { flexDirection: "row", alignItems: "center", gap: spacing.sm },
   // primaryAccent rather than primary: an 8px dot in primary measures ~2.1:1
   // on a dark card, and this is the one mark that says "unread". See
   // theme/colors.js - primaryAccent exists for small accents on dark.
-  unreadDot: { width: 8, height: 8, borderRadius: 4, backgroundColor: colors.primaryAccent },
-  title: { ...typography.h3, color: colors.textPrimary, flexShrink: 1 },
-  body: { ...typography.body, color: colors.textSecondary, marginTop: spacing.xs },
-  time: { ...typography.caption, color: colors.textMuted, marginTop: spacing.sm },
-  empty: { textAlign: "center", ...typography.body, color: colors.textSecondary, marginTop: 40 },
+  unreadDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: colors.primaryAccent,
+  },
+  title: { ...typography.label, color: colors.textPrimary, flexShrink: 1 },
+  body: {
+    ...typography.body,
+    color: colors.textSecondary,
+    marginTop: spacing.xs,
+  },
+  time: {
+    ...typography.caption,
+    color: colors.textMuted,
+    marginTop: spacing.sm,
+  },
+  empty: {
+    textAlign: "center",
+    ...typography.body,
+    color: colors.textSecondary,
+    marginTop: 40,
+  },
 });

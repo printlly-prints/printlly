@@ -1,51 +1,91 @@
-import { Pressable, StyleSheet } from "react-native";
+import { ActivityIndicator, StyleSheet } from "react-native";
+import { PressableScale } from "pressto";
+import { useReducedMotion } from "react-native-reanimated";
+import { toast } from "react-native-sonner";
+import { useRef, useState } from "react";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { useSavedShops } from "../context/SavedShopsContext";
 import { colors } from "../theme";
 
-// Heart toggle used on every shop card (Shops tab, Home's nearby list,
-// Saved Shops list). Reads/writes the shared SavedShopsContext so all of
-// them stay in sync without each screen fetching its own saved list.
-//
-// `overlay`: true when this heart sits on top of a shop photo (ShopPhoto)
-// rather than plain card background - an arbitrary photo can't guarantee
-// contrast the way a flat surface colour can, so it gets a translucent
-// white backing to stay legible regardless of what's underneath.
-export default function SavedShopHeart({ shop, size = 20, style, overlay = false }) {
-  const { isSaved, toggleSaved } = useSavedShops();
-  const saved = isSaved(shop._id);
-
+export default function SavedShopHeart({
+  shop,
+  size = 20,
+  style,
+  overlay = false,
+}) {
+  const { isSaved, setSaved } = useSavedShops();
+  const saved = isSaved(shop._id),
+    reduced = useReducedMotion();
+  const [busy, setBusy] = useState(false);
+  const setter = useRef(setSaved);
+  setter.current = setSaved;
+  const change = async () => {
+    if (busy) return;
+    setBusy(true);
+    const result = await setSaved(shop, !saved);
+    setBusy(false);
+    if (!result.ok) {
+      if (!result.busy)
+        toast.error("Couldn’t save your change", {
+          description: result.message,
+        });
+      return;
+    }
+    if (result.saved)
+      toast.success("Shop saved", { description: shop.shop_name });
+    else
+      toast("Shop removed", {
+        duration: 8000,
+        description: shop.shop_name,
+        action: {
+          label: "Undo",
+          onClick: async () => {
+            const restored = await setter.current(shop, true);
+            if (restored.ok) toast.success("Shop restored");
+            else if (!restored.busy)
+              toast.error("Couldn’t restore shop", {
+                description: restored.message,
+              });
+          },
+        },
+      });
+  };
+  const tint = overlay
+    ? saved
+      ? colors.magenta
+      : colors.ink
+    : saved
+      ? colors.primary
+      : colors.textSecondary;
   return (
-    <Pressable
-      hitSlop={10}
-      onPress={() => toggleSaved(shop)}
-      style={[styles.button, overlay && styles.overlayButton, style]}
+    <PressableScale
+      disabled={busy}
+      accessibilityRole="button"
+      accessibilityLabel={(saved ? "Unsave " : "Save ") + shop.shop_name}
+      accessibilityState={{ selected: saved, disabled: busy, busy }}
+      onPress={change}
+      config={{ minScale: reduced ? 1 : 0.88 }}
+      animationConfig={{ duration: reduced ? 1 : 120 }}
+      style={[styles.button, overlay && styles.overlay, style]}
     >
-      <Ionicons
-        name={saved ? "heart" : "heart-outline"}
-        size={size}
-        color={saved ? colors.primaryBright : colors.textSecondary}
-      />
-    </Pressable>
+      {busy ? (
+        <ActivityIndicator size="small" color={tint} />
+      ) : (
+        <Ionicons
+          name={saved ? "bookmark" : "bookmark-outline"}
+          size={size}
+          color={tint}
+        />
+      )}
+    </PressableScale>
   );
 }
-
 const styles = StyleSheet.create({
   button: {
-    width: 32,
-    height: 32,
+    width: 44,
+    height: 44,
     alignItems: "center",
     justifyContent: "center",
   },
-  overlayButton: {
-    // Dark rather than the light theme's translucent white: the icon on
-    // top is now light, and a light icon on a white pill is invisible.
-    // Same job - bringing its own ground so an arbitrary photo cannot
-    // wash the control out - from the other side.
-    backgroundColor: "rgba(6,22,18,0.72)",
-    borderRadius: 16,
-    // A hairline so the pill still has an edge over a dark photograph.
-    borderWidth: 1,
-    borderColor: "rgba(230,242,236,0.22)",
-  },
+  overlay: { backgroundColor: colors.surface, borderRadius: 22 },
 });
