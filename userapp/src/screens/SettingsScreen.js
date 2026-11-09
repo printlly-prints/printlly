@@ -27,11 +27,10 @@ export default function SettingsScreen() {
         />
       </View>
       <Text accessibilityRole="header" style={styles.title}>
-        Your files stay yours.
+        Your files are private
       </Text>
       <Text style={styles.paragraph}>
-        Uploaded documents are used to fulfil your print order. Files are
-        automatically deleted when the order is completed.
+        We delete them when your order is completed.
       </Text>
       <Text style={styles.section}>APP PREFERENCES</Text>
       {Platform.OS !== "web" ? (

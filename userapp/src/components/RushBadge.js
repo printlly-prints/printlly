@@ -2,11 +2,6 @@ import { memo } from "react";
 import { StyleSheet, Text, View } from "react-native";
 import { rushColors, rushLabels, typography, radius } from "../theme";
 
-// Emoji dot per level, per the design spec ("🟢 Low rush" etc.) - a quick
-// visual read that doesn't rely on the badge's (already soft) colour
-// alone.
-const RUSH_EMOJI = { low: "🟢", medium: "🟡", high: "🔴" };
-
 // Small pill showing a shop's live rush level - the same shape as
 // StatusBadge, for a shop's queue instead of an order's status. Used on
 // ShopsScreen, HomeScreen's nearby-shops cards, and SelectShopScreen.
@@ -25,8 +20,9 @@ function RushBadge({ level, style }) {
     <View
       style={[styles.badge, { backgroundColor: palette.bg, borderColor: palette.border }, style]}
     >
+      <View style={[styles.dot, { backgroundColor: palette.text }]} />
       <Text style={[styles.text, { color: palette.text }]}>
-        {RUSH_EMOJI[level]} {rushLabels[level]}
+        {rushLabels[level]}
       </Text>
     </View>
   );
@@ -37,11 +33,15 @@ export default memo(RushBadge);
 const styles = StyleSheet.create({
   // See StatusBadge for why the border is load-bearing on a dark card.
   badge: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
     paddingHorizontal: 10,
     paddingVertical: 5,
     borderRadius: radius.pill,
     alignSelf: "flex-start",
     borderWidth: 1,
   },
+  dot: { width: 7, height: 7, borderRadius: radius.pill },
   text: { ...typography.caption },
 });

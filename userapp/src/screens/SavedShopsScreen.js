@@ -7,14 +7,10 @@ import {
   Text,
   View,
 } from "react-native";
-import Button from "../components/Button";
-import SavedShopHeart from "../components/SavedShopHeart";
-import ShopPhoto from "../components/ShopPhoto";
-import { shopImageSource } from "../utils/shopImages";
+import ShopRow, { ShopRowDivider } from "../components/ShopRow";
 import { useSavedShops } from "../context/SavedShopsContext";
 import useOpenStatusRefresh from "../hooks/useOpenStatusRefresh";
-import { formatDistance } from "../utils/distance";
-import { colors, typography, spacing, radius } from "../theme";
+import { colors, typography, spacing } from "../theme";
 
 // Reached from the Profile menu. Lists shops the customer has hearted
 // elsewhere (Shops tab, Home's nearby list) - the list itself comes from
@@ -54,100 +50,31 @@ export default function SavedShopsScreen({ navigation }) {
           tintColor={colors.primaryBright}
         />
       }
-      ListEmptyComponent={
-        <Text style={styles.empty}>
-          No saved shops yet — tap the bookmark on any shop to save it here.
-        </Text>
+      ListEmptyComponent={<Text style={styles.empty}>No saved shops yet.</Text>}
+      ItemSeparatorComponent={ShopRowDivider}
+      renderItem={({ item }) =>
+        item.shop_id ? (
+          <ShopRow
+            shop={item.shop_id}
+            onPress={() =>
+              navigation.navigate("ShopDetails", { shop: item.shop_id })
+            }
+          />
+        ) : null
       }
-      renderItem={({ item }) => {
-        const shop = item.shop_id;
-        if (!shop) return null;
-        // Dimmed and marked, not disabled - the point of saving a closed
-        // shop is often exactly to order from it later. "Order Now" still
-        // works; the actual shop picked at SelectShopScreen's price
-        // comparison is what gets a disabled "Select" if still closed by
-        // then (and POST /orders itself is the final, authoritative gate).
-        const closed = shop.is_currently_open === false;
-        const distanceLabel = formatDistance(shop.distance_km);
-        return (
-          <View style={[styles.card, closed && styles.cardClosed]}>
-            <ShopPhoto
-              source={shopImageSource(shop)}
-              shopName={shop.shop_name}
-              style={styles.photo}
-              closed={closed}
-            />
-            <SavedShopHeart shop={shop} overlay style={styles.heartCorner} />
-            <Text style={styles.shopName} numberOfLines={1}>
-              {shop.shop_name}
-            </Text>
-            <Text style={styles.address}>{shop.address}</Text>
-            {distanceLabel ? (
-              <Text style={styles.distance}>{distanceLabel}</Text>
-            ) : null}
-            {shop.contact ? (
-              <Text style={styles.contact}>{shop.contact}</Text>
-            ) : null}
-            <View style={styles.orderButton}>
-              <Button
-                title="Order Now"
-                onPress={() =>
-                  navigation.navigate("PrintFlow", {
-                    screen: "UploadDocuments",
-                    params: { preselectedShop: shop },
-                  })
-                }
-              />
-            </View>
-          </View>
-        );
-      }}
     />
   );
 }
 
 const styles = StyleSheet.create({
   list: { flex: 1, backgroundColor: colors.background },
-  listContent: { padding: spacing.lg, flexGrow: 1 },
+  listContent: { paddingHorizontal: 20, paddingTop: spacing.sm, flexGrow: 1 },
   center: {
     flex: 1,
     alignItems: "center",
     justifyContent: "center",
     backgroundColor: colors.background,
   },
-  card: {
-    position: "relative",
-    backgroundColor: colors.surface,
-    borderRadius: radius.md,
-    padding: spacing.xl,
-    marginBottom: spacing.md,
-    borderWidth: 1,
-    borderColor: colors.border,
-  },
-  photo: { height: 120, marginBottom: spacing.md },
-  cardClosed: { opacity: 0.6 },
-  heartCorner: {
-    position: "absolute",
-    top: spacing.xl + spacing.xs,
-    right: spacing.xl + spacing.xs,
-  },
-  shopName: { ...typography.h2, color: colors.textPrimary },
-  address: {
-    ...typography.body,
-    color: colors.textSecondary,
-    marginTop: spacing.sm,
-  },
-  contact: {
-    ...typography.bodySmall,
-    color: colors.textSecondary,
-    marginTop: spacing.xs,
-  },
-  distance: {
-    ...typography.labelSmall,
-    color: colors.primaryDeep,
-    marginTop: spacing.xs,
-  },
-  orderButton: { marginTop: spacing.lg },
   empty: {
     textAlign: "center",
     ...typography.body,

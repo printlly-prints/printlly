@@ -81,8 +81,7 @@ export default function EditProfileScreen({ navigation, route }) {
         {defaultsOnly ? (
           <>
             <Text style={styles.note}>
-              New documents start with these settings. You can change them for
-              each file before ordering.
+              Used for new documents.
             </Text>
             <View style={styles.defaults}>
               <DocumentSettingsCard
@@ -186,8 +185,7 @@ export default function EditProfileScreen({ navigation, route }) {
                 ))}
             </View>
             <Text style={styles.note}>
-              Your gender is optional. All avatars and accents are available to
-              everyone. Avatar and accent choices are saved on this device.
+              Optional. Avatar and accent are saved on this device.
             </Text>
             <Text style={[styles.label, { marginTop: spacing.xl }]}>
               Display name
@@ -213,7 +211,7 @@ export default function EditProfileScreen({ navigation, route }) {
               </Text>
             </View>
             <Text style={styles.note}>
-              Linked to your sign-in. It can’t be changed here.
+              Can't be changed here.
             </Text>
           </>
         )}

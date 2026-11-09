@@ -115,7 +115,7 @@ export default function PrintPreferencesScreen({ route, navigation }) {
       <Text style={styles.title}>Print preferences</Text>
       <Text style={styles.subtitle}>
         {multiple
-          ? "Set these separately for each document — tap one to open it."
+          ? "Tap a document to change its settings."
           : "Choose how this document should be printed."}
       </Text>
 
@@ -140,14 +140,13 @@ export default function PrintPreferencesScreen({ route, navigation }) {
 
       {!shopPricing ? (
         <Text style={styles.servicesNote}>
-          Finishing services (binding, lamination and so on) vary by shop
-          &mdash; you&apos;ll be able to add them once you&apos;ve chosen one.
+          Add finishing after you pick a shop.
         </Text>
       ) : null}
 
       <Text style={styles.label}>Additional notes (optional)</Text>
       <Text style={styles.helperText}>
-        Applies to the whole order, not one document.
+        Applies to the whole order.
       </Text>
       <TextInput
         style={styles.textArea}
@@ -196,14 +195,12 @@ export default function PrintPreferencesScreen({ route, navigation }) {
               can still pick a different shop on the next screen, and the
               charge is always recomputed server-side. */}
           <Text style={styles.estimateNote}>
-            Compare other shops on the next screen — the final price is
-            confirmed before you pay.
+            You can compare shops next.
           </Text>
         </View>
       ) : (
         <Text style={styles.pricingNote}>
-          Each shop sets its own rates — you&apos;ll see prices from nearby
-          shops on the next screen.
+          You'll see nearby prices next.
         </Text>
       )}
 

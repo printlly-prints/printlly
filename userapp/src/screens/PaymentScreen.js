@@ -21,7 +21,7 @@ import { upiCheckoutDisplay } from "../utils/upiPayments";
 //
 // SECURITY: this screen never trusts its own checkout result. By the time
 // it mounts, the Order already exists (created by whoever navigated here
-// - see ReviewCheckoutScreen and utils/orderNavigation.js) with
+// - see CheckoutScreen and utils/orderNavigation.js) with
 // payment_status "created" and no otp. From there:
 //   1. Ask the backend for a Razorpay order (POST /payments/razorpay/
 //      create-order) for that order_id - it returns key_id and the exact
@@ -88,7 +88,7 @@ function buildCheckoutHtml({
 }
 
 // Always reached with an EXISTING order_id - either fresh from
-// ReviewCheckoutScreen (which just called POST /orders) or resumed for a
+// CheckoutScreen (which just called POST /orders) or resumed for a
 // "created"/"failed" order via utils/orderNavigation.js (MyOrdersScreen's
 // "Complete payment" button, or a HomeScreen order card). Either way this
 // screen's only job from here is to get that one order paid.
@@ -188,7 +188,7 @@ export default function PaymentScreen({ route, navigation }) {
       // is never called (there's nothing to verify) and this isn't an
       // error, so no error screen either. The order is left exactly as
       // it was (payment_status "created"); going back returns to
-      // ReviewCheckoutScreen (or wherever this screen was resumed from),
+      // CheckoutScreen (or wherever this screen was resumed from),
       // and the order can still be paid for later from My Orders as long
       // as it hasn't expired.
       navigation.goBack();

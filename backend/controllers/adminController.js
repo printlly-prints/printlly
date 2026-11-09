@@ -1,3 +1,4 @@
+const mongoose = require("mongoose");
 const Shop = require("../models/Shop");
 const User = require("../models/User");
 const Order = require("../models/Order");
@@ -6,6 +7,13 @@ const { getSignedKycUrl } = require("../utils/kycFileAccess");
 const { notifyShopVerification } = require("../utils/notifications");
 const { getPricingSettings, invalidatePricingSettingsCache } = require("../utils/pricing");
 const { parsePagination } = require("../utils/pagination");
+const {
+  emptyBalance,
+  getVendorActivity,
+  getVendorBalances,
+  populateActivity,
+  toActivityOrder,
+} = require("../utils/vendorActivity");
 
 // Every handler in this file is mounted behind verifyToken +
 // requireRole("admin") - see routes/adminRoutes.js, which applies both
@@ -340,8 +348,18 @@ const getOverviewStats = async (req, res) => {
 // ?customer_id=, ?from=<ISO date>, ?to=<ISO date>. Paginated.
 const listOrders = async (req, res) => {
   try {
-    const { status, payment_status, shop_id, customer_id, from, to } = req.query;
+    const { status, payment_status, shop_id, customer_id, from, to, ref } = req.query;
     const filter = {};
+
+    // The order reference a customer quotes is the end of the _id, which
+    // no index can serve, so this only runs when someone searches for one.
+    if (ref !== undefined) {
+      if (!/^(PL)?[0-9a-f]{6,24}$/i.test(String(ref))) {
+        return res.status(400).json({ message: "ref must look like PL1A2B3C" });
+      }
+      const suffix = String(ref).replace(/^PL/i, "").toLowerCase();
+      filter.$expr = { $regexMatch: { input: { $toString: "$_id" }, regex: `${suffix}$` } };
+    }
 
     if (status !== undefined) {
       const allowed = ["pending", "accepted", "ready_for_pickup", "completed", "cancelled", "expired"];
@@ -404,6 +422,58 @@ const listOrders = async (req, res) => {
   } catch (error) {
     console.error(`Failed to list orders: ${error.message}`);
     res.status(500).json({ message: "Failed to list orders" });
+  }
+};
+
+// GET /admin/orders/:id
+// One order's whole lifecycle, for tracing a complaint.
+const getOrderTrace = async (req, res) => {
+  try {
+    if (!mongoose.isObjectIdOrHexString(req.params.id)) {
+      return res.status(400).json({ message: "Invalid order id" });
+    }
+    const order = await populateActivity(
+      Order.findById(req.params.id).populate("shop_id", "shop_name address contact"),
+      { audit: true }
+    ).lean();
+    if (!order) {
+      return res.status(404).json({ message: "Order not found" });
+    }
+    res.status(200).json({ ...toActivityOrder(order, { audit: true }), shop: order.shop_id });
+  } catch (error) {
+    console.error(`Failed to load order trace: ${error.message}`);
+    res.status(500).json({ message: "Failed to load this order" });
+  }
+};
+
+// GET /admin/shops/:shopId/activity
+// Everything a vendor sees in their own log, plus the audit fields and
+// their balance.
+const getShopActivity = async (req, res) => {
+  try {
+    if (!mongoose.isObjectIdOrHexString(req.params.shopId)) {
+      return res.status(400).json({ message: "Invalid shop id" });
+    }
+    const shop = await Shop.findById(req.params.shopId)
+      .select("shop_name address contact is_active shop_logo_url shop_photo_url owner_photo_url owner_id")
+      .populate("owner_id", "name email phone")
+      .lean();
+    if (!shop) {
+      return res.status(404).json({ message: "Shop not found" });
+    }
+    const { limit, skip } = parsePagination(req.query);
+    const [activity, balances] = await Promise.all([
+      getVendorActivity(shop._id, { limit, skip, audit: true }),
+      getVendorBalances({ shopId: shop._id }),
+    ]);
+    res.status(200).json({
+      shop,
+      ...activity,
+      balance: balances.get(String(shop._id)) || emptyBalance(),
+    });
+  } catch (error) {
+    console.error(`Failed to load vendor activity: ${error.message}`);
+    res.status(500).json({ message: "Failed to load vendor activity" });
   }
 };
 
@@ -520,6 +590,8 @@ module.exports = {
   reactivateShop,
   getOverviewStats,
   listOrders,
+  getOrderTrace,
+  getShopActivity,
   getSettings,
   updateSettings,
 };

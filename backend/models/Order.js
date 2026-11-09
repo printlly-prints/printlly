@@ -246,9 +246,23 @@ const orderSchema = new mongoose.Schema(
       ref: "Settlement",
       default: null,
     },
+    // Append-only lifecycle, for tracing a complaint. Orders placed before
+    // this field existed have no entries beyond what createdAt can say.
+    timeline: [
+      {
+        event: { type: String, required: true },
+        at: { type: Date, default: Date.now },
+        actor: { type: String, enum: ["customer", "vendor", "admin", "system"], required: true },
+        _id: false,
+      },
+    ],
   },
   { timestamps: true }
 );
+
+orderSchema.methods.logEvent = function logEvent(event, actor) {
+  this.timeline.push({ event, actor });
+};
 
 // The settlement queries: "everything this shop is still owed for" and
 // the platform-wide pending aggregation both filter on exactly this

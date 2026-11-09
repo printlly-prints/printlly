@@ -119,6 +119,10 @@ const shopSchema = new mongoose.Schema(
       type: String,
       default: null,
     },
+    shop_logo_url: {
+      type: String,
+      default: null,
+    },
     // Submitted via POST /shops/me/kyc, reviewed via PATCH /shops/:id/
     // verify. This whole sub-document is sensitive and must never be
     // returned wholesale to a client - see getMyShop, which strips the

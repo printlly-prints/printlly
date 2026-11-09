@@ -22,7 +22,7 @@ const STEPS = [
   { key: "accepted", label: "Shop accepted", pending: "The shop will confirm shortly." },
   { key: "printing", label: "Printing in progress", pending: "Your files are queued." },
   { key: "ready", label: "Ready for pickup", pending: "We'll notify you once it's ready." },
-  { key: "completed", label: "Collected", pending: "Show your OTP at the counter." },
+  { key: "completed", label: "Collected", pending: "Show your pickup code at the counter." },
 ];
 
 // How many steps are DONE for a given backend status. The active step is

@@ -50,12 +50,10 @@ export default function SavedShopHeart({
         },
       });
   };
-  const tint = overlay
-    ? saved
-      ? colors.magenta
-      : colors.ink
-    : saved
-      ? colors.primary
+  const tint = saved
+    ? colors.magenta
+    : overlay
+      ? colors.ink
       : colors.textSecondary;
   return (
     <PressableScale

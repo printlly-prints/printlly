@@ -187,6 +187,7 @@ const verifyRazorpayPayment = async (req, res) => {
     }
 
     order.payment_status = "failed";
+    order.logEvent("payment_failed", "system");
     await order.save();
 
     // Deliberately generic and does not reveal which check failed (bad

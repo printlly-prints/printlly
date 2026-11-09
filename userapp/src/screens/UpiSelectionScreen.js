@@ -13,6 +13,7 @@ import { useReducedMotion } from "react-native-reanimated";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import Button from "../components/Button";
 import UpiOptions from "../components/UpiOptions";
+import { formatRupees } from "../components/PriceBreakdown";
 import { upiOption } from "../utils/upiPayments";
 import { colors, typography, spacing, radius } from "../theme";
 
@@ -22,16 +23,28 @@ export default function UpiSelectionScreen({ route, navigation }) {
   const [selected, setSelected] = useState(
     upiOption(route.params?.selected).key,
   );
+  const overlay = Platform.OS !== "ios";
   const close = () => navigation.goBack();
+  // With an amount, confirming here is the payment step, not just a choice.
+  const amount = route.params?.amount;
   const apply = () =>
     navigation.popTo(
       route.params.returnTo === "Payment" ? "Payment" : "Checkout",
-      { upiApp: selected },
+      {
+        upiApp: selected,
+        ...(amount !== undefined ? { payRequest: Date.now() } : {}),
+      },
       { merge: true },
     );
+  const optionName =
+    selected === "qr"
+      ? "UPI QR"
+      : selected === "other"
+        ? "another UPI app"
+        : upiOption(selected).title;
   const content = (
-    <View style={[styles.screen, Platform.OS === "web" && styles.webScreen]}>
-      {Platform.OS === "web" ? (
+    <View style={[styles.screen, overlay && styles.overlayScreen]}>
+      {overlay ? (
         <Pressable
           style={StyleSheet.absoluteFill}
           onPress={close}
@@ -40,8 +53,8 @@ export default function UpiSelectionScreen({ route, navigation }) {
         />
       ) : null}
       <View
-        style={Platform.OS === "web" ? styles.webPanel : styles.panel}
-        accessibilityViewIsModal={Platform.OS !== "web"}
+        style={overlay ? styles.overlayPanel : styles.panel}
+        accessibilityViewIsModal
         accessibilityLabel="Choose UPI app"
       >
         <View style={styles.header}>
@@ -73,11 +86,9 @@ export default function UpiSelectionScreen({ route, navigation }) {
         >
           <Button
             title={
-              selected === "qr"
-                ? "Use UPI QR"
-                : selected === "other"
-                  ? "Use another UPI app"
-                  : `Use ${upiOption(selected).title}`
+              amount !== undefined
+                ? `Pay ${formatRupees(amount)} with ${optionName}`
+                : `Use ${optionName}`
             }
             onPress={apply}
           />
@@ -85,21 +96,30 @@ export default function UpiSelectionScreen({ route, navigation }) {
       </View>
     </View>
   );
+  // Android's transparentModal route is already the overlay, and Button's
+  // gestures don't receive touches inside a React Native Modal there.
   return Platform.OS === "web" ? (
-    <Modal visible transparent onRequestClose={close} animationType={reduced ? "none" : "fade"}>
+    <Modal
+      visible
+      transparent
+      onRequestClose={close}
+      animationType={reduced ? "none" : "fade"}
+    >
       {content}
     </Modal>
-  ) : content;
+  ) : (
+    content
+  );
 }
 
 const styles = StyleSheet.create({
   screen: { flex: 1 },
-  webScreen: {
+  overlayScreen: {
     backgroundColor: "rgba(26,26,26,0.28)",
     justifyContent: "flex-end",
   },
   panel: { flex: 1, backgroundColor: colors.background },
-  webPanel: {
+  overlayPanel: {
     flexShrink: 0,
     backgroundColor: colors.background,
     width: "100%",

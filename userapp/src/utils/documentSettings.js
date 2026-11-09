@@ -4,7 +4,7 @@
 // carries its own color_mode, copies, paper_size, sides and services.
 //
 // PrintPreferencesScreen builds that array - one card per uploaded file -
-// and it travels unchanged through SelectShop and ReviewCheckout to the
+// and it travels unchanged through SelectShop and Checkout to the
 // API. The helpers here are the small shape conversions along the way.
 
 // Body for POST /shops/compare-pricing: page_count per document, since

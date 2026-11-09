@@ -1,11 +1,18 @@
+import { useEffect } from "react";
 import { DEMO_MODE } from "../config/runtime";
 import { Image, ScrollView, StyleSheet, Text, View } from "react-native";
-import Animated, { useReducedMotion, FadeIn } from "react-native-reanimated";
+import Animated, {
+  useReducedMotion,
+  FadeIn,
+  ZoomIn,
+} from "react-native-reanimated";
 import Button from "../components/Button";
 import Card from "../components/Card";
+import OrderJourney from "../components/OrderJourney";
 import ScreenBackground from "../components/ScreenBackground";
 import { formatRupees } from "../components/PriceBreakdown";
 import { orderRef } from "../utils/orderRef";
+import { successHaptic } from "../utils/haptics";
 import { colors, typography, spacing, fonts } from "../theme";
 
 // The confirmation screen, reached only by the reset in PaymentScreen
@@ -14,33 +21,40 @@ import { colors, typography, spacing, fonts } from "../theme";
 // verify endpoint returned, complete with the OTP it generated.
 export default function OrderPlacedScreen({ route, navigation }) {
   const { order } = route.params;
+  const shopName = order.shop_id?.shop_name;
 
   const reduced = useReducedMotion();
+  useEffect(() => {
+    successHaptic();
+  }, []);
 
   return (
     <ScreenBackground tone="deep">
       <ScrollView contentContainerStyle={styles.content}>
-        <View style={styles.successHeader}>
+        <Animated.View
+          entering={reduced ? undefined : ZoomIn.duration(240)}
+          style={styles.art}
+        >
           <Image
             source={require("../../assets/art/paper-pal-success.png")}
-            style={styles.successArt}
+            style={styles.artImage}
             resizeMode="contain"
             accessible={false}
           />
-          <View style={styles.successCopy}>
-            <Text accessibilityRole="header" style={styles.title}>
-              Order placed
-            </Text>
-            <Text style={styles.subtitle}>
-              {DEMO_MODE
-                ? "Your order details are all here."
-                : "Your print order is with the shop."}
-            </Text>
-          </View>
-        </View>
+        </Animated.View>
+        <Text accessibilityRole="header" style={styles.title}>
+          Order placed
+        </Text>
+        <Text style={styles.subtitle}>
+          {shopName
+            ? `${shopName} has your order.`
+            : "Your print order is with the shop."}
+        </Text>
 
         <Animated.View entering={reduced ? undefined : FadeIn.duration(200)}>
-          <Card style={styles.summary}>
+          <OrderJourney status={order.status} illustrated={false} />
+
+          <Card>
             <View style={styles.summaryRow}>
               <View>
                 <Text style={styles.summaryLabel}>Order ID</Text>
@@ -57,21 +71,19 @@ export default function OrderPlacedScreen({ route, navigation }) {
             </View>
           </Card>
 
-          {/* The reference says "We've sent the order details to your
-              email and SMS." This product sends neither - there is no
-              mailer and no SMS gateway anywhere in the backend; what it
-              does create is an in-app notification (see
-              utils/notifications.js). Saying otherwise would have
-              customers waiting on a message that is never coming. */}
-          <Text style={styles.note}>
-            {DEMO_MODE
-              ? "Open your order to see its status and pickup code."
-              : "You’ll get an in-app notification when the shop accepts your order and again when it’s ready to collect."}
-          </Text>
+          {/* In-app notification only: the backend has no mailer or SMS
+              gateway (see utils/notifications.js), so promising either
+              would leave customers waiting on a message that never comes. */}
+          {!DEMO_MODE ? (
+            <Text style={styles.note}>
+              We'll notify you when it's accepted and when it's ready.
+            </Text>
+          ) : null}
 
           <View style={styles.actions}>
             <Button
-              title="View order details"
+              title="Track order"
+              icon="arrow-forward"
               onPress={() => navigation.navigate("OrderTracking", { order })}
             />
             <Button
@@ -95,21 +107,21 @@ const styles = StyleSheet.create({
     width: "100%",
     alignSelf: "center",
   },
-  successHeader: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: spacing.lg,
-    marginBottom: spacing.md,
+  art: { alignSelf: "center" },
+  artImage: { width: 148, height: 180 },
+  title: {
+    ...typography.h1,
+    color: colors.textPrimary,
+    textAlign: "center",
+    marginTop: spacing.lg,
   },
-  successArt: { width: 100, height: 130 },
-  successCopy: { flex: 1 },
-  title: { ...typography.h2, color: colors.textPrimary },
   subtitle: {
     ...typography.body,
     color: colors.textSecondary,
-    marginTop: spacing.sm,
+    textAlign: "center",
+    marginTop: spacing.xs,
+    marginBottom: spacing.xl,
   },
-  summary: { marginTop: spacing.xl },
   summaryRow: {
     flexDirection: "row",
     alignItems: "center",

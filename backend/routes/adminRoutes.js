@@ -8,6 +8,8 @@ const {
   reactivateShop,
   getOverviewStats,
   listOrders,
+  getOrderTrace,
+  getShopActivity,
   getSettings,
   updateSettings,
 } = require("../controllers/adminController");
@@ -18,6 +20,7 @@ const {
   markConversationReadByAdmin,
 } = require("../controllers/supportController");
 const {
+  getDailyLedger,
   getPendingSettlements,
   getShopSettlementDetail,
   settleShopOrders,
@@ -76,6 +79,8 @@ router.get("/stats/overview", getOverviewStats);
 // Read-only. There is intentionally no admin route that changes an
 // order's status - see listOrders' comment in the controller for why.
 router.get("/orders", listOrders);
+router.get("/orders/:id", getOrderTrace);
+router.get("/shops/:shopId/activity", getShopActivity);
 
 // --- Platform settings ---------------------------------------------------
 
@@ -86,6 +91,7 @@ router.get("/orders", listOrders);
 //
 // /pending and the audit list come before /shop/:shopId so a literal
 // path segment is never swallowed by the parameterised one.
+router.get("/settlements/ledger", getDailyLedger);
 router.get("/settlements/pending", getPendingSettlements);
 router.get("/settlements", listSettlements);
 router.get("/settlements/shop/:shopId", getShopSettlementDetail);

@@ -27,6 +27,7 @@ const OrdersDashboard = lazy(() => import("./pages/OrdersDashboard"));
 const Dashboard = lazy(() => import("./pages/Dashboard"));
 const PricingPage = lazy(() => import("./pages/PricingPage"));
 const Earnings = lazy(() => import("./pages/Earnings"));
+const Activity = lazy(() => import("./pages/Activity"));
 const Settings = lazy(() => import("./pages/Settings"));
 const Notifications = lazy(() => import("./pages/Notifications"));
 
@@ -175,6 +176,8 @@ export default function App() {
             </ProtectedRoute>
           }
         />
+
+        <Route path="/activity" element={<ProtectedRoute requireShop><Activity /></ProtectedRoute>} />
 
         {/* What the shop is owed and what has already been paid out.
             Reads GET /shops/me/settlements, which is scoped to the

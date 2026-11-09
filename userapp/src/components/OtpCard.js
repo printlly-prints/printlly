@@ -6,7 +6,13 @@ import Ionicons from "@expo/vector-icons/Ionicons";
 import { toast } from "react-native-sonner";
 import { colors, typography, spacing, fonts } from "../theme";
 
-export default function OtpCard({ otp, caption, shopName, reference }) {
+export default function OtpCard({
+  otp,
+  caption,
+  shopName,
+  reference,
+  compact = false,
+}) {
   const reduced = useReducedMotion(),
     timer = useRef(null);
   const [copied, setCopied] = useState(false);
@@ -22,20 +28,47 @@ export default function OtpCard({ otp, caption, shopName, reference }) {
     }
   };
   if (!otp) return null;
+  const copyButton = (
+    <Pressable
+      accessibilityRole="button"
+      accessibilityLabel={copied ? "Code copied" : "Copy pickup code"}
+      onPress={copy}
+      style={styles.copy}
+    >
+      <Ionicons
+        name={copied ? "checkmark" : "copy-outline"}
+        size={21}
+        color={colors.onPrimary}
+      />
+    </Pressable>
+  );
+  const codeLabel = `Pickup code: ${String(otp).split("").join(" ")}`;
+  if (compact)
+    return (
+      <View style={[styles.row, styles.compactCard]}>
+        <View style={styles.compactCopy}>
+          <Text
+            style={styles.compactCode}
+            selectable
+            accessibilityLabel={codeLabel}
+          >
+            {String(otp)}
+          </Text>
+          <Text style={styles.compactCaption}>{caption}</Text>
+        </View>
+        {copyButton}
+      </View>
+    );
   return (
     <Animated.View
       entering={reduced ? undefined : FadeIn.duration(180)}
       style={styles.card}
     >
       <View style={styles.row}>
-        <Text style={styles.label}>PICKUP PASS</Text>
+        <Text style={styles.label}>Pickup code</Text>
         {reference ? <Text style={styles.label}>#{reference}</Text> : null}
       </View>
-      <Text
-        selectable
-        accessibilityLabel={`Pickup code: ${String(otp).split("").join(" ")}`}
-        style={styles.code}
-      >
+      <Text selectable accessibilityLabel={codeLabel} style={styles.code}>
         {String(otp)}
       </Text>
       <Text style={styles.caption}>
@@ -48,22 +81,11 @@ export default function OtpCard({ otp, caption, shopName, reference }) {
       <View style={styles.row}>
         <View style={{ flex: 1, gap: spacing.xs }}>
           <Text style={styles.label}>
-            {shopName ? "COLLECT FROM" : "KEEP YOUR CODE HANDY"}
+            {shopName ? "Collect from" : "Keep your code handy"}
           </Text>
           {shopName ? <Text style={styles.shop}>{shopName}</Text> : null}
         </View>
-        <Pressable
-          accessibilityRole="button"
-          accessibilityLabel={copied ? "Code copied" : "Copy pickup code"}
-          onPress={copy}
-          style={styles.copy}
-        >
-          <Ionicons
-            name={copied ? "checkmark" : "copy-outline"}
-            size={21}
-            color={colors.onPrimary}
-          />
-        </Pressable>
+        {copyButton}
       </View>
     </Animated.View>
   );
@@ -82,6 +104,22 @@ const styles = StyleSheet.create({
     alignItems: "center",
     gap: spacing.md,
   },
+  compactCard: {
+    backgroundColor: colors.yellow,
+    borderRadius: 22,
+    padding: spacing.lg,
+    marginBottom: spacing.lg,
+  },
+  compactCopy: { flex: 1, minWidth: 0 },
+  compactCode: {
+    fontFamily: fonts.headingBold,
+    fontSize: 24,
+    lineHeight: 32,
+    letterSpacing: 3,
+    color: colors.ink,
+    fontVariant: ["tabular-nums"],
+  },
+  compactCaption: { ...typography.caption, color: colors.ink },
   label: { ...typography.labelSmall, fontSize: 10, color: colors.ink },
   code: {
     fontFamily: fonts.headingBold,

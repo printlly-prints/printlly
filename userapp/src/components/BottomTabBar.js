@@ -8,6 +8,7 @@ import Animated, {
   withSpring,
 } from "react-native-reanimated";
 import Ionicons from "@expo/vector-icons/Ionicons";
+import { getFocusedRouteNameFromRoute } from "@react-navigation/native";
 import BackgroundCurve from "./vendor/reacticx/curved-bottom-tabs/BackgroundCurve";
 import { colors, fonts } from "../theme";
 
@@ -61,6 +62,9 @@ export default function BottomTabBar({ state, descriptors, navigation }) {
         : withSpring(target, { damping: 12, stiffness: 120, mass: 0.5 });
     placed.current = true;
   }, [state.index, state.routes.length, width, reduced, center]);
+  // Shop details has its own sticky "Print here" action.
+  if (getFocusedRouteNameFromRoute(state.routes[state.index]) === "ShopDetails")
+    return null;
   return (
     <View
       onLayout={(e) => setWidth(e.nativeEvent.layout.width)}
@@ -146,7 +150,7 @@ const styles = StyleSheet.create({
   },
   selectedLabel: {
     fontFamily: fonts.headingSemiBold,
-    color: colors.primaryDeep,
+ color: colors.primaryDeep,
   },
   iconCircle: {
     width: 40,

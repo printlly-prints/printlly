@@ -56,6 +56,7 @@ async function markOrderPaid(order, { razorpayPaymentId = null } = {}) {
   // it has already done. Rounded to paise so a float tail cannot accumulate
   // across a settlement batch.
   order.vendor_amount = Math.round((order.total_amount - order.platform_fee) * 100) / 100;
+  order.logEvent("paid", "system");
 
   await order.save();
 

@@ -10,7 +10,7 @@ async function moduleFromSource(file) {
 const { confirmationState, finishPrintFlow } = await moduleFromSource(
   "../src/utils/confirmationNavigation.js",
 );
-const { navigateToOrder } = await moduleFromSource(
+const { navigateToOrder, pickLiveOrders } = await moduleFromSource(
   "../src/utils/orderNavigation.js",
 );
 const { greetingForHour } = await moduleFromSource("../src/utils/greeting.js");
@@ -84,6 +84,36 @@ assert.equal(
   calls.pop()[0],
   "OrderTracking",
   "closed orders must not resume payment",
+);
+assert.deepEqual(
+  pickLiveOrders([
+    { _id: "printing", status: "accepted", payment_status: "paid" },
+    { _id: "done", status: "completed", payment_status: "paid" },
+    { _id: "unpaid", status: "pending", payment_status: "pending" },
+    { _id: "ready", status: "ready_for_pickup", payment_status: "paid" },
+  ]).map((liveOrder) => liveOrder._id),
+  ["ready", "unpaid", "printing"],
+  "Home must surface the most urgent live order first",
+);
+const { quoteTags } = await moduleFromSource(
+  "../src/utils/quoteSelection.js",
+);
+assert.deepEqual(
+  quoteTags([
+    { shop_id: "a", total_amount: 15, distance_km: 0.9 },
+    { shop_id: "b", total_amount: 19, distance_km: 0.4 },
+    { shop_id: "c", total_amount: 10, distance_km: 0.1, shop_status: "closed" },
+  ]),
+  { a: ["Cheapest"], b: ["Closest"] },
+  "closed shops must not win a comparison tag",
+);
+assert.deepEqual(
+  quoteTags([
+    { shop_id: "a", total_amount: 15 },
+    { shop_id: "b", total_amount: 15 },
+  ]),
+  {},
+  "ties and missing distances must not earn a tag",
 );
 console.log(
   "Passed: independent tab history, checkout cleanup and contextual order navigation.",

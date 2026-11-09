@@ -1,8 +1,16 @@
-import { useRef, useState } from "react";
-import { Alert, ScrollView, StyleSheet, Text, View } from "react-native";
+import { useCallback, useEffect, useRef, useState } from "react";
+import {
+  Alert,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  View,
+} from "react-native";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import CheckoutPaymentBar from "../components/CheckoutPaymentBar";
 import Card, { CardHeader } from "../components/Card";
+import CartItem from "../components/CartItem";
 import PriceBreakdown from "../components/PriceBreakdown";
 import ScreenBackground from "../components/ScreenBackground";
 import ShopCard from "../components/ShopCard";
@@ -11,7 +19,10 @@ import { finishPrintFlow } from "../utils/confirmationNavigation";
 import api from "../api/client";
 import { DEMO_MODE } from "../config/runtime";
 import { useAuth } from "../context/AuthContext";
-import { toOrderDocuments } from "../utils/documentSettings";
+import {
+  toComparePricingDocuments,
+  toOrderDocuments,
+} from "../utils/documentSettings";
 import { shopAvailability } from "../utils/shopAvailability";
 import {
   colors,
@@ -22,18 +33,110 @@ import {
   availabilityColors,
 } from "../theme";
 
+// Review and pay on one screen.
+//
+// Nothing here is priced in the app. Copies can be changed, and when they
+// are, the whole order is re-quoted by the server (POST
+// /shops/compare-pricing, scoped to this shop) rather than the app
+// multiplying anything itself: shop rates are per-vendor and the platform
+// fee can be a percentage, so an app-side "x copies" would drift from the
+// real charge. The number the customer sees is always one the server just
+// produced.
 export default function CheckoutScreen({ route, navigation }) {
-  const {
-    uploadedDocs,
-    docSettings,
-    notes,
-    shop,
-    shopDetail,
-    priceBreakdown,
-    totalAmount,
-    documentServices,
-  } = route.params;
+  const { shop, notes } = route.params;
   const { user } = useAuth();
+
+  const [uploadedDocs, setUploadedDocs] = useState(route.params.uploadedDocs);
+  const [docSettings, setDocSettings] = useState(route.params.docSettings);
+  const [quote, setQuote] = useState({
+    priceBreakdown: route.params.priceBreakdown,
+    totalAmount: route.params.totalAmount,
+    documentTotals: route.params.documentTotals,
+    documentServices: route.params.documentServices,
+  });
+  const [repricing, setRepricing] = useState(false);
+  const [quoteError, setQuoteError] = useState("");
+
+  // The shop's own rates and freshest status. Non-fatal if it fails: the
+  // per-page line is omitted and every server-quoted price still shows.
+  const [shopDetail, setShopDetail] = useState(null);
+  useEffect(() => {
+    let cancelled = false;
+    api
+      .get(`/shops/${shop._id}`)
+      .then(({ data }) => {
+        if (!cancelled) setShopDetail(data);
+      })
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
+  }, [shop._id]);
+
+  const perPageRateFor = (settings) => {
+    const pricing = shopDetail?.pricing;
+    if (!pricing) return undefined;
+    return settings.color_mode === "color"
+      ? pricing.rate_per_page_color
+      : pricing.rate_per_page_bw;
+  };
+
+  // Keyed on a token so a slow earlier response can never overwrite a newer
+  // one when "+" is tapped quickly.
+  const requestToken = useRef(0);
+  const reprice = useCallback(
+    async (nextDocs, nextSettings) => {
+      const token = ++requestToken.current;
+      setRepricing(true);
+      setQuoteError("");
+      try {
+        const { data } = await api.post("/shops/compare-pricing", {
+          documents: toComparePricingDocuments(nextDocs, nextSettings),
+          shop_id: shop._id,
+        });
+        if (token !== requestToken.current) return;
+
+        const result = data?.[0];
+        if (!result) {
+          setQuoteError(
+            `${shop.shop_name} can't price this order any more. Choose another shop.`,
+          );
+          return;
+        }
+        setQuote({
+          priceBreakdown: result.price_breakdown,
+          totalAmount: result.total_amount,
+          documentTotals: result.document_totals,
+          documentServices: result.document_services,
+        });
+      } catch (err) {
+        if (token !== requestToken.current) return;
+        setQuoteError(
+          err.response?.data?.message ||
+            "Couldn't update the price. Check your connection.",
+        );
+      } finally {
+        if (token === requestToken.current) setRepricing(false);
+      }
+    },
+    [shop._id, shop.shop_name],
+  );
+
+  const setCopies = (index, copies) => {
+    const nextSettings = docSettings.map((s, i) =>
+      i === index ? { ...s, copies } : s,
+    );
+    setDocSettings(nextSettings);
+    reprice(uploadedDocs, nextSettings);
+  };
+
+  const removeDoc = (index) => {
+    const nextDocs = uploadedDocs.filter((_, i) => i !== index);
+    const nextSettings = docSettings.filter((_, i) => i !== index);
+    setUploadedDocs(nextDocs);
+    setDocSettings(nextSettings);
+    reprice(nextDocs, nextSettings);
+  };
 
   // shopDetail is the freshly-fetched shop where one was loaded, so it
   // carries the more current status of the two.
@@ -43,6 +146,12 @@ export default function CheckoutScreen({ route, navigation }) {
   const pendingOrder = useRef(null);
   const [placing, setPlacing] = useState(false);
   const [error, setError] = useState("");
+  const changeShop = () =>
+    navigation.navigate("SelectShop", {
+      ...route.params,
+      uploadedDocs,
+      docSettings,
+    });
 
   // Creates the real Order (priced server-side from scratch) and only
   // then hands off to payment. PaymentScreen never creates an order
@@ -58,11 +167,11 @@ export default function CheckoutScreen({ route, navigation }) {
         documents: toOrderDocuments(
           uploadedDocs,
           docSettings,
-          documentServices,
+          quote.documentServices,
         ),
         instructions: notes,
       };
-      const draftKey = JSON.stringify([payload, totalAmount]);
+      const draftKey = JSON.stringify([payload, quote.totalAmount]);
       const data =
         pendingOrder.current?.key === draftKey
           ? pendingOrder.current.order
@@ -77,6 +186,7 @@ export default function CheckoutScreen({ route, navigation }) {
         return;
       }
 
+      const { priceBreakdown } = quote;
       navigation.navigate("Payment", {
         orderId: data._id,
         estimatedAmount: data.total_amount,
@@ -100,10 +210,7 @@ export default function CheckoutScreen({ route, navigation }) {
       // shop, not a retry.
       if (/closed/i.test(message)) {
         Alert.alert("Shop is closed", message, [
-          {
-            text: "Choose another shop",
-            onPress: () => navigation.navigate("SelectShop", route.params),
-          },
+          { text: "Choose another shop", onPress: changeShop },
         ]);
       } else {
         setError(message || "Could not place the order. Please try again.");
@@ -113,6 +220,14 @@ export default function CheckoutScreen({ route, navigation }) {
     }
   };
 
+  // Set by the UPI sheet when the customer confirms there.
+  const payRequest = route.params.payRequest;
+  useEffect(() => {
+    if (payRequest) payNow();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [payRequest]);
+
+  const { priceBreakdown, totalAmount } = quote;
   const rows = [
     { label: "Subtotal", value: priceBreakdown.base_subtotal },
     priceBreakdown.paper_size_charge > 0
@@ -127,18 +242,69 @@ export default function CheckoutScreen({ route, navigation }) {
     { label: "Platform fee", value: priceBreakdown.platform_fee },
     { label: "Pickup", free: true },
   ];
+  const pickupBy = [user?.name, user?.phone || user?.email]
+    .filter(Boolean)
+    .join(" · ");
 
   return (
     <ScreenBackground>
       <ScrollView style={styles.scroll} contentContainerStyle={styles.content}>
+        {/* --- documents --------------------------------------------- */}
+        <Card style={styles.itemsCard}>
+          {uploadedDocs.map((doc, i) => (
+            <View key={doc.upload_id}>
+              {i > 0 ? <View style={styles.divider} /> : null}
+              <CartItem
+                name={doc.original_name}
+                pageCount={doc.page_count}
+                settings={docSettings[i]}
+                copies={docSettings[i].copies}
+                perPageRate={perPageRateFor(docSettings[i])}
+                services={quote.documentServices?.[i]}
+                total={quote.documentTotals?.[i]}
+                editable
+                canRemove={uploadedDocs.length > 1}
+                onChangeCopies={(copies) => setCopies(i, copies)}
+                onRemove={() => removeDoc(i)}
+              />
+            </View>
+          ))}
+        </Card>
+
+        <Pressable
+          accessibilityRole="button"
+          onPress={() =>
+            navigation.navigate("UploadDocuments", {
+              preselectedShop: shopDetail || shop,
+              initialUploadedDocs: uploadedDocs,
+              initialDocSettings: docSettings,
+            })
+          }
+          style={({ pressed }) => [styles.addMore, pressed && styles.pressed]}
+        >
+          <Ionicons name="add" size={22} color={colors.primary} />
+          <Text style={styles.addMoreLabel}>Add documents</Text>
+        </Pressable>
+
+        {quoteError ? (
+          <View style={styles.errorBox}>
+            <Text accessibilityRole="alert" style={styles.errorText}>
+              {quoteError}
+            </Text>
+          </View>
+        ) : null}
+
         {/* --- shop -------------------------------------------------- */}
         <View style={styles.card}>
-          <Text style={styles.sectionLabel}>Pickup from shop</Text>
+          <Text style={styles.sectionLabel}>Pickup from</Text>
           <ShopCard
             shop={shopDetail || shop}
             actionLabel="Change"
-            onAction={() => navigation.navigate("SelectShop", route.params)}
+            onAction={changeShop}
           />
+          {pickupBy ? (
+            <Text style={styles.pickupBy}>Pickup by {pickupBy}</Text>
+          ) : null}
 
           {/* Informational only. A busy shop is accepting orders exactly
               as an open one does, so this does not gate the Pay button,
@@ -154,23 +320,12 @@ export default function CheckoutScreen({ route, navigation }) {
                   This shop is currently busy
                 </Text>
                 <Text style={styles.busyLine}>
-                  Estimated preparation: ~{busy.prepMinutes} min
-                </Text>
-                <Text style={styles.busyLine}>
-                  You can still place your order.
+                  About {busy.prepMinutes} min to prepare
                 </Text>
               </View>
             </View>
           ) : null}
         </View>
-
-        {/* --- contact ----------------------------------------------- */}
-        <Card style={styles.card}>
-          <CardHeader title="Pickup contact" />
-          <ContactRow icon="person-outline" value={user?.name} />
-          <ContactRow icon="call-outline" value={user?.phone} />
-          <ContactRow icon="mail-outline" value={user?.email} />
-        </Card>
 
         {/* --- the bill ---------------------------------------------- */}
         <Card style={styles.card}>
@@ -180,7 +335,9 @@ export default function CheckoutScreen({ route, navigation }) {
 
         {error ? (
           <View style={styles.errorBox}>
-            <Text style={styles.errorText}>{error}</Text>
+            <Text accessibilityRole="alert" style={styles.errorText}>
+              {error}
+            </Text>
           </View>
         ) : null}
       </ScrollView>
@@ -189,40 +346,35 @@ export default function CheckoutScreen({ route, navigation }) {
           to it are never scrolled apart. */}
       <CheckoutPaymentBar
         amount={totalAmount}
-        upiApp={upiApp}
-        onSelect={() =>
+        onContinue={() =>
           navigation.navigate("UpiSelection", {
             selected: upiApp,
             returnTo: "Checkout",
+            amount: totalAmount,
           })
         }
-        onContinue={payNow}
-        loading={placing}
+        loading={placing || repricing}
+        disabled={Boolean(quoteError)}
       />
     </ScreenBackground>
-  );
-}
-
-function ContactRow({ icon, value }) {
-  if (!value) return null;
-  return (
-    <View style={styles.contactRow}>
-      <Ionicons name={icon} size={16} color={colors.textMuted} />
-      <Text style={styles.contactValue}>{value}</Text>
-    </View>
   );
 }
 
 const styles = StyleSheet.create({
   scroll: { flex: 1 },
   content: { padding: spacing.lg, paddingBottom: spacing.xxl },
-  title: { ...typography.h1, color: colors.textPrimary },
-  subtitle: {
-    ...typography.body,
-    color: colors.textSecondary,
-    marginTop: 2,
-    marginBottom: spacing.lg,
+  itemsCard: { paddingVertical: spacing.xs },
+  divider: { height: 1, backgroundColor: colors.border },
+  addMore: {
+    flexDirection: "row",
+    alignItems: "center",
+    alignSelf: "flex-start",
+    gap: spacing.sm,
+    minHeight: 48,
+    marginBottom: spacing.sm,
   },
+  addMoreLabel: { ...typography.labelSmall, color: colors.primary },
+  pressed: { opacity: 0.7 },
   card: { marginBottom: spacing.md },
   // Soft amber, no border, no warning icon: this is information, not a
   // problem, and it must not read as a blocked checkout.
@@ -258,19 +410,16 @@ const styles = StyleSheet.create({
     color: colors.textPrimary,
     marginBottom: spacing.sm,
   },
-
-  contactRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: spacing.sm,
-    paddingVertical: spacing.xs,
+  pickupBy: {
+    ...typography.caption,
+    color: colors.textSecondary,
+    marginTop: spacing.sm,
   },
-  contactValue: { ...typography.bodySmall, color: colors.textPrimary },
-
   errorBox: {
     backgroundColor: colors.dangerBg,
     borderRadius: radius.md,
     padding: spacing.md,
+    marginBottom: spacing.md,
   },
   errorText: { ...typography.bodySmall, color: colors.danger },
 });

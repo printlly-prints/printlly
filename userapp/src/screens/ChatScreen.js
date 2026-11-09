@@ -159,8 +159,7 @@ export default function ChatScreen({ route }) {
               />
               <Text style={styles.emptyTitle}>No messages yet</Text>
               <Text style={styles.emptyBody}>
-                Tell us what's going on and someone from the Paprout team will
-                reply here.
+                Send us a message and we'll reply here.
               </Text>
             </View>
           }

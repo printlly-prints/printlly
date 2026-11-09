@@ -14,6 +14,7 @@ import { Bell } from "lucide-react";
 const NAV_ITEMS = [
   { label: "Dashboard", to: "/dashboard", icon: IconDashboard },
   { label: "Orders", to: "/orders", icon: IconOrders },
+  { label: "Activity", to: "/activity", icon: IconActivity },
   { label: "Pricing", to: "/pricing", icon: IconTag },
   // Earnings sits next to Pricing rather than under Profile: what a shop
   // charges and what it has been paid are the two money questions, and a
@@ -201,6 +202,14 @@ function IconTag() {
     <IconShell>
       <path d="M20.59 13.41 13.42 20.58a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z" />
       <line x1="7" y1="7" x2="7.01" y2="7" />
+    </IconShell>
+  );
+}
+
+function IconActivity() {
+  return (
+    <IconShell>
+      <path d="M3 12h4l3 8 4-16 3 8h4" />
     </IconShell>
   );
 }

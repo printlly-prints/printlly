@@ -52,12 +52,10 @@ export default class ErrorBoundary extends Component {
         <View style={styles.screen}>
           <Text style={styles.title}>Something went wrong</Text>
           <Text style={styles.body}>
-            Paprout ran into an unexpected problem on this screen. Your orders
-            are safe - nothing has been lost or changed.
+            Something went wrong on this screen. Your orders are safe.
           </Text>
           <Text style={styles.note}>
-            If you have an order ready to collect, your pickup code is still
-            valid and the shop can look your order up.
+            Your pickup codes still work.
           </Text>
           <Pressable style={styles.button} onPress={this.reset} accessibilityRole="button">
             <Text style={styles.buttonLabel}>Try again</Text>

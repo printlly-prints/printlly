@@ -133,7 +133,7 @@ export default function DocumentSettingsCard({
       <View style={styles.quickControls}>
         {name ? (
           <View style={styles.quickHeading}>
-            <Text style={styles.quickEyebrow}>SETTINGS FOR</Text>
+            <Text style={styles.quickEyebrow}>Settings for</Text>
             <Text numberOfLines={2} style={styles.quickName}>
               {name.replace(/\.pdf$/i, "")}
             </Text>
@@ -215,8 +215,8 @@ export default function DocumentSettingsCard({
           <Text style={styles.label}>Additional services (optional)</Text>
           <Text style={styles.serviceHint}>
             {availableServices?.length
-              ? "What this shop offers — or type anything else you need."
-              : "Shops name these differently. Ask for what you need and we'll only show shops that do it."}
+              ? "What this shop offers, or type your own."
+              : "We'll only show shops that offer these."}
           </Text>
 
           <View style={styles.servicesBox}>
@@ -376,9 +376,7 @@ const styles = StyleSheet.create({
   quickHeading: { gap: spacing.sm },
   quickEyebrow: {
     ...typography.labelSmall,
-    fontSize: 11,
-    letterSpacing: 0.6,
-    color: colors.primaryDeep,
+    color: colors.textSecondary,
   },
   quickName: { ...typography.bodyMedium, color: colors.ink },
   quickBottom: { flexDirection: "row", gap: spacing.md },
@@ -455,14 +453,7 @@ const styles = StyleSheet.create({
     borderRadius: 12,
   },
   segmentDivider: {},
-  segmentSelected: {
-    backgroundColor: colors.surface,
-    shadowColor: colors.ink,
-    shadowOpacity: 0.06,
-    shadowRadius: 3,
-    shadowOffset: { width: 0, height: 1 },
-    elevation: 1,
-  },
+  segmentSelected: { backgroundColor: colors.primaryWash },
   segmentLabel: {
     fontFamily: fonts.bodyMedium,
     fontSize: 13,
@@ -470,7 +461,7 @@ const styles = StyleSheet.create({
   },
   segmentLabelSelected: {
     fontFamily: fonts.headingSemiBold,
-    color: colors.ink,
+ color: colors.primaryDeep,
   },
   servicesBox: {
     borderWidth: 1,

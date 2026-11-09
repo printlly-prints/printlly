@@ -17,10 +17,14 @@ import api from "../api/client";
 import { useLocation } from "../context/LocationContext";
 import useOpenStatusRefresh from "../hooks/useOpenStatusRefresh";
 import { toComparePricingDocuments } from "../utils/documentSettings";
-import { selectedQuote, selectableQuote } from "../utils/quoteSelection";
+import {
+  quoteTags,
+  selectedQuote,
+  selectableQuote,
+} from "../utils/quoteSelection";
 import { formatDistance } from "../utils/distance";
 import { shopAvailability } from "../utils/shopAvailability";
-import { colors, typography, spacing, rushLabels } from "../theme";
+import { colors, typography, spacing, radius, rushLabels } from "../theme";
 
 const RUSH_RANK = { low: 0, medium: 1, high: 2 };
 export default function SelectShopScreen({ route, navigation }) {
@@ -62,7 +66,8 @@ export default function SelectShopScreen({ route, navigation }) {
     useCallback(() => loadPrices({ silent: true }), [loadPrices]),
   );
   const hasDistances = results.some((q) => Number.isFinite(q.distance_km));
-  const sorted = [...results].sort((a, b) => {
+  // A shop that can't take the order right now isn't an option here.
+  const sorted = results.filter(selectableQuote).sort((a, b) => {
     if (sortBy === "distance")
       return (
         (a.distance_km ?? Infinity) - (b.distance_km ?? Infinity) ||
@@ -79,9 +84,10 @@ export default function SelectShopScreen({ route, navigation }) {
     return a.total_amount - b.total_amount;
   });
   const chosen = selectedQuote(sorted, selectedId);
+  const tags = quoteTags(results);
   const handleContinue = () => {
     if (!chosen || loading || error) return;
-    navigation.navigate("ReviewCheckout", {
+    navigation.navigate("Checkout", {
       uploadedDocs,
       docSettings,
       notes,
@@ -109,9 +115,9 @@ export default function SelectShopScreen({ route, navigation }) {
           <>
             <View style={styles.summary}>
               <Text style={styles.summaryText}>
-                {uploadedDocs.length}{" "}
+                Total price for {uploadedDocs.length}{" "}
                 {uploadedDocs.length === 1 ? "document" : "documents"} · {pages}{" "}
-                pages · priced for your settings
+                pages
               </Text>
             </View>
             <View style={styles.sortRow}>
@@ -128,7 +134,7 @@ export default function SelectShopScreen({ route, navigation }) {
                 />
               ) : null}
               <Sort
-                label="Lowest rush"
+                label="Least busy"
                 selected={sortBy === "rush"}
                 onPress={() => setSortBy("rush")}
               />
@@ -143,9 +149,8 @@ export default function SelectShopScreen({ route, navigation }) {
               />
             ) : (
               <Text style={styles.count}>
-                {results.length}{" "}
-                {results.length === 1 ? "shop can" : "shops can"} print this
-                order
+                {sorted.length} {sorted.length === 1 ? "shop can" : "shops can"}{" "}
+                print this order
               </Text>
             )}
           </>
@@ -161,21 +166,16 @@ export default function SelectShopScreen({ route, navigation }) {
         renderItem={({ item }) => {
           const active = chosen?.shop_id === item.shop_id,
             availability = shopAvailability(item),
-            closed = !selectableQuote(item),
-            distance = formatDistance(item.distance_km);
+            distance = formatDistance(item.distance_km),
+            itemTags = tags[item.shop_id] || [];
           return (
             <Pressable
               accessibilityRole="radio"
-              accessibilityLabel={`${item.shop_name}, ${formatRupees(item.total_amount)} total${closed ? ", closed" : ""}`}
-              accessibilityState={{ checked: active, disabled: closed }}
+              accessibilityLabel={`${item.shop_name}, ${formatRupees(item.total_amount)} total${itemTags.length ? `, ${itemTags.join(", ")}` : ""}`}
+              accessibilityState={{ checked: active }}
               aria-checked={active}
-              disabled={closed}
               onPress={() => setSelectedId(item.shop_id)}
-              style={[
-                styles.quote,
-                active && styles.selected,
-                closed && styles.closed,
-              ]}
+              style={[styles.quote, active && styles.selected]}
             >
               <Ionicons
                 name={active ? "checkmark-circle" : "ellipse-outline"}
@@ -183,7 +183,14 @@ export default function SelectShopScreen({ route, navigation }) {
                 color={active ? colors.primary : colors.border}
               />
               <View style={styles.quoteCopy}>
-                <Text style={styles.shopName}>{item.shop_name}</Text>
+                <View style={styles.nameRow}>
+                  <Text style={styles.shopName}>{item.shop_name}</Text>
+                  {itemTags.map((tag) => (
+                    <Text key={tag} style={styles.tag}>
+                      {tag}
+                    </Text>
+                  ))}
+                </View>
                 <View style={styles.metaRow}>
                   <View
                     style={[
@@ -205,17 +212,11 @@ export default function SelectShopScreen({ route, navigation }) {
                     rushLabels[item.queue?.rush_level] ||
                     ""}
                 </Text>
-                {closed ? (
-                  <Text style={styles.meta}>
-                    Not accepting orders right now
-                  </Text>
-                ) : null}
               </View>
               <View style={styles.amount}>
                 <Text style={styles.total}>
                   {formatRupees(item.total_amount)}
                 </Text>
-                <Text style={styles.meta}>total</Text>
               </View>
             </Pressable>
           );
@@ -249,7 +250,7 @@ function Sort({ label, selected, onPress }) {
       onPress={onPress}
       style={[styles.sort, selected && styles.sortSelected]}
     >
-      <Text style={[styles.sortText, selected && { color: colors.onPrimary }]}>
+      <Text style={[styles.sortText, selected && { color: colors.primaryDeep }]}>
         {label}
       </Text>
     </Pressable>
@@ -285,7 +286,7 @@ const styles = StyleSheet.create({
     borderRadius: 22,
     backgroundColor: colors.surface,
   },
-  sortSelected: { backgroundColor: colors.ink, borderColor: colors.ink },
+  sortSelected: { backgroundColor: colors.primaryWash, borderColor: colors.primary },
   sortText: { ...typography.labelSmall, fontSize: 12, color: colors.ink },
   count: {
     ...typography.caption,
@@ -304,9 +305,24 @@ const styles = StyleSheet.create({
     marginBottom: spacing.md,
   },
   selected: { borderColor: colors.primary },
-  closed: { opacity: 0.6 },
   quoteCopy: { flex: 1, gap: spacing.xs },
+  nameRow: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    alignItems: "center",
+    gap: spacing.xs,
+  },
   shopName: { ...typography.label, color: colors.ink },
+  tag: {
+    ...typography.caption,
+    fontSize: 11,
+    lineHeight: 16,
+    color: colors.textSecondary,
+ backgroundColor: colors.backgroundSoft,
+    borderRadius: radius.pill,
+    paddingHorizontal: spacing.sm,
+    overflow: "hidden",
+  },
   metaRow: { flexDirection: "row", alignItems: "center", gap: spacing.sm },
   dot: { width: 7, height: 7, borderRadius: 4 },
   meta: { ...typography.caption, fontSize: 11, color: colors.textSecondary },

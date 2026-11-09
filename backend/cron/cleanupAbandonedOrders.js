@@ -21,6 +21,7 @@ async function expireOrder(order, reasonLabel) {
   // one file failed to delete.
   try {
     order.status = "expired";
+    order.logEvent("expired", "system");
     await order.save();
     await emitOrderEvent(order, ORDER_EVENTS.ORDER_EXPIRED);
   } catch (error) {

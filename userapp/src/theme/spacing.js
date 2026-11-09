@@ -19,15 +19,15 @@ export const spacing = {
 };
 
 // Corner radii. Softer than a stock scale - cards and sheets carry real
-// roundness, controls stay tighter. Pills are reserved for badges,
-// filter chips and tags; nothing else should be fully rounded.
+// roundness, small controls stay tighter. Full pills
+// are reserved for badges, filter chips and tags.
 export const radius = {
   sm: 8, // chips, small controls, inline inputs
   md: 10, // compact surfaces
   lg: 12, // large surfaces
   hero: 12,
   modal: 24, // sheets and modals
-  button: 8,
+  button: 14,
   card: 22,
   navigation: 36,
   pill: 999, // status badges, filter chips, tags only

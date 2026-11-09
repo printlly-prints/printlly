@@ -37,7 +37,6 @@ import UploadDocumentsScreen from "./src/screens/UploadDocumentsScreen";
 import PrintPreferencesScreen from "./src/screens/PrintPreferencesScreen";
 import SelectShopScreen from "./src/screens/SelectShopScreen";
 import ChooseShopOptionScreen from "./src/screens/ChooseShopOptionScreen";
-import ReviewCheckoutScreen from "./src/screens/ReviewCheckoutScreen";
 import CheckoutScreen from "./src/screens/CheckoutScreen";
 import UpiSelectionScreen from "./src/screens/UpiSelectionScreen";
 import OrderPlacedScreen from "./src/screens/OrderPlacedScreen";
@@ -50,6 +49,7 @@ import NotificationsScreen from "./src/screens/NotificationsScreen";
 import HelpSupportScreen from "./src/screens/HelpSupportScreen";
 import ChatScreen from "./src/screens/ChatScreen";
 import BrandSplash from "./src/screens/BrandSplash";
+import CoachMarksScreen from "./src/screens/CoachMarksScreen";
 import BottomTabBar from "./src/components/BottomTabBar";
 import ErrorBoundary from "./src/components/ErrorBoundary";
 import { initAnalytics, trackEvent, EVENTS } from "./src/lib/analytics";
@@ -143,7 +143,9 @@ function OrdersNavigation() {
         component={MyOrdersScreen}
         options={{
           title: "Orders",
-          header: (props) => <AppHeader {...props} title="Orders" />,
+          header: (props) => (
+            <AppHeader {...props} title="Orders" showSupport />
+          ),
         }}
       />
       <Branch.Screen
@@ -172,7 +174,7 @@ function ProfileNavigation() {
         component={ProfileScreen}
         options={{
           title: "You",
-          header: (props) => <AppHeader {...props} title="You" />,
+          header: (props) => <AppHeader {...props} title="You" showSupport />,
         }}
       />
       <Branch.Screen
@@ -251,14 +253,9 @@ function PrintFlowNavigation() {
         options={{ title: "Select shop" }}
       />
       <Branch.Screen
-        name="ReviewCheckout"
-        component={ReviewCheckoutScreen}
-        options={{ title: "Review print" }}
-      />
-      <Branch.Screen
         name="Checkout"
         component={CheckoutScreen}
-        options={{ title: "Checkout" }}
+        options={{ title: "Review & pay" }}
       />
       <Branch.Screen
         name="Payment"
@@ -270,8 +267,11 @@ function PrintFlowNavigation() {
         component={UpiSelectionScreen}
         options={{
           headerShown: false,
+          // The native formSheet never appears on Android here, and can leave
+          // the tab bar and header offset, so only iOS uses it.
           presentation:
-            Platform.OS === "web" ? "transparentModal" : "formSheet",
+            Platform.OS === "ios" ? "formSheet" : "transparentModal",
+          animation: "slide_from_bottom",
           sheetAllowedDetents: [0.75, 1],
           sheetGrabberVisible: true,
           contentStyle: { backgroundColor: "transparent" },
@@ -348,6 +348,33 @@ function RootNavigator() {
             <Stack.Screen
               name="MainTabs"
               component={MainTabs}
+              options={{ headerShown: false }}
+            />
+            <Stack.Screen
+              name="CoachMarks"
+              component={CoachMarksScreen}
+              options={{
+                headerShown: false,
+                presentation: "transparentModal",
+                animation: "fade",
+                contentStyle: { backgroundColor: "transparent" },
+              }}
+            />
+            {/* Opened from Home, so Back returns to Home rather than
+                leaving the customer inside another tab. */}
+            <Stack.Screen
+              name="PrintDefaults"
+              component={EditProfileScreen}
+              options={{ title: "Print preferences", presentation: "modal" }}
+            />
+            <Stack.Screen
+              name="SavedShops"
+              component={SavedShopsScreen}
+              options={{ title: "Saved shops" }}
+            />
+            <Stack.Screen
+              name="ShopDetails"
+              component={ShopDetailsScreen}
               options={{ headerShown: false }}
             />
 

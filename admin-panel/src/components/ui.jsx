@@ -80,6 +80,8 @@ const BADGE_STYLES = {
   paid: "bg-status-ready-bg text-status-ready-text",
   created: "bg-status-pending-bg text-status-pending-text",
   failed: "bg-error-bg text-error-text",
+  unsettled: "bg-status-pending-bg text-status-pending-text",
+  settled: "bg-status-ready-bg text-status-ready-text",
 };
 
 const BADGE_LABELS = {
@@ -162,6 +164,51 @@ export function Loading({ label = "Loading..." }) {
 // table. Indian digit grouping, no decimals - every amount in this system
 // is already rounded to at most 2dp server-side, and whole rupees is what
 // an operator scanning a table actually wants.
+export function Stat({ label, value, tone = "bg-surface border-border" }) {
+  return (
+    <div className={`px-4 py-3 rounded-panel border ${tone}`}>
+      <p className="text-xs text-text-secondary">{label}</p>
+      <p className="font-heading text-lg font-bold text-text-primary tabular-nums mt-0.5">{value}</p>
+    </div>
+  );
+}
+
+// The reference a customer quotes, derived the same way the apps derive it.
+export function orderRef(id) {
+  return `PL${String(id).slice(-6).toUpperCase()}`;
+}
+
+const EVENT_LABELS = {
+  placed: "Order placed",
+  paid: "Payment confirmed",
+  payment_failed: "Payment failed",
+  accepted: "Accepted by shop",
+  ready: "Ready for pickup",
+  completed: "Picked up",
+  expired: "Expired",
+  settled: "Payout settled",
+};
+
+const ACTOR_LABELS = { customer: "Customer", vendor: "Shop", admin: "Admin", system: "System" };
+
+export function Timeline({ events }) {
+  return (
+    <ol className="space-y-2">
+      {events.map((entry, index) => (
+        <li key={`${entry.event}-${index}`} className="flex flex-wrap justify-between gap-x-4 text-sm">
+          <span className="text-text-primary">
+            {EVENT_LABELS[entry.event] || entry.event}
+            <span className="text-text-muted"> · {ACTOR_LABELS[entry.actor] || entry.actor}</span>
+          </span>
+          <time dateTime={entry.at} className="text-text-secondary tabular-nums">
+            {formatDate(entry.at)}
+          </time>
+        </li>
+      ))}
+    </ol>
+  );
+}
+
 export function formatRupees(value) {
   const n = Number(value) || 0;
   return `₹${n.toLocaleString("en-IN", { maximumFractionDigits: 2 })}`;

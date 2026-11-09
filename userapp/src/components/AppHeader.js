@@ -9,7 +9,12 @@ import SupportChatButton from "./SupportChatButton";
 import { greetingForHour } from "../utils/greeting";
 import { colors, typography, spacing } from "../theme";
 
-export default function AppHeader({ navigation, title, accessory }) {
+export default function AppHeader({
+  navigation,
+  title,
+  accessory,
+  showSupport = false,
+}) {
   const insets = useSafeAreaInsets();
   const reduced = useReducedMotion();
   const { user, appearance } = useAuth();
@@ -33,7 +38,7 @@ export default function AppHeader({ navigation, title, accessory }) {
         </Text>
       </View>
       {accessory}
-      <SupportChatButton navigation={navigation} />
+      {showSupport ? <SupportChatButton navigation={navigation} /> : null}
       {!title ? (
         <PressableScale
           accessibilityRole="button"

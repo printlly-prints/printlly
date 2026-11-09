@@ -1,4 +1,6 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { useFocusEffect } from "@react-navigation/native";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import {
   Image,
   Pressable,
@@ -18,14 +20,19 @@ import DocumentSettingsCard from "../components/DocumentSettingsCard";
 import { defaultDocumentSettings } from "../utils/documentSettings";
 import { describeDocumentSettings } from "../utils/documentSettings";
 import DocumentThumbnail from "../components/DocumentThumbnail";
-import PaperPreview from "../components/PaperPreview";
-import { uploadDocuments } from "../api/client";
+import LiveOrderTicket from "../components/LiveOrderTicket";
+import api, { uploadDocuments } from "../api/client";
+import useFocusedPoll from "../hooks/useFocusedPoll";
+import { navigateToOrder, pickLiveOrders } from "../utils/orderNavigation";
 import { DEMO_MODE } from "../config/runtime";
 import { demoStore } from "../demo/store";
 import { useAuth } from "../context/AuthContext";
-import { colors, typography, spacing, radius } from "../theme";
+import { useSavedShops } from "../context/SavedShopsContext";
+import { colors, typography, spacing, radius, fonts } from "../theme";
 
 const MAX_FILES = 10;
+const LIVE_ORDER_POLL_MS = 20 * 1000;
+const COACH_MARKS_KEY = "paprout.coachmarks.v5";
 
 // Step 1 of the order flow (Upload -> Preferences -> Select shop ->
 // Review & pay). Pick up to 10 PDFs, upload them, and only then move on -
@@ -42,6 +49,7 @@ export default function UploadDocumentsScreen({
 }) {
   const insets = useSafeAreaInsets();
   const { appearance } = useAuth();
+  const { savedShops } = useSavedShops();
   const preselectedShop = route.params?.preselectedShop || null;
 
   const [pendingFiles, setPendingFiles] = useState([]);
@@ -55,6 +63,31 @@ export default function UploadDocumentsScreen({
   const [error, setError] = useState("");
   const [settingsById, setSettingsById] = useState({});
   const [activeDocId, setActiveDocId] = useState(null);
+  const [liveOrders, setLiveOrders] = useState([]);
+  const [liveLoaded, setLiveLoaded] = useState(false);
+  const activeOrdersRef = useRef(null);
+  const savedShopsRef = useRef(null);
+  const defaultsRef = useRef(null);
+  const addDocumentsRef = useRef(null);
+
+  // Only the Print tab shows live orders; this screen also runs in PrintFlow.
+  const isHome = route.name === "Home";
+  const loadLiveOrders = useCallback(async () => {
+    try {
+      const { data } = await api.get("/orders/customer");
+      setLiveOrders(pickLiveOrders(data));
+    } catch {
+      // Non-fatal: starting a print must still work with orders unavailable.
+    } finally {
+      setLiveLoaded(true);
+    }
+  }, []);
+  useFocusEffect(
+    useCallback(() => {
+      if (isHome) loadLiveOrders();
+    }, [isHome, loadLiveOrders]),
+  );
+  useFocusedPoll(isHome ? loadLiveOrders : null, LIVE_ORDER_POLL_MS);
 
   useEffect(() => {
     const docs = route.params?.initialUploadedDocs;
@@ -83,6 +116,58 @@ export default function UploadDocumentsScreen({
 
   const totalSlotsUsed =
     pendingFiles.length + uploadedDocs.length + failedUploads.length;
+  // First-run tour. Waits for the live order ticket, which moves the layout.
+  const workspaceEmpty = totalSlotsUsed === 0;
+  useEffect(() => {
+    if (!isHome || !liveLoaded || !workspaceEmpty) return undefined;
+    const timer = setTimeout(async () => {
+      try {
+        if (await AsyncStorage.getItem(COACH_MARKS_KEY)) return;
+      } catch {
+        return; // Storage trouble must never trap someone in a tour.
+      }
+      const measured = await Promise.all(
+        [
+          {
+            ref: activeOrdersRef,
+            title: "Active orders",
+            body: "Prints you're waiting on.",
+          },
+          {
+            ref: savedShopsRef,
+            title: "Saved shops",
+            body: "Shops you've bookmarked.",
+          },
+          {
+            ref: defaultsRef,
+            title: "Print defaults",
+            body: "Tap to change them.",
+          },
+          {
+            ref: addDocumentsRef,
+            title: "Start here",
+            body: "Add a file to print.",
+          },
+        ].map(
+          ({ ref, title, body }) =>
+            new Promise((resolve) => {
+              if (!ref.current) return resolve(null);
+              ref.current.measureInWindow((x, y, width, height) =>
+                resolve(
+                  width > 0 ? { x, y, width, height, title, body } : null,
+                ),
+              );
+            }),
+        ),
+      );
+      const steps = measured.filter(Boolean);
+      if (!steps.length || !navigation.isFocused()) return;
+      AsyncStorage.setItem(COACH_MARKS_KEY, "1").catch(() => {});
+      navigation.navigate("CoachMarks", { steps });
+    }, 400);
+    return () => clearTimeout(timer);
+  }, [isHome, liveLoaded, workspaceEmpty, navigation]);
+
   const canProceed =
     uploadedDocs.length > 0 &&
     pendingFiles.length === 0 &&
@@ -275,7 +360,11 @@ export default function UploadDocumentsScreen({
     (sum, doc) => sum + (doc.page_count || 0),
     0,
   );
-  const hasFailure = failedUploads.length > 0 || Boolean(error);
+  const defaultsSummary = describeDocumentSettings({
+    ...defaultDocumentSettings(),
+    ...appearance?.printDefaults,
+    services: [],
+  });
   return (
     <View style={styles.screen}>
       <ScrollView
@@ -284,33 +373,71 @@ export default function UploadDocumentsScreen({
       >
         {totalSlotsUsed === 0 ? (
           <View style={styles.emptyWorkspace}>
-            <PaperPreview />
-            <Text accessibilityRole="header" style={styles.title}>
-              What are we{"\n"}printing today?
-            </Text>
-            <Text style={styles.subtitle}>
-              Add documents or images and set them up. Compare nearby shops
-              after.
-            </Text>
-            <Button
-              title="Add documents"
-              icon="document-attach-outline"
-              iconPosition="left"
-              onPress={addFiles}
-            />
+            {isHome ? (
+              <View style={styles.stats}>
+                <Stat
+                  targetRef={activeOrdersRef}
+                  icon="receipt"
+                  tint={colors.primary}
+ value={liveOrders.length}
+                  label="active orders"
+                  onPress={() => navigation.navigate("Orders")}
+                />
+                <Stat
+                  targetRef={savedShopsRef}
+                  icon="bookmark"
+                  tint={colors.magenta}
+ value={savedShops.length}
+                  label="saved shops"
+                  onPress={() => navigation.navigate("SavedShops")}
+                />
+                <Pressable
+                  accessibilityRole="button"
+                  accessibilityLabel={`Your defaults: ${defaultsSummary}`}
+                  accessibilityHint="Change your print defaults"
+                  onPress={() => navigation.navigate("PrintDefaults")}
+                  ref={defaultsRef}
+                  style={styles.defaultsBadge}
+                >
+                  <Text style={styles.defaultsText} numberOfLines={1}>
+                    {defaultsSummary}
+                  </Text>
+                </Pressable>
+              </View>
+            ) : null}
+            {liveOrders.length > 0 ? (
+              <LiveOrderTicket
+                order={liveOrders[0]}
+                onOpen={() => navigateToOrder(navigation, liveOrders[0])}
+              />
+            ) : null}
+            <View style={styles.peek} pointerEvents="none">
+              <Image
+                source={require("../../assets/art/paper-pal-peeking.png")}
+                style={styles.peekArt}
+                resizeMode="contain"
+                accessible={false}
+              />
+            </View>
+            <View style={styles.hero}>
+              <Text accessibilityRole="header" style={styles.heroTitle}>
+                What are we{"\n"}printing today?
+              </Text>
+              <Text style={styles.heroBody}>
+                Add your files, then compare nearby shops.
+              </Text>
+              <View ref={addDocumentsRef} collapsable={false}>
+                <Button
+                  title="Add documents"
+                  icon="document-attach-outline"
+                  iconPosition="left"
+                  onPress={addFiles}
+                />
+              </View>
+            </View>
             <Text style={styles.fileLimit}>
               PDF, JPG, JPEG, PNG · up to 10 MB each · 10 files per order
             </Text>
-            <View style={styles.defaults}>
-              <Text style={styles.defaultTitle}>Your defaults</Text>
-              <Text style={styles.note}>
-                {describeDocumentSettings({
-                  ...defaultDocumentSettings(),
-                  ...appearance?.printDefaults,
-                  services: [],
-                })}{" "}
-              </Text>
-            </View>
           </View>
         ) : (
           <View style={styles.documentsHeading}>
@@ -324,16 +451,6 @@ export default function UploadDocumentsScreen({
                 pages
               </Text>
             </View>
-            <Image
-              source={
-                hasFailure
-                  ? require("../../assets/art/paper-pal-pending.png")
-                  : require("../../assets/art/paper-pal-cmyk.png")
-              }
-              style={{ width: 70, height: 86 }}
-              resizeMode="contain"
-              accessible={false}
-            />
           </View>
         )}
         {uploadedDocs.map((doc) => (
@@ -464,10 +581,9 @@ export default function UploadDocumentsScreen({
             </Text>
           </View>
         ) : null}
-        {!DEMO_MODE ? (
+        {!DEMO_MODE && totalSlotsUsed > 0 ? (
           <Text style={styles.privacy}>
-            Your files are used for your print order and deleted when the order
-            ends.
+            Files are deleted after your order.
           </Text>
         ) : null}
       </ScrollView>
@@ -492,13 +608,25 @@ export default function UploadDocumentsScreen({
             }
           />
           {pendingFiles.length > 0 || failedUploads.length > 0 ? (
-            <Text style={styles.note}>
-              Upload, retry or remove remaining files to continue.
-            </Text>
+            <Text style={styles.note}>Finish uploading to continue.</Text>
           ) : null}
         </View>
       ) : null}
     </View>
+  );
+}
+function Stat({ targetRef, icon, tint, value, label, onPress }) {
+  return (
+    <Pressable
+      ref={targetRef}
+      accessibilityRole="button"
+      accessibilityLabel={`${value} ${label}`}
+      onPress={onPress}
+      style={styles.stat}
+    >
+      <Ionicons name={icon} size={20} color={tint} />
+      <Text style={[styles.statValue, { color: tint }]}>{value}</Text>
+    </Pressable>
   );
 }
 function DocumentRow({
@@ -563,16 +691,56 @@ const styles = StyleSheet.create({
     color: colors.textMuted,
     textAlign: "center",
   },
-  defaults: {
-    padding: spacing.lg,
-    borderWidth: 1,
-    borderStyle: "dashed",
-    borderColor: colors.border,
-    borderRadius: 24,
-    gap: spacing.sm,
-    marginTop: spacing.sm,
+  stats: { flexDirection: "row", alignItems: "center", gap: spacing.lg },
+  stat: {
+    minHeight: 44,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.xs,
   },
-  defaultTitle: { ...typography.labelSmall, color: colors.ink },
+  statValue: {
+    ...typography.label,
+    fontFamily: fonts.headingBold,
+    fontVariant: ["tabular-nums"],
+  },
+  defaultsBadge: {
+    flexShrink: 1,
+    marginLeft: "auto",
+    minHeight: 44,
+    justifyContent: "center",
+  },
+  defaultsText: {
+    ...typography.caption,
+    fontFamily: fonts.headingSemiBold,
+    color: colors.textSecondary,
+    backgroundColor: colors.backgroundSoft,
+    borderRadius: radius.sm,
+    paddingHorizontal: spacing.sm,
+    paddingVertical: spacing.xs,
+    overflow: "hidden",
+  },
+  hero: {
+    backgroundColor: colors.surface,
+    borderRadius: 24,
+    borderWidth: 1,
+    borderColor: colors.border,
+    padding: spacing.xl,
+    gap: spacing.sm,
+    overflow: "hidden",
+  },
+  // Sits on the panel's top edge so the mascot's hands grip it.
+  peek: {
+    alignItems: "center",
+    marginBottom: -spacing.lg - 9,
+    zIndex: 1,
+  },
+  peekArt: { width: 124, height: 123 },
+  heroTitle: { ...typography.h2, color: colors.ink },
+  heroBody: {
+    ...typography.bodySmall,
+    color: colors.textSecondary,
+    marginBottom: spacing.md,
+  },
   documentsHeading: {
     flexDirection: "row",
     alignItems: "baseline",

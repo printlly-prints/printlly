@@ -202,6 +202,7 @@ const createOrder = async (req, res) => {
       services_charge: priced.services_charge,
       platform_fee: priced.platform_fee,
       total_amount: priced.total_amount,
+      timeline: [{ event: "placed", actor: "customer" }],
       // payment_status defaults to "created" and otp defaults to null on
       // the schema - neither is set here. See POST /payments/razorpay/verify.
     });
@@ -367,6 +368,7 @@ const acceptOrder = async (req, res) => {
     }
 
     order.status = "accepted";
+    order.logEvent("accepted", "vendor");
     await order.save();
 
     await emitOrderEvent(order, ORDER_EVENTS.ORDER_ACCEPTED);
@@ -390,6 +392,7 @@ const readyOrder = async (req, res) => {
     }
 
     order.status = "ready_for_pickup";
+    order.logEvent("ready", "vendor");
     await order.save();
 
     await emitOrderEvent(order, ORDER_EVENTS.ORDER_READY_FOR_PICKUP);
@@ -431,6 +434,7 @@ const completeOrder = async (req, res) => {
     }
 
     order.status = "completed";
+    order.logEvent("completed", "vendor");
     await order.save();
 
     await emitOrderEvent(order, ORDER_EVENTS.ORDER_COMPLETED);

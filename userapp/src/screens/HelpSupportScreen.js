@@ -27,35 +27,35 @@ import { colors, typography, spacing, radius } from "../theme";
 const FAQS = [
   {
     q: "What happens to my documents after printing?",
-    a: "They are deleted automatically. The moment the shop marks your order completed - by entering your pickup OTP - the file is removed from our servers and from our storage provider. The same thing happens if an order expires without being collected. Your documents are only ever used to fulfil the order you uploaded them for; they are never shared or sold.",
+    a: "They're deleted when your order is completed or expires. We never share or sell them.",
   },
   {
     q: "How does pickup work?",
-    a: "Once your payment is confirmed you get a 6-digit OTP, shown on the order screen. When your prints are ready, go to the shop and read out that OTP - the shop enters it to confirm you collected the right order. Only then is the order marked completed. Don't share the OTP with anyone before you're at the counter: it's the only thing proving the prints are yours.",
+    a: "After payment you get a 6-digit pickup code. When your prints are ready, read it out at the shop. Keep it private until then.",
   },
   {
     q: "Why does the same document cost different amounts at different shops?",
-    a: "Because each shop sets its own prices. A shop chooses its own per-page rate for black & white and for colour, what it charges for A3, its surcharge for double-sided, and which add-on services it offers and at what price. Paprout adds a platform fee on top, and that part is the same everywhere. The shop-selection screen prices your exact documents at every nearby shop, so the totals you compare there are the real ones.",
+    a: "Each shop sets its own prices, and Paprout adds a platform fee. The totals you compare are for your exact order.",
   },
   {
     q: "I asked for a service and a shop didn't show up",
-    a: "Add-on services like binding or lamination are set up by each shop individually, so not every shop offers every service - and a shop that can't do what you asked for is left out of the comparison rather than shown at a price it can't honour. Shops also name things differently: one shop's \"Lamination\" may be another's \"Glossy Lamination\". We match loosely when comparing, and the shop's own name and price are what you see on the review screen and on the final order.",
+    a: "Not every shop offers every service, so shops that can't do what you asked for are left out.",
   },
   {
     q: "My order says expired - what happened?",
-    a: "Orders expire in two situations. If a payment is never completed, the order is released after about an hour. And if an order stalls - still waiting on the shop to accept it, or accepted but never moved on - it is closed out after 48 hours without progress. Once your prints are marked ready for pickup that clock stops, so a ready order won't expire out from under you. In either case the uploaded documents are deleted along with the order, so you'll need to upload again to place a new one.",
+    a: "Unpaid orders expire after about an hour. Orders with no progress expire after 48 hours. Orders ready for pickup don't expire. You'll need to upload your files again.",
   },
   {
     q: "My payment failed but money left my account",
-    a: "If a payment doesn't verify, Razorpay releases the amount back to the original payment method automatically - bank timelines vary, but it is usually a few working days. The order itself stays payable in the meantime, so you can simply try again from the order screen. If you've waited and nothing has come back, start a chat below with the order open and we'll trace it.",
+    a: "It's refunded automatically, usually within a few working days. You can retry from the order screen. If it doesn't come back, chat with us below.",
   },
   {
     q: "Can I cancel or change an order after paying?",
-    a: "Not from the app - there's no self-serve cancellation yet, mainly because your file may already be printing. Message us here as early as you can and we'll sort it out with the shop directly.",
+    a: "Not in the app yet. Message us as soon as you can and we'll check with the shop.",
   },
   {
     q: "A shop is showing as closed",
-    a: "Shops set their own opening hours, and can also close manually when they're mid-rush or out of paper. A closed shop still appears in the list - it just can't take a new order until it reopens. If it looks wrong, pick another shop for now and tell us which one, and we'll check with the owner.",
+    a: "Shops set their own hours and can close at any time. You can order once it reopens, or pick another shop.",
   },
 ];
 
@@ -151,8 +151,7 @@ export default function HelpSupportScreen({ navigation }) {
       ) : null}
 
       <Text style={styles.footnote}>
-        Chat is the fastest route for anything about a specific order - it comes
-        through with your order details already attached.
+        Chat is fastest for order questions.
       </Text>
     </ScrollView>
   );

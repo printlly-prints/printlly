@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
+import { Link } from "react-router-dom";
 import api from "../api/axios";
 import AdminLayout from "../components/AdminLayout";
 import {
@@ -13,6 +14,7 @@ import {
   Tr,
   formatDate,
   formatRupees,
+  orderRef,
 } from "../components/ui";
 
 const PAGE_SIZE = 25;
@@ -35,11 +37,15 @@ export default function Orders() {
   const [from, setFrom] = useState("");
   const [to, setTo] = useState("");
   const [search, setSearch] = useState("");
+  const [ref, setRef] = useState("");
+  // Only a complete reference is searched; a half-typed one has no answer.
+  const refQuery = /^(PL)?[0-9a-f]{6,24}$/i.test(ref.trim()) ? ref.trim() : "";
 
   const load = useCallback(async () => {
     setLoading(true);
     try {
       const params = new URLSearchParams();
+      if (refQuery) params.set("ref", refQuery);
       if (status) params.set("status", status);
       if (paymentStatus) params.set("payment_status", paymentStatus);
       if (from) params.set("from", from);
@@ -57,7 +63,7 @@ export default function Orders() {
     } finally {
       setLoading(false);
     }
-  }, [status, paymentStatus, from, to, page]);
+  }, [status, paymentStatus, from, to, page, refQuery]);
 
   useEffect(() => {
     load();
@@ -67,7 +73,7 @@ export default function Orders() {
   // page 3 of a different result set would show an arbitrary window.
   useEffect(() => {
     setPage(0);
-  }, [status, paymentStatus, from, to]);
+  }, [status, paymentStatus, from, to, refQuery]);
 
   // Shop/customer search is applied client-side over the fetched page:
   // the backend filters orders by shop_id/customer_id (ids, not names),
@@ -136,6 +142,7 @@ export default function Orders() {
             className="px-3 py-1.5 border border-border rounded-control text-sm focus:outline-none focus:ring-2 focus:border-primary focus:ring-primary/20"
           />
         </label>
+        <TextFilter label="Order reference" value={ref} onChange={setRef} placeholder="PL1A2B3C" />
         <TextFilter
           label="Find on this page"
           value={search}
@@ -151,11 +158,16 @@ export default function Orders() {
       ) : (
         <>
           <TableShell
-            headers={["Placed", "Shop", "Customer", "Order", "Status", "Payment", "Total"]}
+            headers={["Ref", "Placed", "Shop", "Customer", "Order", "Status", "Payment", "Total"]}
             empty={visible.length === 0 ? "No orders match these filters." : null}
           >
             {visible.map((order) => (
               <Tr key={order._id}>
+                <Td className="whitespace-nowrap">
+                  <Link to={`/orders/${order._id}`} className="font-medium text-primary-bright hover:text-primary-deep">
+                    {orderRef(order._id)}
+                  </Link>
+                </Td>
                 <Td className="whitespace-nowrap text-text-secondary">{formatDate(order.createdAt)}</Td>
                 <Td className="text-text-primary">{order.shop_id?.shop_name || "—"}</Td>
                 <Td>

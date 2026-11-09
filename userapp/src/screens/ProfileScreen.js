@@ -12,13 +12,16 @@ import { toast } from "react-native-sonner";
 import { useAuth } from "../context/AuthContext";
 import { useSupport } from "../context/SupportContext";
 import ProfileAvatar from "../components/ProfileAvatar";
-import { defaultDocumentSettings } from "../utils/documentSettings";
+import {
+  defaultDocumentSettings,
+  describeDocumentSettings,
+} from "../utils/documentSettings";
 import {
   profileAccent,
   suggestedAvatar,
   PROFILE_WASH,
 } from "../utils/profilePreferences";
-import { colors, typography, spacing } from "../theme";
+import { colors, typography, spacing, radius } from "../theme";
 
 export default function ProfileScreen({ navigation }) {
   const { user, logout, appearance } = useAuth();
@@ -54,12 +57,14 @@ export default function ProfileScreen({ navigation }) {
       showsVerticalScrollIndicator={false}
     >
       <View style={[styles.identity, { backgroundColor: wash }]}>
-        <ProfileAvatar
-          avatar={appearance?.avatar || suggestedAvatar(user?.gender)}
-          name={name}
-          colour={accent}
-          size={64}
-        />
+        <View style={styles.avatarRing}>
+          <ProfileAvatar
+            avatar={appearance?.avatar || suggestedAvatar(user?.gender)}
+            name={name}
+            colour={accent}
+            size={60}
+          />
+        </View>
         <View style={styles.identityCopy}>
           <Text style={styles.name}>{name}</Text>
           <Text style={styles.email}>{user?.email}</Text>
@@ -70,45 +75,34 @@ export default function ProfileScreen({ navigation }) {
           onPress={() => navigation.navigate("EditProfile")}
           style={styles.edit}
         >
-          <Ionicons name="pencil-outline" size={21} color={colors.ink} />
+          <Text style={styles.editText}>Edit</Text>
         </Pressable>
       </View>
-      <Text style={styles.section}>Default print settings</Text>
-      <View style={styles.card}>
-        <View style={styles.defaults}>
-          <Setting
-            label="Colour"
-            value={print.color_mode === "bw" ? "Black & white" : "Colour"}
+      <View style={styles.group}>
+        <View style={styles.groupInner}>
+          <MenuItem
+            icon="print-outline"
+            tint="backgroundSoft"
+            label="Print defaults"
+            value={describeDocumentSettings({ ...print, services: [] })}
+            hint="Edit default print settings"
+            onPress={() => navigation.navigate("PrintDefaults")}
           />
-          <Setting label="Paper" value={print.paper_size} />
-          <Setting
-            label="Sides"
-            value={print.sides === "double" ? "Double-sided" : "Single-sided"}
+          <MenuItem
+            icon="shield-checkmark-outline"
+            tint="backgroundSoft"
+            label="Privacy & app settings"
+            onPress={() => navigation.navigate("Settings")}
           />
-          <Setting label="Copies" value={String(print.copies)} />
+          <MenuItem
+            icon="help-circle-outline"
+            tint="backgroundSoft"
+            label="Help and support"
+            badge={unreadCount}
+            onPress={() => navigation.navigate("HelpSupport")}
+            last
+          />
         </View>
-        <Pressable
-          accessibilityRole="button"
-          onPress={() => navigation.navigate("PrintDefaults")}
-          style={styles.editDefaults}
-        >
-          <Text style={styles.link}>Edit defaults</Text>
-        </Pressable>
-      </View>
-      <Text style={styles.section}>App</Text>
-      <View style={[styles.card, { paddingVertical: 0 }]}>
-        <MenuItem
-          icon="shield-checkmark-outline"
-          label="Privacy & app settings"
-          onPress={() => navigation.navigate("Settings")}
-        />
-        <MenuItem
-          icon="help-circle-outline"
-          label="Help and support"
-          badge={unreadCount}
-          onPress={() => navigation.navigate("HelpSupport")}
-          last
-        />
       </View>
       <Pressable
         accessibilityRole="button"
@@ -116,30 +110,33 @@ export default function ProfileScreen({ navigation }) {
         onPress={signOut}
         style={styles.logout}
       >
-        <Ionicons name="log-out-outline" size={20} color={colors.danger} />
         <Text style={styles.logoutText}>Log out</Text>
       </Pressable>
     </ScrollView>
   );
 }
-function Setting({ label, value }) {
-  return (
-    <View style={styles.setting}>
-      <Text style={styles.settingLabel}>{label}</Text>
-      <Text style={styles.settingValue}>{value}</Text>
-    </View>
-  );
-}
-function MenuItem({ icon, label, badge, onPress, last }) {
+function MenuItem({ icon, tint, label, value, badge, hint, onPress, last }) {
   return (
     <Pressable
       accessibilityRole="button"
-      accessibilityLabel={label + (badge > 0 ? `, ${badge} unread` : "")}
+      accessibilityLabel={
+        label +
+        (value ? `, ${value}` : "") +
+        (badge > 0 ? `, ${badge} unread` : "")
+      }
+      accessibilityHint={hint}
       onPress={onPress}
       style={[styles.menuItem, !last && styles.rowBorder]}
     >
-      <Ionicons name={icon} size={21} color={colors.textSecondary} />
+      <View style={[styles.menuIcon, { backgroundColor: colors[tint] }]}>
+        <Ionicons name={icon} size={19} color={colors.ink} />
+      </View>
       <Text style={styles.menuLabel}>{label}</Text>
+      {value ? (
+        <Text style={styles.menuValue} numberOfLines={1}>
+          {value}
+        </Text>
+      ) : null}
       {badge > 0 ? <Text style={styles.unread}>{badge}</Text> : null}
       <Ionicons name="chevron-forward" size={17} color={colors.textSecondary} />
     </Pressable>
@@ -159,38 +156,48 @@ const styles = StyleSheet.create({
   identityCopy: { flex: 1, gap: spacing.xs },
   name: { ...typography.h3, fontSize: 18, color: colors.ink },
   email: { ...typography.caption, fontSize: 11, color: colors.textSecondary },
+  // A line and a paper gap keep the avatar from melting into the tinted card.
+  avatarRing: {
+    padding: 3,
+    borderRadius: 36,
+    borderWidth: 2,
+ borderColor: colors.primary,
+ backgroundColor: colors.surface,
+  },
   edit: {
-    width: 44,
+    minWidth: 64,
     height: 44,
+    paddingHorizontal: spacing.lg,
     borderRadius: 22,
     backgroundColor: colors.surface,
     alignItems: "center",
     justifyContent: "center",
   },
-  section: {
-    ...typography.labelSmall,
-    color: colors.textSecondary,
-    marginTop: spacing.xl,
-    marginBottom: spacing.sm,
+  editText: { ...typography.label, color: colors.primaryDeep },
+  group: {
+    marginTop: spacing.lg,
+    padding: spacing.sm,
+    borderRadius: 28,
+    backgroundColor: colors.backgroundSoft,
   },
-  card: {
-    padding: spacing.lg,
-    borderWidth: 1,
-    borderColor: colors.border,
+  groupInner: {
+    paddingHorizontal: spacing.md,
+    borderRadius: 22,
     backgroundColor: colors.surface,
-    borderRadius: 24,
   },
-  defaults: { flexDirection: "row", flexWrap: "wrap", rowGap: spacing.lg },
-  setting: { width: "50%", gap: spacing.xs },
-  settingLabel: { ...typography.caption, color: colors.textSecondary },
-  settingValue: { ...typography.labelSmall, color: colors.ink },
-  editDefaults: {
-    minHeight: 44,
+  menuIcon: {
+    width: 36,
+    height: 36,
+    borderRadius: 12,
+    alignItems: "center",
     justifyContent: "center",
-    alignSelf: "flex-start",
-    marginTop: spacing.md,
   },
-  link: { ...typography.labelSmall, color: colors.primaryDeep },
+  menuValue: {
+    ...typography.caption,
+    color: colors.textSecondary,
+    flexShrink: 1,
+    maxWidth: "45%",
+  },
   menuItem: {
     flexDirection: "row",
     alignItems: "center",
@@ -202,15 +209,12 @@ const styles = StyleSheet.create({
   rowBorder: { borderBottomWidth: 1, borderColor: colors.border },
   unread: { ...typography.labelSmall, color: colors.primary },
   logout: {
-    minHeight: 50,
-    borderWidth: 1,
-    borderColor: colors.border,
-    borderRadius: 25,
-    flexDirection: "row",
+    minHeight: 52,
+    borderRadius: radius.button,
+    backgroundColor: colors.backgroundSoft,
     alignItems: "center",
     justifyContent: "center",
-    gap: spacing.sm,
-    marginTop: spacing.xl,
+    marginTop: spacing.lg,
   },
   logoutText: { ...typography.label, color: colors.danger },
 });

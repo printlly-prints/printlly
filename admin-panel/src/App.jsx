@@ -14,6 +14,8 @@ const AccountDirectory = lazy(() => import("./pages/AccountDirectory"));
 const Orders = lazy(() => import("./pages/Orders"));
 const Settlements = lazy(() => import("./pages/Settlements"));
 const SettlementDetail = lazy(() => import("./pages/SettlementDetail"));
+const ShopActivity = lazy(() => import("./pages/ShopActivity"));
+const OrderTrace = lazy(() => import("./pages/OrderTrace"));
 const SupportInbox = lazy(() => import("./pages/SupportInbox"));
 const Settings = lazy(() => import("./pages/Settings"));
 
@@ -62,6 +64,9 @@ export default function App() {
             </ProtectedRoute>
           }
         />
+
+        <Route path="/orders/:id" element={<ProtectedRoute><OrderTrace /></ProtectedRoute>} />
+        <Route path="/shops/:shopId/activity" element={<ProtectedRoute><ShopActivity /></ProtectedRoute>} />
 
         <Route path="/vendors" element={<ProtectedRoute><AccountDirectory key="vendors" role="shop_owner" /></ProtectedRoute>} />
         <Route path="/users" element={<ProtectedRoute><AccountDirectory key="users" role="customer" /></ProtectedRoute>} />

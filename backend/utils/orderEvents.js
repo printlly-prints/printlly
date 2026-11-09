@@ -139,7 +139,7 @@ async function resolveShopName(order) {
 const COPY = {
   payment_success: (shopName) => ({
     title: "Payment successful",
-    body: `Your payment for the order at ${shopName} was received. Your pickup OTP is ready - check your order for details.`,
+    body: `Your payment for the order at ${shopName} was received. Your pickup code is ready - check your order for details.`,
   }),
   payment_failed: (shopName) => ({
     title: "Payment failed",

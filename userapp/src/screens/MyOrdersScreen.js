@@ -15,7 +15,11 @@ import Ionicons from "@expo/vector-icons/Ionicons";
 import { orderRef } from "../utils/orderRef";
 import StatusBadge from "../components/StatusBadge";
 import api from "../api/client";
-import { isAwaitingPayment, navigateToOrder } from "../utils/orderNavigation";
+import {
+  isAwaitingPayment,
+  navigateToOrder,
+  pickLiveOrders,
+} from "../utils/orderNavigation";
 import useFocusedPoll from "../hooks/useFocusedPoll";
 import { colors, typography, spacing, radius } from "../theme";
 
@@ -62,11 +66,10 @@ export default function MyOrdersScreen({ navigation }) {
   // this is invisible until something genuinely changes.
   useFocusedPoll(loadOrders, ORDER_POLL_MS);
 
-  const visibleOrders = orders.filter((o) =>
+  const visibleOrders =
     tab === "active"
-      ? ACTIVE_STATUSES.includes(o.status)
-      : !ACTIVE_STATUSES.includes(o.status),
-  );
+      ? pickLiveOrders(orders)
+      : orders.filter((o) => !ACTIVE_STATUSES.includes(o.status));
 
   if (loading) {
     return (
@@ -123,8 +126,8 @@ export default function MyOrdersScreen({ navigation }) {
               }
               body={
                 tab === "active"
-                  ? "Orders appear here after you place a print. Use the Print tab when you're ready."
-                  : "Collected, cancelled and expired orders appear here."
+                  ? "Your prints will show up here."
+                  : "Finished orders show up here."
               }
             />
           ) : null
@@ -188,8 +191,7 @@ export default function MyOrdersScreen({ navigation }) {
                 {cardBody}
                 {item.payment_status === "failed" ? (
                   <Text style={styles.paymentNote}>
-                    Your last payment attempt didn't go through - no charge was
-                    made.
+                    Payment didn't go through. You weren't charged.
                   </Text>
                 ) : null}
                 <Pressable
@@ -233,7 +235,7 @@ export default function MyOrdersScreen({ navigation }) {
                     </Text>
                   </View>
                   <View style={styles.viewCode}>
-                    <Text style={styles.viewCodeText}>Pickup ticket</Text>
+                    <Text style={styles.viewCodeText}>Pickup code</Text>
                     <Ionicons
                       name="arrow-forward"
                       size={16}
@@ -343,12 +345,13 @@ const styles = StyleSheet.create({
     marginTop: spacing.sm,
   },
   reference: { ...typography.caption, fontSize: 11, color: colors.textMuted },
+  // Yellow means "your code is ready" everywhere it appears.
   readyCard: {
-    backgroundColor: colors.primaryWash,
-    borderColor: colors.primaryWash,
+    backgroundColor: colors.yellow,
+    borderColor: colors.yellow,
   },
-  readyText: { color: colors.primaryDeep },
-  readyMuted: { color: colors.textSecondary },
+  readyText: { color: colors.ink },
+  readyMuted: { color: colors.ink },
   paymentCard: {
     backgroundColor: colors.pinkWash,
     borderColor: colors.pinkWash,
@@ -372,7 +375,7 @@ const styles = StyleSheet.create({
   pickupLabel: {
     ...typography.caption,
     fontSize: 11,
-    color: colors.textSecondary,
+    color: colors.ink,
   },
   pickupCode: {
     ...typography.h2,
@@ -385,9 +388,9 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     gap: spacing.xs,
     alignItems: "center",
-    backgroundColor: colors.primary,
-    padding: 10,
-    borderRadius: 18,
+ backgroundColor: colors.primaryDeep,
+ padding: 10,
+ borderRadius: 14,
   },
   viewCodeText: { ...typography.labelSmall, color: colors.onPrimary },
   detailAction: {
@@ -420,12 +423,12 @@ const styles = StyleSheet.create({
     marginTop: spacing.md,
     minHeight: 44,
     borderRadius: radius.button,
-    backgroundColor: colors.primary,
+ backgroundColor: colors.primary,
     alignItems: "center",
     justifyContent: "center",
     paddingHorizontal: spacing.lg,
   },
-  payButtonPressed: { backgroundColor: colors.primaryDeep },
+  payButtonPressed: { opacity: 0.8 },
   payButtonLabel: { ...typography.button, color: colors.surface },
   empty: {
     textAlign: "center",

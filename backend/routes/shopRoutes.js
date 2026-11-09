@@ -17,6 +17,7 @@ const {
   updateMyStatus,
   updateMyPayout,
   getMySettlements,
+  getMyActivity,
   updateMyLocation,
   deactivateMyShop,
   reactivateMyShop,
@@ -80,6 +81,7 @@ router.post(
   photoUpload.fields([
     { name: "owner_photo", maxCount: 1 },
     { name: "shop_photo", maxCount: 1 },
+    { name: "shop_logo", maxCount: 1 },
   ]),
   uploadShopPhotos
 );
@@ -119,6 +121,9 @@ router.patch("/me/payout", verifyToken, requireRole("shop_owner"), updateMyPayou
 // Scoped to their own shop the same way - no other vendor's earnings are
 // reachable from here.
 router.get("/me/settlements", verifyToken, requireRole("shop_owner"), getMySettlements);
+
+// This vendor's own request and dispatch log, scoped the same way.
+router.get("/me/activity", verifyToken, requireRole("shop_owner"), getMyActivity);
 
 // Shop owner sets their map pin (latitude/longitude) and searchable
 // locality label - used by GET /shops ?search= and ?lat/&lng.

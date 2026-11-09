@@ -17,6 +17,17 @@ export function isAwaitingPayment(order) {
   );
 }
 
+const LIVE_STATUSES = ["pending", "accepted", "ready_for_pickup"];
+
+// Most urgent first: ready to collect, then unpaid, then in progress.
+export function pickLiveOrders(orders) {
+  const rank = (order) =>
+    order.status === "ready_for_pickup" ? 0 : isAwaitingPayment(order) ? 1 : 2;
+  return orders
+    .filter((order) => LIVE_STATUSES.includes(order.status))
+    .sort((a, b) => rank(a) - rank(b));
+}
+
 export function navigateToOrder(navigation, order) {
   if (CLOSED_STATUSES.includes(order.status)) {
     navigation.navigate("OrderTracking", { order });
@@ -26,9 +37,9 @@ export function navigateToOrder(navigation, order) {
   if (isAwaitingPayment(order)) {
     // Resumes/retries payment for this exact order rather than creating a
     // new one - PaymentScreen only ever pays for an order_id it's given,
-    // it never creates one itself (see ReviewCheckoutScreen, which is the
+    // it never creates one itself (see CheckoutScreen, which is the
     // only place that does). The breakdown mirrors what
-    // ReviewCheckoutScreen would have shown, built from the order's own
+    // CheckoutScreen would have shown, built from the order's own
     // stored itemized fields since there's nothing left to recompute here.
     navigation.navigate("PrintFlow", {
       screen: "Payment",

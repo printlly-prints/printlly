@@ -193,7 +193,7 @@ export default function AuthScreen() {
           </View>
           {signingUp && (
             <Text style={styles.passwordHint}>
-              At least 10 characters. Try a memorable passphrase.
+              At least 10 characters.
             </Text>
           )}
           {signingUp && (
@@ -205,8 +205,7 @@ export default function AuthScreen() {
                 disabled={loading}
               />
               <Text style={styles.passwordHint}>
-                Suggests your profile accent and avatars. You can change both
-                later.
+                You can change this later.
               </Text>
             </View>
           )}
@@ -266,9 +265,6 @@ export default function AuthScreen() {
             </Pressable>
           </View>
         </View>
-        <Text style={styles.footer}>
-          Your files. Your neighbourhood. One less errand.
-        </Text>
       </ScrollView>
     </KeyboardAvoidingView>
   );
@@ -406,10 +402,4 @@ const styles = StyleSheet.create({
   switchText: { ...typography.bodySmall, color: colors.textSecondary },
   switchButton: { minHeight: 48, justifyContent: "center" },
   switchLabel: { ...typography.labelSmall, color: colors.primary },
-  footer: {
-    ...typography.caption,
-    color: colors.textMuted,
-    textAlign: "center",
-    marginTop: 24,
-  },
 });

@@ -21,6 +21,7 @@ import ShopCard from "../components/ShopCard";
 import api from "../api/client";
 import useFocusedPoll from "../hooks/useFocusedPoll";
 import { orderRef } from "../utils/orderRef";
+import { successHaptic } from "../utils/haptics";
 import { colors, typography, spacing, radius } from "../theme";
 
 const ORDER_POLL_MS = 20 * 1000;
@@ -66,6 +67,7 @@ export default function OrderTrackingScreen({ route, navigation }) {
   const isCompleted = status === "completed";
   const meta = STATUS_META[status] || STATUS_META.pending;
   const otpStillNeeded = !isClosed && !isCompleted && order.otp;
+  const otpReady = otpStillNeeded && status === "ready_for_pickup";
 
   const showQueuePosition =
     (status === "pending" || status === "accepted") &&
@@ -73,7 +75,7 @@ export default function OrderTrackingScreen({ route, navigation }) {
 
   const shareDetails = () => {
     Share.share({
-      message: `My Paprout order\nOrder: ${orderRef(order)}\nPickup OTP: ${order.otp}`,
+      message: `My Paprout order\nOrder: ${orderRef(order)}\nPickup code: ${order.otp}`,
     });
   };
 
@@ -85,6 +87,7 @@ export default function OrderTrackingScreen({ route, navigation }) {
       if (updated) {
         const wasReady = order.status === "ready_for_pickup";
         if (!wasReady && updated.status === "ready_for_pickup") {
+          successHaptic();
           navigation.replace("PickupOtp", { order: updated });
           return;
         }
@@ -171,16 +174,12 @@ export default function OrderTrackingScreen({ route, navigation }) {
           </View>
         ) : null}
 
-        {otpStillNeeded ? (
+        {otpReady ? (
           <OtpCard
             otp={order.otp}
             reference={orderRef(order)}
             shopName={order.shop_id?.shop_name}
-            caption={
-              status === "ready_for_pickup"
-                ? "Show this code at the counter"
-                : "Keep this code for when your prints are ready"
-            }
+            caption="Show this code at the counter"
           />
         ) : null}
 
@@ -188,7 +187,7 @@ export default function OrderTrackingScreen({ route, navigation }) {
           <Card style={styles.card}>
             <Text style={styles.closedText}>
               {status === "expired"
-                ? "This order expired because it wasn't completed in time. Its documents were automatically deleted — upload again to place a new order."
+                ? "This order expired. Upload your files again to reorder."
                 : "This order was cancelled."}
             </Text>
           </Card>
@@ -209,6 +208,14 @@ export default function OrderTrackingScreen({ route, navigation }) {
                 : `${order.queue_position} order${order.queue_position === 1 ? "" : "s"} ahead of you`}
             </Text>
           </View>
+        ) : null}
+
+        {otpStillNeeded && !otpReady ? (
+          <OtpCard
+            compact
+            otp={order.otp}
+            caption="You'll need this code at pickup"
+          />
         ) : null}
 
         <View style={styles.card}>
@@ -288,7 +295,7 @@ export default function OrderTrackingScreen({ route, navigation }) {
 
         {otpStillNeeded ? (
           <Button
-            title="Share OTP"
+            title="Share code"
             variant="secondary"
             onPress={shareDetails}
             style={styles.action}

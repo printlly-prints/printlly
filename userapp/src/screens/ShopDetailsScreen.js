@@ -16,7 +16,7 @@ import { LinearGradient } from "expo-linear-gradient";
 import { WebView } from "react-native-webview";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import Button from "../components/Button";
-import RushBadge from "../components/RushBadge";
+import ShopStatusChips from "../components/ShopStatusChips";
 import SavedShopHeart from "../components/SavedShopHeart";
 import ShopPhoto from "../components/ShopPhoto";
 import { shopImageSource } from "../utils/shopImages";
@@ -110,7 +110,11 @@ export default function ShopDetailsScreen({ navigation, route }) {
   const availability = shopAvailability(shop);
   const closed = availability.isClosed;
   const distanceLabel = formatDistance(shop.distance_km);
+  const area = shop.locality || shop.address;
+  const canOpenMap = !DEMO_MODE;
   const pricing = shop.pricing;
+  const hasA3Rate = pricing?.paper_size_rates?.A3 > 0;
+  const hasDuplexRate = pricing?.sides_extra_rate > 0;
   // Whatever THIS shop offers, under its own names - there is no fixed
   // set of services any more. A disabled one isn't orderable, so it isn't
   // shown.
@@ -161,38 +165,7 @@ export default function ShopDetailsScreen({ navigation, route }) {
           {/* Chips over the photo, not a separate row below it - this is
               the first thing to know about a shop and it belongs on the
               picture of it. */}
-          <View style={styles.heroChips}>
-            <View
-              style={[
-                styles.chip,
-                {
-                  backgroundColor: availability.colors.bg,
-                  borderColor: availability.colors.border,
-                },
-              ]}
-            >
-              <View
-                style={[
-                  styles.dot,
-                  { backgroundColor: availability.colors.dot },
-                ]}
-              />
-              <Text
-                style={[styles.chipText, { color: availability.colors.text }]}
-              >
-                {availability.isBusy
-                  ? "Busy right now"
-                  : closed
-                    ? "Closed"
-                    : "Open now"}
-              </Text>
-            </View>
-            {/* While busy the vendor's own estimate is the more specific
-                thing to say, so the generic queue reading stands down. */}
-            {!availability.isBusy && shop.queue?.rush_level ? (
-              <RushBadge level={shop.queue.rush_level} />
-            ) : null}
-          </View>
+          <ShopStatusChips shop={shop} style={styles.heroChips} />
         </View>
 
         {/* Floating controls. The back button and the heart are the only
@@ -236,18 +209,45 @@ export default function ShopDetailsScreen({ navigation, route }) {
                     so nothing is appended here - doing so printed
                     "0.1 km away away". */}
                 <Text style={styles.metaStrong}>{distanceLabel}</Text>
-                <Text style={styles.metaDot}>·</Text>
+                {area ? <Text style={styles.metaDot}>·</Text> : null}
               </>
             ) : null}
-            <Ionicons
-              name="location-outline"
-              size={13}
-              color={colors.textMuted}
-            />
-            <Text style={styles.meta} numberOfLines={2}>
-              {shop.locality || shop.address}
-            </Text>
+            {area ? (
+              <>
+                <Ionicons
+                  name="location-outline"
+                  size={13}
+                  color={colors.textMuted}
+                />
+                <Text style={styles.meta} numberOfLines={2}>
+                  {area}
+                </Text>
+              </>
+            ) : null}
           </View>
+
+          {/* --- pricing ------------------------------------------------ */}
+          {pricing ? (
+            <View style={styles.priceBlock}>
+              <View style={styles.priceLine}>
+                <Text style={styles.priceBig}>₹{pricing.rate_per_page_bw}</Text>
+                <Text style={styles.priceBigUnit}>B&W page</Text>
+                <Text style={styles.colourPill}>
+                  Colour ₹{pricing.rate_per_page_color}
+                </Text>
+              </View>
+              {/* Rates, not a quote: the platform fee and real maths land
+                  at checkout. */}
+              <Text style={styles.priceCaption}>
+                Platform fee added at checkout.
+              </Text>
+            </View>
+          ) : loading ? (
+            <ActivityIndicator
+              color={colors.primaryBright}
+              style={styles.sectionLoading}
+            />
+          ) : null}
 
           {/* Short, and never an error: busy means this shop is open
               for business and working through a queue. Stated once,
@@ -262,8 +262,7 @@ export default function ShopDetailsScreen({ navigation, route }) {
               />
               <Text style={styles.busyText}>
                 <Text style={styles.busyStrong}>Busy right now. </Text>
-                High order volume. Your print may take around{" "}
-                {availability.prepMinutes} min.
+                Prints may take about {availability.prepMinutes} min.
               </Text>
             </View>
           ) : null}
@@ -271,68 +270,70 @@ export default function ShopDetailsScreen({ navigation, route }) {
           {error ? <Text style={styles.error}>{error}</Text> : null}
 
           {/* --- quick actions ---------------------------------------- */}
-          <View style={styles.actionRow}>
-            <ActionButton
-              icon="map-outline"
-              label="View on map"
-              onPress={openInMaps}
-              disabled={DEMO_MODE}
-            />
-            <ActionButton
-              icon="call-outline"
-              label="Call"
-              onPress={call}
-              disabled={!shop.contact}
-            />
-          </View>
+          {canOpenMap || shop.contact ? (
+            <View style={styles.actionRow}>
+              {canOpenMap ? (
+                <ActionButton
+                  icon="map-outline"
+                  label="View on map"
+                  onPress={openInMaps}
+                />
+              ) : null}
+              {shop.contact ? (
+                <ActionButton icon="call-outline" label="Call" onPress={call} />
+              ) : null}
+            </View>
+          ) : null}
 
           {/* --- hours ------------------------------------------------- */}
-          <Card style={styles.tightCard}>
-            <View style={styles.hoursRow}>
-              <View style={styles.iconDisc}>
-                <Ionicons
-                  name="time-outline"
-                  size={18}
-                  color={colors.primaryBright}
-                />
+          {/* business_hours is sent by GET /shops/:id only when the shop
+              runs a schedule. Without one, the live status on the photo is
+              the whole answer - inventing "9 to 9" would not be true. */}
+          {shop.business_hours ? (
+            <Card style={styles.tightCard}>
+              <View style={styles.hoursRow}>
+                <View style={styles.iconDisc}>
+                  <Ionicons
+                    name="time-outline"
+                    size={18}
+                    color={colors.primaryBright}
+                  />
+                </View>
+                <View style={styles.hoursText}>
+                  <Text style={styles.cardTitle}>Open today</Text>
+                  <Text style={styles.cardSub}>
+                    {`${shop.business_hours.open_time} – ${shop.business_hours.close_time}`}
+                  </Text>
+                </View>
               </View>
-              <View style={styles.hoursText}>
-                {/* business_hours is sent by GET /shops/:id only when the
-                    shop actually runs a schedule. No schedule means the
-                    owner opens and closes by hand, and saying so is the
-                    truth - inventing "9 to 9" would not be. */}
-                <Text style={styles.cardTitle}>
-                  {shop.business_hours ? "Open today" : "Opening hours"}
-                </Text>
-                <Text style={styles.cardSub}>
-                  {shop.business_hours
-                    ? `${shop.business_hours.open_time} – ${shop.business_hours.close_time}`
-                    : "This shop opens and closes manually — check the status above."}
-                </Text>
-              </View>
-              <View
-                style={[
-                  styles.statusPill,
-                  {
-                    backgroundColor: availability.colors.bg,
-                    borderColor: availability.colors.border,
-                  },
-                ]}
-              >
-                <View
-                  style={[
-                    styles.dot,
-                    { backgroundColor: availability.colors.dot },
-                  ]}
-                />
-                <Text
-                  style={[styles.chipText, { color: availability.colors.text }]}
-                >
-                  {availability.label}
-                </Text>
-              </View>
-            </View>
-          </Card>
+            </Card>
+          ) : null}
+
+          {hasA3Rate || hasDuplexRate ? (
+            <>
+              <Text style={styles.sectionTitle}>Other charges</Text>
+              <Card>
+                {hasA3Rate ? (
+                  <PriceRow
+                    first
+                    label="A3 paper"
+                    value={`+₹${pricing.paper_size_rates.A3}`}
+                    unit="/ page"
+                  />
+                ) : null}
+                {hasDuplexRate ? (
+                  // A rupee amount per page, not a percentage the customer
+                  // would have to apply to a subtotal they cannot see yet.
+                  <PriceRow
+                    first={!hasA3Rate}
+                    label="Double-sided"
+                    value={`+₹${pricing.sides_extra_rate}`}
+                    unit="/ page"
+                  />
+                ) : null}
+              </Card>
+            </>
+          ) : null}
 
           {/* --- owner ------------------------------------------------- */}
           {/* One compact row, not a panel: it is a reassurance, not a
@@ -348,7 +349,7 @@ export default function ShopDetailsScreen({ navigation, route }) {
                 <View style={styles.hoursText}>
                   <Text style={styles.cardTitle}>Shop owner</Text>
                   <Text style={styles.cardSub}>
-                    Ask for them at the counter when you collect.
+                    Ask for them at the counter.
                   </Text>
                 </View>
               </View>
@@ -356,104 +357,67 @@ export default function ShopDetailsScreen({ navigation, route }) {
           ) : null}
 
           {/* --- where to find it -------------------------------------- */}
-          <Text style={styles.sectionTitle}>Where to find it</Text>
-          <Card>
-            <View style={styles.addressRow}>
-              <Ionicons
-                name="location-outline"
-                size={16}
-                color={colors.primaryDeep}
-              />
-              <Text style={styles.addressText}>{shop.address}</Text>
-            </View>
-
-            {maps.embed ? (
-              <>
-                <View style={styles.mapBox} pointerEvents="none">
-                  {mapError ? (
-                    <Text style={styles.emptyNote}>
-                      Map couldn't load. Open Google Maps below to see the
-                      location.
-                    </Text>
-                  ) : (
-                    <WebView
-                      source={{
-                        html: googleMapHtml(maps.embed),
-                        baseUrl: "https://www.google.com",
-                      }}
-                      style={styles.map}
-                      scrollEnabled={false}
-                      originWhitelist={["*"]}
-                      onError={() => setMapError(true)}
-                      onHttpError={() => setMapError(true)}
-                      accessibilityLabel={`${shop.shop_name} location on Google Maps`}
+          {shop.address || maps.embed ? (
+            <>
+              <Text style={styles.sectionTitle}>Where to find it</Text>
+              <Card>
+                {shop.address ? (
+                  <View style={styles.addressRow}>
+                    <Ionicons
+                      name="location-outline"
+                      size={16}
+                      color={colors.primaryDeep}
                     />
-                  )}
-                </View>
-                <Button
-                  title="Open Google Maps"
-                  disabled={DEMO_MODE}
-                  variant="secondary"
-                  icon="open-outline"
-                  onPress={openInMaps}
-                  style={styles.mapButton}
-                />
-              </>
-            ) : (
-              <Text style={styles.emptyNote}>
-                This shop hasn&apos;t pinned its exact location yet.
-              </Text>
-            )}
-          </Card>
+                    <Text style={styles.addressText}>{shop.address}</Text>
+                  </View>
+                ) : null}
+
+                {maps.embed ? (
+                  <>
+                    <View style={styles.mapBox} pointerEvents="none">
+                      {mapError ? (
+                        <Text style={styles.emptyNote}>
+                          Map couldn't load. Open Google Maps below to see the
+                          location.
+                        </Text>
+                      ) : (
+                        <WebView
+                          source={{
+                            html: googleMapHtml(maps.embed),
+                            baseUrl: "https://www.google.com",
+                          }}
+                          style={styles.map}
+                          scrollEnabled={false}
+                          originWhitelist={["*"]}
+                          onError={() => setMapError(true)}
+                          onHttpError={() => setMapError(true)}
+                          accessibilityLabel={`${shop.shop_name} location on Google Maps`}
+                        />
+                      )}
+                    </View>
+                    <Button
+                      title="Open Google Maps"
+                      disabled={DEMO_MODE}
+                      variant="secondary"
+                      icon="open-outline"
+                      onPress={openInMaps}
+                      style={styles.mapButton}
+                    />
+                  </>
+                ) : null}
+              </Card>
+            </>
+          ) : null}
 
           {/* --- pricing ------------------------------------------------ */}
           {pricing ? (
             <>
-              <Text style={styles.sectionTitle}>What they charge</Text>
-              <Card>
-                <PriceRow
-                  label="Black & white"
-                  value={`₹${pricing.rate_per_page_bw}`}
-                  unit="/ page"
-                />
-                <PriceRow
-                  label="Colour"
-                  value={`₹${pricing.rate_per_page_color}`}
-                  unit="/ page"
-                />
-                {pricing.paper_size_rates?.A3 > 0 ? (
-                  <PriceRow
-                    label="A3 paper"
-                    value={`+₹${pricing.paper_size_rates.A3}`}
-                    unit="/ page"
-                  />
-                ) : null}
-                {pricing.sides_extra_rate > 0 ? (
-                  // Reads the same way as the A3 row above: a rupee amount
-                  // per page, not a percentage the customer would have to
-                  // apply to a subtotal they cannot see yet.
-                  <PriceRow
-                    label="Double-sided"
-                    value={`+₹${pricing.sides_extra_rate}`}
-                    unit="/ page"
-                  />
-                ) : null}
-
-                {/* Said plainly rather than shown as a total, because it
-                    isn't one - the platform fee and the real maths land
-                    at checkout. */}
-                <Text style={styles.priceNote}>
-                  These are this shop&apos;s rates. Your final total, including
-                  the platform fee, is shown before you pay.
-                </Text>
-              </Card>
-
               <Text style={styles.sectionTitle}>Additional services</Text>
               <Card>
                 {enabledServices.length > 0 ? (
                   enabledServices.map((service, i) => (
                     <PriceRow
-                      key={service._id}
+                      key={service._id || service.name}
                       label={service.name}
                       value={`₹${service.rate}`}
                       unit="/ document"
@@ -467,20 +431,7 @@ export default function ShopDetailsScreen({ navigation, route }) {
                 )}
               </Card>
             </>
-          ) : loading ? (
-            <ActivityIndicator
-              color={colors.primaryBright}
-              style={styles.sectionLoading}
-            />
           ) : null}
-
-          {/* --- lead-in to the CTA ------------------------------------- */}
-          <View style={styles.ctaNote}>
-            <Text style={styles.ctaTitle}>Need to print something?</Text>
-            <Text style={styles.ctaSub}>
-              Upload your document and choose your print preferences.
-            </Text>
-          </View>
         </View>
       </ScrollView>
 
@@ -489,10 +440,17 @@ export default function ShopDetailsScreen({ navigation, route }) {
       <View
         style={[styles.footer, { paddingBottom: spacing.md + insets.bottom }]}
       >
+        {pricing && !closed ? (
+          <View>
+            <Text style={styles.footerPrice}>₹{pricing.rate_per_page_bw}</Text>
+            <Text style={styles.footerUnit}>per B&W page</Text>
+          </View>
+        ) : null}
         <Button
           title={closed ? "Shop is closed right now" : "Print here"}
           icon={closed ? undefined : "arrow-forward"}
           disabled={closed}
+          style={styles.footerButton}
           onPress={() =>
             navigation.navigate("PrintFlow", {
               screen: "UploadDocuments",
@@ -514,29 +472,16 @@ function Card({ children, style }) {
   return <View style={[styles.card, style]}>{children}</View>;
 }
 
-function ActionButton({ icon, label, onPress, disabled }) {
+function ActionButton({ icon, label, onPress }) {
   return (
     <Pressable
       onPress={onPress}
-      disabled={disabled}
       accessibilityRole="button"
       accessibilityLabel={label}
-      accessibilityState={{ disabled: !!disabled }}
-      style={({ pressed }) => [
-        styles.actionButton,
-        disabled && styles.actionDisabled,
-        pressed && !disabled && styles.pressed,
-      ]}
+      style={({ pressed }) => [styles.actionButton, pressed && styles.pressed]}
     >
-      <Ionicons
-        name={icon}
-        size={17}
-        color={disabled ? colors.textMuted : colors.primaryBright}
-      />
-      <Text
-        style={[styles.actionLabel, disabled && styles.actionLabelDisabled]}
-        numberOfLines={1}
-      >
+      <Ionicons name={icon} size={17} color={colors.primaryBright} />
+      <Text style={styles.actionLabel} numberOfLines={1}>
         {label}
       </Text>
     </Pressable>
@@ -567,12 +512,10 @@ const styles = StyleSheet.create({
   // --- hero ---------------------------------------------------------
   hero: {
     height: HERO_HEIGHT,
-    width: "100%",
+    marginHorizontal: spacing.lg,
+    marginTop: spacing.sm,
     overflow: "hidden",
-    borderTopLeftRadius: 24,
-    borderTopRightRadius: 24,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.border,
+    borderRadius: 24,
   },
   heroPhoto: {
     height: HERO_HEIGHT,
@@ -587,17 +530,17 @@ const styles = StyleSheet.create({
   },
   heroChips: {
     position: "absolute",
-    left: spacing.lg,
-    bottom: spacing.lg,
+    left: spacing.md,
+    bottom: spacing.md,
     flexDirection: "row",
     alignItems: "center",
     gap: spacing.sm,
   },
   heroControls: {
     position: "absolute",
-    top: spacing.md,
-    left: spacing.lg,
-    right: spacing.lg,
+    top: spacing.lg + spacing.sm,
+    left: spacing.lg + spacing.md,
+    right: spacing.lg + spacing.md,
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
@@ -615,20 +558,6 @@ const styles = StyleSheet.create({
   },
   pressed: { opacity: 0.7 },
 
-  chip: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 6,
-    paddingHorizontal: spacing.md,
-    paddingVertical: 6,
-    borderRadius: radius.pill,
-    // borderWidth is load-bearing on a dark card - see StatusBadge.
-    borderWidth: 1,
-  },
-  // Background and text colour come inline from shopAvailability() -
-  // open, busy and closed each have their own, and busy is amber rather
-  // than red because a busy shop is trading normally.
-  chipText: { fontFamily: fonts.headingBold, fontSize: 11.5 },
   // Informational, not a warning: a soft amber field with no border and
   // no icon, sitting inline under the shop's name.
   busyNote: {
@@ -687,13 +616,11 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: colors.border,
   },
-  actionDisabled: { opacity: 0.5 },
   actionLabel: {
     fontFamily: fonts.bodyMedium,
     fontSize: 13,
     color: colors.primaryBright,
   },
-  actionLabelDisabled: { color: colors.textMuted },
 
   // --- cards ---------------------------------------------------------
   card: {
@@ -725,17 +652,6 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
-  statusPill: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 5,
-    paddingHorizontal: spacing.sm,
-    paddingVertical: 4,
-    borderRadius: radius.pill,
-    // borderWidth is load-bearing on a dark card - see StatusBadge.
-    borderWidth: 1,
-  },
-
   ownerRow: { flexDirection: "row", alignItems: "center", gap: spacing.md },
   ownerPhoto: {
     width: 40,
@@ -786,24 +702,42 @@ const styles = StyleSheet.create({
     fontSize: 11.5,
     color: colors.textMuted,
   },
-  priceNote: {
+  priceBlock: { marginTop: spacing.md, gap: spacing.xs },
+  priceLine: {
+    flexDirection: "row",
+    alignItems: "center",
+    flexWrap: "wrap",
+    columnGap: spacing.sm,
+  },
+  priceBig: {
+ ...typography.h2,
+    color: colors.ink,
+    fontVariant: ["tabular-nums"],
+  },
+  priceBigUnit: { ...typography.bodySmall, color: colors.textSecondary },
+  colourPill: {
     ...typography.caption,
-    color: colors.textMuted,
-    marginTop: spacing.sm,
-    paddingTop: spacing.sm,
-    borderTopWidth: 1,
-    borderTopColor: colors.border,
-  },
-
-  ctaNote: { marginTop: spacing.xl },
-  ctaTitle: { ...typography.label, color: colors.textPrimary },
-  ctaSub: {
-    ...typography.bodySmall,
     color: colors.textSecondary,
-    marginTop: 2,
+ backgroundColor: colors.backgroundSoft,
+    borderRadius: radius.pill,
+    paddingHorizontal: spacing.sm,
+    paddingVertical: 3,
+    overflow: "hidden",
   },
+  priceCaption: { ...typography.caption, color: colors.textMuted },
+
+  footerPrice: {
+    ...typography.h3,
+    color: colors.ink,
+    fontVariant: ["tabular-nums"],
+  },
+  footerUnit: { ...typography.caption, color: colors.textSecondary },
+  footerButton: { flex: 1 },
 
   footer: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.lg,
     paddingHorizontal: spacing.lg,
     paddingTop: spacing.md,
     backgroundColor: colors.surface,

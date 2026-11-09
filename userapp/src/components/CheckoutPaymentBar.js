@@ -12,6 +12,7 @@ export default function CheckoutPaymentBar({
   onSelect,
   onContinue,
   loading,
+  disabled,
 }) {
   const insets = useSafeAreaInsets();
   return (
@@ -21,23 +22,26 @@ export default function CheckoutPaymentBar({
         { paddingBottom: Math.max(insets.bottom, spacing.lg) },
       ]}
     >
-      <Pressable
-        accessibilityRole="button"
-        accessibilityLabel={`Choose UPI app. Selected: ${upiOption(upiApp).title}`}
-        accessibilityHint="Opens UPI options"
-        accessibilityState={{ disabled: Boolean(loading) }}
-        disabled={loading}
-        onPress={onSelect}
-        style={({ pressed }) => [styles.selector, pressed && styles.pressed]}
-      >
-        <Ionicons name="wallet-outline" size={19} color={colors.primary} />
-        <Text style={styles.label}>UPI</Text>
-        <Ionicons name="chevron-down" size={14} color={colors.primary} />
-      </Pressable>
+      {onSelect ? (
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel={`Choose UPI app. Selected: ${upiOption(upiApp).title}`}
+          accessibilityHint="Opens UPI options"
+          accessibilityState={{ disabled: Boolean(loading) }}
+          disabled={loading}
+          onPress={onSelect}
+          style={({ pressed }) => [styles.selector, pressed && styles.pressed]}
+        >
+          <Ionicons name="wallet-outline" size={19} color={colors.primary} />
+          <Text style={styles.label}>UPI</Text>
+          <Ionicons name="chevron-down" size={14} color={colors.primary} />
+        </Pressable>
+      ) : null}
       <Button
-        title={`Continue  ${formatRupees(amount)}`}
+        title={`Pay ${formatRupees(amount)}`}
         onPress={onContinue}
         loading={loading}
+        disabled={disabled}
         style={styles.continue}
       />
     </View>

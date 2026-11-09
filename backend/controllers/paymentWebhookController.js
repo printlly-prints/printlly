@@ -369,6 +369,7 @@ const handleRazorpayWebhook = async (req, res) => {
       }
 
       order.payment_status = "failed";
+      order.logEvent("payment_failed", "system");
       await order.save();
 
       // After the save, and only on the actual transition - the already-paid

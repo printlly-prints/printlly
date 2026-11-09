@@ -5,6 +5,7 @@ const Settlement = require("../models/Settlement");
 const { parsePagination } = require("../utils/pagination");
 const { SETTLEABLE, round2 } = require("../utils/settlement");
 const { sendTransactionalEmail } = require("../utils/email");
+const { getVendorBalances } = require("../utils/vendorActivity");
 
 // Admin-side manual settlement tracking.
 //
@@ -92,6 +93,63 @@ const getPendingSettlements = async (req, res) => {
   } catch (error) {
     console.error(`Failed to list pending settlements: ${error.message}`);
     res.status(500).json({ message: "Failed to list pending settlements" });
+  }
+};
+
+// A settlement day runs midnight to midnight in India, not UTC.
+function istDayRange(date) {
+  const from = new Date(`${date}T00:00:00+05:30`);
+  return { from, to: new Date(from.getTime() + 24 * 60 * 60 * 1000) };
+}
+
+function todayInIndia() {
+  return new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Kolkata" }).format(new Date());
+}
+
+// GET /admin/settlements/ledger?date=YYYY-MM-DD
+// Pending vs settled per vendor for one day. Defaults to today in India.
+const getDailyLedger = async (req, res) => {
+  try {
+    const date = req.query.date ?? todayInIndia();
+    const { from, to } = /^\d{4}-\d{2}-\d{2}$/.test(date) ? istDayRange(date) : {};
+    if (!from || Number.isNaN(from.getTime())) {
+      return res.status(400).json({ message: "date must be YYYY-MM-DD" });
+    }
+
+    const balances = await getVendorBalances({ from, to });
+    const shops = await Shop.find({ _id: { $in: [...balances.keys()] } })
+      .select("shop_name shop_logo_url shop_photo_url owner_id")
+      .populate("owner_id", "name")
+      .lean();
+
+    const rows = shops
+      .map((shop) => ({
+        shop_id: shop._id,
+        shop_name: shop.shop_name,
+        logo_url: shop.shop_logo_url || shop.shop_photo_url || null,
+        owner_name: shop.owner_id?.name || null,
+        ...balances.get(String(shop._id)),
+      }))
+      // Longest wait first, then shops with nothing pending.
+      .sort(
+        (a, b) =>
+          (a.oldest_pending_at || Infinity) - (b.oldest_pending_at || Infinity) ||
+          a.shop_name.localeCompare(b.shop_name)
+      );
+
+    const sum = (field) => round2(rows.reduce((total, row) => total + row[field], 0));
+    res.status(200).json({
+      date,
+      totals: {
+        pending_amount: sum("pending_amount"),
+        settled_in_period: sum("settled_in_period"),
+        next_cycle_amount: sum("next_cycle_amount"),
+      },
+      rows,
+    });
+  } catch (error) {
+    console.error(`Failed to load settlement ledger: ${error.message}`);
+    res.status(500).json({ message: "Failed to load settlement ledger" });
   }
 };
 
@@ -285,7 +343,10 @@ const settleShopOrders = async (req, res) => {
 
     await Order.updateMany(
       { _id: { $in: targetIds }, shop_id: shop._id, ...SETTLEABLE },
-      { $set: { settlement_status: "settled", settlement_id: settlementId } }
+      {
+        $set: { settlement_status: "settled", settlement_id: settlementId },
+        $push: { timeline: { event: "settled", at: settledAt, actor: "admin" } },
+      }
     );
 
     // What this batch actually got, which under a race may be fewer than
@@ -311,7 +372,17 @@ const settleShopOrders = async (req, res) => {
       reference_note: typeof reference_note === "string" ? reference_note.trim() : "",
     });
 
+    // Whatever wasn't covered stays unsettled and carries to the next payout.
+    const balances = await getVendorBalances({ shopId: shop._id }).catch(() => null);
+    const left = balances?.get(String(shop._id)) || null;
+
     res.status(201).json({
+      remaining: left && {
+        pending_amount: left.pending_amount,
+        pending_orders: left.pending_orders,
+        next_cycle_amount: left.next_cycle_amount,
+        next_cycle_orders: left.next_cycle_orders,
+      },
       settlement: {
         _id: settlement._id,
         shop_id: settlement.shop_id,
@@ -404,6 +475,7 @@ const listSettlements = async (req, res) => {
 };
 
 module.exports = {
+  getDailyLedger,
   getPendingSettlements,
   getShopSettlementDetail,
   settleShopOrders,

@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
+import { Link } from "react-router-dom";
 import api from "../api/axios";
 import AdminLayout from "../components/AdminLayout";
 import ConfirmDialog from "../components/ConfirmDialog";
@@ -162,7 +163,13 @@ export default function Shops() {
                 <Badge value={shop.is_active ? "active" : "inactive"} />
               </Td>
               <Td className="whitespace-nowrap text-text-secondary">{formatDate(shop.createdAt)}</Td>
-              <Td className="text-right">
+              <Td className="text-right whitespace-nowrap">
+                <Link
+                  to={`/shops/${shop._id}/activity`}
+                  className="inline-block mr-2 px-3 py-1.5 rounded-control border border-border text-sm font-medium text-text-primary hover:bg-background-soft"
+                >
+                  Activity
+                </Link>
                 <button
                   type="button"
                   onClick={() => {

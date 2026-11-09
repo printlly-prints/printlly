@@ -20,7 +20,7 @@ const NAV_ITEMS = [
   // through on their own schedule, not a queue where a customer or
   // vendor is blocked waiting on a decision, which is what the two
   // badges above mean.
-  { label: "Settlements", to: "/settlements", icon: Wallet },
+  { label: "Daily Settlement", to: "/settlements", icon: Wallet },
   // Kept live by the support socket rather than polled - see
   // SupportContext. Counts THREADS waiting, not messages: "3" meaning
   // three people are waiting is what an admin can act on, where "3"

@@ -4,7 +4,7 @@
 //
 // Nothing here is ever the price charged. POST /orders recomputes every
 // figure server-side from the shop's own stored rates, and that result is
-// what the customer pays - see ReviewCheckoutScreen, which shows the
+// what the customer pays - see CheckoutScreen, which shows the
 // SERVER's numbers, not these. This exists because a running total is
 // useless if it only appears after you have finished choosing.
 //

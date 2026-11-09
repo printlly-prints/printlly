@@ -92,7 +92,7 @@ export default function DemoPaymentScreen({ route, navigation }) {
         <View style={styles.orderRow}>
           <Ionicons name="bag-check-outline" size={20} color={colors.primary} />
           <Text style={[styles.caption, styles.copy]}>
-            We’ll keep your order and pickup details together in Orders.
+            You'll find this in Orders.
           </Text>
         </View>
         {error ? (

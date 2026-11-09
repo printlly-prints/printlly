@@ -34,7 +34,11 @@ export default function OrderJourney({
                   ]}
                 />
                 <View
-                  style={[styles.dot, index <= phase.stage && styles.doneDot]}
+                  style={[
+                    styles.dot,
+                    !compact && styles.pathDot,
+                    index <= phase.stage && styles.doneDot,
+                  ]}
                 >
                   {index <= phase.stage ? (
                     <Ionicons
@@ -43,7 +47,7 @@ export default function OrderJourney({
                           ? "ellipsis-horizontal"
                           : "checkmark"
                       }
-                      size={9}
+                      size={compact ? 9 : 13}
                       color={colors.onPrimary}
                     />
                   ) : null}
@@ -117,6 +121,7 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   doneDot: { backgroundColor: colors.primary, borderColor: colors.primary },
+  pathDot: { width: 22, height: 22, borderRadius: 11 },
   label: { ...typography.caption, fontSize: 10, color: colors.textSecondary },
   doneLabel: { color: colors.primaryDeep },
 });

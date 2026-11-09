@@ -83,7 +83,7 @@ const getSavedShops = async (req, res) => {
     const savedShops = await SavedShop.find({ customer_id: req.user.id })
       .populate(
         "shop_id",
-        `shop_name address contact shop_photo_url locality location ${AVAILABILITY_FIELDS}`
+        `shop_name address contact shop_photo_url locality location pricing.rate_per_page_bw pricing.rate_per_page_color ${AVAILABILITY_FIELDS}`
       )
       .sort({ created_at: -1 });
 

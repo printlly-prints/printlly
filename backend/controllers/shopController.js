@@ -15,6 +15,8 @@ const PayoutHistory = require("../models/PayoutHistory");
 const Settlement = require("../models/Settlement");
 const Order = require("../models/Order");
 const { SETTLEABLE, round2 } = require("../utils/settlement");
+const { parsePagination } = require("../utils/pagination");
+const { getVendorActivity } = require("../utils/vendorActivity");
 const { buildSearchFilter, parseGeoPoint, findListedShops, distanceKmTo } = require("../utils/shopSearch");
 const { trackEvent, EVENTS } = require("../utils/analytics");
 
@@ -214,10 +216,9 @@ const createShop = async (req, res) => {
 // vendor/admin-facing only. shop_photo_url is the one photo customers
 // are meant to see, so it stays.
 //
-// It also drops `pricing` from the payload, which no customer-facing
-// client reads from this route (per-shop prices reach the app already
-// applied to a specific order, via POST /shops/compare-pricing) - a
-// nested object per shop, on every listing, that nothing consumed.
+// Of `pricing` it sends only the two per-page rates the shop list shows.
+// The rest (paper, sides, services) stays on GET /shops/:id, and real
+// order totals still come from POST /shops/compare-pricing.
 //
 // The availability fields ARE selected (shop_status/is_currently_open
 // can't be computed without them) but never sent - toPublicShop strips
@@ -250,7 +251,7 @@ const getActiveShops = async (req, res) => {
 
     const entries = await findListedShops({
       filter: { is_active: true, verification_status: "approved", ...buildSearchFilter(req.query.search) },
-      select: `shop_name address contact shop_photo_url locality location ${AVAILABILITY_FIELDS}`,
+      select: `shop_name address contact shop_photo_url locality location pricing.rate_per_page_bw pricing.rate_per_page_color ${AVAILABILITY_FIELDS}`,
       point,
     });
 
@@ -368,17 +369,19 @@ const uploadShopPhotos = async (req, res) => {
 
     const ownerPhotoFile = req.files?.owner_photo?.[0];
     const shopPhotoFile = req.files?.shop_photo?.[0];
+    const shopLogoFile = req.files?.shop_logo?.[0];
 
-    if (!ownerPhotoFile && !shopPhotoFile) {
+    if (!ownerPhotoFile && !shopPhotoFile && !shopLogoFile) {
       return res.status(400).json({
-        message: "Send at least one of 'owner_photo' or 'shop_photo'.",
+        message: "Send at least one of 'owner_photo', 'shop_photo' or 'shop_logo'.",
       });
     }
 
     const previousOwnerPhoto = shop.owner_photo_url;
     const previousShopPhoto = shop.shop_photo_url;
+    const previousShopLogo = shop.shop_logo_url;
     if (local) {
-      for (const [file, field] of [[ownerPhotoFile,'owner_photo_url'], [shopPhotoFile,'shop_photo_url']]) {
+      for (const [file, field] of [[ownerPhotoFile,'owner_photo_url'], [shopPhotoFile,'shop_photo_url'], [shopLogoFile,'shop_logo_url']]) {
         if (!file) continue;
         shop[field] = await saveLocalShopPhoto(file, origin);
         savedLocalPhotos.push(shop[field]);
@@ -403,17 +406,28 @@ const uploadShopPhotos = async (req, res) => {
         });
         shop.shop_photo_url = result.secure_url;
       }
+
+      if (shopLogoFile) {
+        const result = await uploadToCloudinary(shopLogoFile.buffer, {
+          resource_type: "image",
+          folder: "shop_photos",
+          ...PHOTO_TRANSFORMATION,
+        });
+        shop.shop_logo_url = result.secure_url;
+      }
     }
 
     await shop.save();
     if (local) {
       if (ownerPhotoFile) await removeLocalShopPhoto(previousOwnerPhoto, origin);
       if (shopPhotoFile) await removeLocalShopPhoto(previousShopPhoto, origin);
+      if (shopLogoFile) await removeLocalShopPhoto(previousShopLogo, origin);
     }
 
     res.status(200).json({
       owner_photo_url: shop.owner_photo_url,
       shop_photo_url: shop.shop_photo_url,
+      shop_logo_url: shop.shop_logo_url,
     });
   } catch (error) {
     await Promise.all(savedLocalPhotos.map(url=>removeLocalShopPhoto(url,origin)));
@@ -1055,7 +1069,7 @@ const comparePricing = async (req, res) => {
     // priced or fifty. A shop that would be excluded from the comparison
     // returns an empty array here too, rather than being quietly priced
     // because it was asked for by name.
-    if (shop_id !== undefined && !mongoose.isValidObjectId(shop_id)) {
+    if (shop_id !== undefined && !mongoose.isObjectIdOrHexString(shop_id)) {
       return res.status(400).json({ message: "shop_id must be a valid shop id" });
     }
 
@@ -1104,7 +1118,9 @@ const comparePricing = async (req, res) => {
       filter: {
         is_active: true,
         verification_status: "approved",
-        ...(shop_id ? { _id: shop_id } : {}),
+        // A real ObjectId: with a location this filter goes to $geoNear,
+        // which doesn't cast strings and would match no shop.
+        ...(shop_id ? { _id: new mongoose.Types.ObjectId(shop_id) } : {}),
       },
       select: `shop_name address locality shop_photo_url pricing ${AVAILABILITY_FIELDS}`,
       point,
@@ -1432,10 +1448,26 @@ const getMySettlements = async (req, res) => {
   }
 };
 
+// GET /shops/me/activity
+// Every paid request sent to this shop: who sent it, what was printed,
+// and what happened to it. Scoped by owner, no shop id is accepted.
+const getMyActivity = async (req, res) => {
+  try {
+    const shop = await loadMyShop(req, res);
+    if (!shop) return;
+    const { limit, skip } = parsePagination(req.query);
+    res.status(200).json(await getVendorActivity(shop._id, { limit, skip }));
+  } catch (error) {
+    console.error(`Failed to load shop activity: ${error.message}`);
+    res.status(500).json({ message: "Failed to load shop activity" });
+  }
+};
+
 module.exports = {
   getShopById,
   updateMyPayout,
   getMySettlements,
+  getMyActivity,
   createShop,
   getActiveShops,
   getMyShop,

@@ -57,6 +57,8 @@ export default function ShopProfile() {
   const [ownerPreview, setOwnerPreview] = useState(null);
   const [shopPhotoFile, setShopPhotoFile] = useState(null);
   const [shopPreview, setShopPreview] = useState(null);
+  const [logoFile, setLogoFile] = useState(null);
+  const [logoPreview, setLogoPreview] = useState(null);
   const [photosError, setPhotosError] = useState("");
   const [photosSuccess, setPhotosSuccess] = useState("");
   const [photosLoading, setPhotosLoading] = useState(false);
@@ -73,6 +75,18 @@ export default function ShopProfile() {
       if (shopPreview) URL.revokeObjectURL(shopPreview);
     };
   }, [shopPreview]);
+  useEffect(() => {
+    return () => {
+      if (logoPreview) URL.revokeObjectURL(logoPreview);
+    };
+  }, [logoPreview]);
+
+  const pickLogo = (file) => {
+    if (!file) return;
+    setLogoFile(file);
+    setLogoPreview(URL.createObjectURL(file));
+    setPhotosSuccess("");
+  };
 
   const pickOwnerPhoto = (file) => {
     if (!file) return;
@@ -92,7 +106,7 @@ export default function ShopProfile() {
   // vendor can update just one photo later without resending the other.
   const handlePhotosSubmit = async (e) => {
     e.preventDefault();
-    if (!ownerPhotoFile && !shopPhotoFile) {
+    if (!ownerPhotoFile && !shopPhotoFile && !logoFile) {
       setPhotosError("Choose at least one photo to upload.");
       return;
     }
@@ -103,11 +117,14 @@ export default function ShopProfile() {
       const form = new FormData();
       if (ownerPhotoFile) form.append("owner_photo", ownerPhotoFile);
       if (shopPhotoFile) form.append("shop_photo", shopPhotoFile);
+      if (logoFile) form.append("shop_logo", logoFile);
       await api.post("/shops/me/photos", form);
       await refreshShop();
       setPhotosSuccess("Photos uploaded.");
       setOwnerPhotoFile(null);
       setShopPhotoFile(null);
+      setLogoFile(null);
+      setLogoPreview(null);
       // Drop the local previews too, not just the File handles. Each
       // preview is an object URL pinning the full-resolution image in
       // memory, and until now they were only released on unmount or when
@@ -126,7 +143,7 @@ export default function ShopProfile() {
     }
   };
 
-  const hasPendingPhoto = Boolean(ownerPhotoFile || shopPhotoFile);
+  const hasPendingPhoto = Boolean(ownerPhotoFile || shopPhotoFile || logoFile);
 
   // --- Danger zone: deactivation --------------------------------------
   const [showDeactivateConfirm, setShowDeactivateConfirm] = useState(false);
@@ -272,6 +289,22 @@ export default function ShopProfile() {
               onClear={() => {
                 setShopPhotoFile(null);
                 setShopPreview(null);
+              }}
+            />
+
+            <PhotoDropzone
+              inputId="shop_logo"
+              label="Shop logo"
+              hint="Shown on your shop activity page"
+              aspect="aspect-[4/3]"
+              compact
+              currentUrl={shop.shop_logo_url}
+              previewUrl={logoPreview}
+              pendingFile={logoFile}
+              onPick={pickLogo}
+              onClear={() => {
+                setLogoFile(null);
+                setLogoPreview(null);
               }}
             />
 

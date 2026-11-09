@@ -59,9 +59,9 @@ export const statusLabels = {
 };
 export const rushColors = { low: green, medium: amber, high: red };
 export const rushLabels = {
-  low: "Low rush",
-  medium: "Medium rush",
-  high: "High rush",
+  low: "Not busy",
+  medium: "Moderately busy",
+  high: "Very busy",
 };
 export const availabilityColors = {
   open: { dot: "#18725C", ...green },

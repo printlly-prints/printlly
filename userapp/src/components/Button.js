@@ -57,10 +57,10 @@ export default function Button({
 }
 const styles = StyleSheet.create({
   button: {
-    minHeight: 52,
-    borderRadius: 22,
+    minHeight: 48,
+    borderRadius: radius.button,
     backgroundColor: colors.primary,
-    alignItems: "center",
+ alignItems: "center",
     justifyContent: "center",
     paddingHorizontal: spacing.lg,
   },
@@ -73,7 +73,7 @@ const styles = StyleSheet.create({
   secondary: {
     backgroundColor: colors.surface,
     borderWidth: 1,
-    borderColor: colors.borderStrong,
+    borderColor: colors.border,
   },
   disabled: { opacity: 0.5 },
   label: {

@@ -1,4 +1,12 @@
-import { Image, ScrollView, Share, StyleSheet, Text, View } from "react-native";
+import {
+  Image,
+  Pressable,
+  ScrollView,
+  Share,
+  StyleSheet,
+  Text,
+  View,
+} from "react-native";
 import Button from "../components/Button";
 import OtpCard from "../components/OtpCard";
 import ScreenBackground from "../components/ScreenBackground";
@@ -20,7 +28,7 @@ export default function PickupOtpScreen({ route, navigation }) {
 
   const shareDetails = () => {
     Share.share({
-      message: `My print is ready! Pickup OTP: ${order.otp} at ${shopName}`,
+      message: `My print is ready! Pickup code: ${order.otp} at ${shopName}`,
     });
   };
 
@@ -54,14 +62,17 @@ export default function PickupOtpScreen({ route, navigation }) {
 
         <View style={styles.actions}>
           <Button
-            title="View order details"
-            onPress={() => navigation.replace("OrderTracking", { order })}
-          />
-          <Button
-            title="Share OTP"
+            title="Share code"
             variant="secondary"
             onPress={shareDetails}
           />
+          <Pressable
+            accessibilityRole="button"
+            onPress={() => navigation.replace("OrderTracking", { order })}
+            style={styles.details}
+          >
+            <Text style={styles.detailsLabel}>View order details</Text>
+          </Pressable>
         </View>
       </ScrollView>
     </ScreenBackground>
@@ -89,5 +100,7 @@ const styles = StyleSheet.create({
     marginTop: spacing.xs,
   },
   shop: { marginTop: spacing.lg },
-  actions: { marginTop: spacing.lg, gap: spacing.md },
+  actions: { marginTop: spacing.lg, gap: spacing.sm },
+  details: { minHeight: 48, alignItems: "center", justifyContent: "center" },
+  detailsLabel: { ...typography.label, color: colors.primary },
 });
