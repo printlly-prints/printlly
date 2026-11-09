@@ -84,7 +84,7 @@ export default function ShopStatusCard() {
       </div>
 
       <div className="mt-3 border-t border-border pt-3">
-        <p className="text-[11px] font-medium uppercase tracking-wide text-text-muted">Today's hours</p>
+        <p className="text-[11px] font-medium text-text-muted">Today's hours</p>
         {scheduleEnabled ? (
           <p className="text-sm tabular-nums text-text-primary">
             {shop.business_hours.open_time} – {shop.business_hours.close_time}

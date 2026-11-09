@@ -16,7 +16,8 @@ export default function KpiCard({ icon, label, value, note, tone = "teal", to })
   const body = (
     <>
       <div className="flex items-center justify-between gap-2">
-        <span className={`w-9 h-9 rounded-control grid place-items-center ${tones[tone]}`} aria-hidden="true">
+        <p className="text-sm font-medium text-text-secondary">{label}</p>
+        <span className={`w-8 h-8 rounded-control grid place-items-center ${tones[tone]}`} aria-hidden="true">
           {icon}
         </span>
         {to && (
@@ -25,11 +26,10 @@ export default function KpiCard({ icon, label, value, note, tone = "teal", to })
           </span>
         )}
       </div>
-      <p className="mt-3 text-xs font-medium text-text-secondary">{label}</p>
-      <p className="font-heading text-2xl font-extrabold text-text-primary tabular-nums leading-tight">
+      <p className={`mt-2 font-heading text-3xl font-semibold tabular-nums leading-tight ${tone === "success" ? "text-primary-deep" : "text-text-primary"}`}>
         {value}
       </p>
-      {note && <p className="mt-0.5 text-xs text-text-muted">{note}</p>}
+      {note && <p className="mt-2 text-xs text-text-muted">{note}</p>}
     </>
   );
 

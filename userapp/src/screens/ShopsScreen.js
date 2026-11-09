@@ -150,7 +150,7 @@ export default function ShopsScreen({ navigation }) {
           {searching ? (
             <ActivityIndicator size="small" color={colors.primaryBright} />
           ) : query ? (
-            <Pressable
+            <PressableScale
               onPress={() => setQuery("")}
               hitSlop={10}
               accessibilityLabel="Clear search"
@@ -160,7 +160,7 @@ export default function ShopsScreen({ navigation }) {
                 size={18}
                 color={colors.textMuted}
               />
-            </Pressable>
+            </PressableScale>
           ) : null}
         </View>
         <Pressable
@@ -227,118 +227,121 @@ export default function ShopsScreen({ navigation }) {
             .filter(Boolean)
             .join(", ");
           return (
-            <PressableScale
+            <Pressable
               accessibilityRole="button"
               accessibilityLabel={"View " + item.shop_name}
-              style={[
-                styles.card,
-                index === 0 && styles.featuredCard,
-                closed && styles.cardClosed,
-              ]}
+              style={[styles.card, closed && styles.cardClosed]}
               onPress={() => navigation.navigate("ShopDetails", { shop: item })}
             >
-              {/* Photo beside the text rather than a full-width band above
-                  it: the band alone was taller than this entire row, and
-                  it was what kept the list to two shops per screen. */}
-              <View
-                style={
-                  index === 0 ? styles.featuredPhotoWrap : styles.smallPhotoWrap
-                }
-              >
-                <ShopPhoto
-                  source={shopImageSource(item)}
-                  shopName={item.shop_name}
-                  style={index === 0 ? styles.featuredPhoto : styles.photo}
-                  iconSize={24}
-                  closed={closed}
-                />
-                {index === 0 ? (
-                  <SavedShopHeart
-                    shop={item}
-                    overlay
-                    style={styles.photoSave}
+              <View style={index === 0 ? styles.featuredCard : styles.rowCard}>
+                <View
+                  style={
+                    index === 0
+                      ? styles.featuredPhotoWrap
+                      : styles.smallPhotoWrap
+                  }
+                >
+                  <ShopPhoto
+                    source={shopImageSource(item)}
+                    shopName={item.shop_name}
+                    style={index === 0 ? styles.featuredPhoto : styles.photo}
+                    iconSize={24}
+                    closed={closed}
                   />
-                ) : null}
-              </View>
-
-              <View
-                style={[styles.details, index === 0 && styles.featuredDetails]}
-              >
-                <View style={styles.titleRow}>
-                  <Text style={styles.shopName} numberOfLines={1}>
-                    {item.shop_name}
-                  </Text>
-                  {/* Off the photo now, so no translucent backing is
-                      needed to keep it legible. */}
-                  {index > 0 ? (
+                  {index === 0 ? (
                     <SavedShopHeart
                       shop={item}
-                      size={20}
-                      style={styles.heart}
+                      overlay
+                      style={styles.photoSave}
                     />
                   ) : null}
                 </View>
 
-                {/* Only fields GET /shops actually sends. It carries no
+                <View
+                  style={[
+                    styles.details,
+                    index === 0 && styles.featuredDetails,
+                  ]}
+                >
+                  <View style={styles.titleRow}>
+                    <Text style={styles.shopName} numberOfLines={1}>
+                      {item.shop_name}
+                    </Text>
+                    {/* Off the photo now, so no translucent backing is
+                      needed to keep it legible. */}
+                    {index > 0 ? (
+                      <SavedShopHeart
+                        shop={item}
+                        size={20}
+                        style={styles.heart}
+                      />
+                    ) : null}
+                  </View>
+
+                  {/* Only fields GET /shops actually sends. It carries no
                     rating and deliberately drops `pricing` (see
                     getActiveShops), so there is no "4.8 (56)" and no
                     "₹2/page" here - both would be made up about a real
                     business. */}
-                {location ? (
-                  <View style={styles.metaRow}>
-                    <Ionicons
-                      name="location-outline"
-                      size={12}
-                      color={colors.textMuted}
-                    />
-                    <Text style={styles.metaText} numberOfLines={1}>
-                      {location}
-                    </Text>
-                  </View>
-                ) : null}
+                  {location ? (
+                    <View style={styles.metaRow}>
+                      <Ionicons
+                        name="location-outline"
+                        size={12}
+                        color={colors.textMuted}
+                      />
+                      <Text style={styles.metaText} numberOfLines={1}>
+                        {location}
+                      </Text>
+                    </View>
+                  ) : null}
 
-                {/* While busy, the vendor's own preparation estimate
+                  {/* While busy, the vendor's own preparation estimate
                     replaces the generic rush reading - it is the more
                     specific promise, and it is the whole difference busy
                     makes to this customer. */}
-                <View style={styles.metaRow}>
-                  <View
-                    style={[
-                      styles.statusDot,
-                      { backgroundColor: availability.colors.dot },
-                    ]}
-                  />
-                  <Text
-                    style={[
-                      styles.statusText,
-                      { color: availability.colors.text },
-                    ]}
-                    numberOfLines={1}
-                  >
-                    {[
-                      availability.label,
-                      availability.prepLine ||
-                        rushLabels[item.queue?.rush_level],
-                    ]
-                      .filter(Boolean)
-                      .join(" · ")}
-                  </Text>
-                </View>
-
-                {distanceLabel || item.contact ? (
-                  <View style={styles.footerRow}>
-                    {distanceLabel ? (
-                      <Text style={styles.distance}>{distanceLabel}</Text>
-                    ) : null}
-                    {item.contact ? (
-                      <Text style={styles.contact} numberOfLines={1}>
-                        {item.contact}
-                      </Text>
-                    ) : null}
+                  <View style={styles.metaRow}>
+                    <View
+                      style={[
+                        styles.statusDot,
+                        { backgroundColor: availability.colors.dot },
+                      ]}
+                    />
+                    <Text
+                      style={[
+                        styles.statusText,
+                        { color: availability.colors.text },
+                      ]}
+                      numberOfLines={1}
+                    >
+                      {[
+                        availability.label,
+                        availability.prepLine ||
+                          rushLabels[item.queue?.rush_level],
+                      ]
+                        .filter(Boolean)
+                        .join(" · ")}
+                    </Text>
                   </View>
-                ) : null}
+
+                  {distanceLabel || item.contact ? (
+                    <View style={styles.footerRow}>
+                      {distanceLabel ? (
+                        <Text style={styles.distance}>{distanceLabel}</Text>
+                      ) : null}
+                      {item.contact ? (
+                        <Text style={styles.contact} numberOfLines={1}>
+                          {item.contact}
+                        </Text>
+                      ) : null}
+                    </View>
+                  ) : null}
+                </View>
+                {index === 0 && (
+                  <View pointerEvents="none" style={styles.cardOutline} />
+                )}
               </View>
-            </PressableScale>
+            </Pressable>
           );
         }}
       />
@@ -385,32 +388,48 @@ const styles = StyleSheet.create({
   // roughly 300px before. The height is set by the photo, not by the
   // text, so a shop with no locality doesn't produce a shorter card.
   card: {
+    marginBottom: spacing.sm,
+  },
+  rowCard: {
     flexDirection: "row",
     alignItems: "flex-start",
     gap: spacing.md,
     backgroundColor: colors.surface,
     borderRadius: 0,
     paddingVertical: spacing.lg,
-    marginBottom: spacing.sm,
     borderBottomWidth: 1,
     borderColor: colors.border,
     backgroundColor: colors.background,
   },
-  photo: { width: 88, height: 88, borderRadius: 20 },
+  photo: { width: 88, height: 88, borderRadius: 0 },
   smallPhotoWrap: { width: 88 },
   featuredCard: {
     flexDirection: "column",
     gap: 0,
     paddingVertical: 0,
-    borderWidth: 1,
-    borderColor: colors.border,
     borderRadius: 28,
     overflow: "hidden",
     backgroundColor: colors.surface,
   },
-  featuredPhotoWrap: { width: "100%", position: "relative" },
-  featuredPhoto: { width: "100%", height: 174 },
-  featuredDetails: { padding: spacing.lg, width: "100%" },
+  featuredPhotoWrap: {
+    width: "100%",
+    position: "relative",
+    overflow: "hidden",
+    borderBottomWidth: 1,
+    borderBottomColor: colors.border,
+  },
+  featuredPhoto: { width: "100%", height: 174, borderRadius: 0 },
+  cardOutline: {
+    ...StyleSheet.absoluteFillObject,
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: 28,
+  },
+  featuredDetails: {
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.md,
+    width: "100%",
+  },
   photoSave: { position: "absolute", top: spacing.md, right: spacing.md },
   locationRow: {
     flexDirection: "row",

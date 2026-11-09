@@ -23,8 +23,8 @@ export default function WeeklyChart({ days, metric = "orders" }) {
               <div
                 title={`${day.label}: ${day.orders} order${day.orders === 1 ? "" : "s"}, ₹${day.earnings}`}
                 style={{ height: `${height}%` }}
-                className={`w-full rounded-t-[6px] transition-[height] duration-300 ${
-                  day.isToday ? "bg-primary" : value === 0 ? "bg-border" : "bg-primary/35"
+                className={`w-full rounded-t-[4px] ${
+                  day.isToday ? "bg-primary" : value === 0 ? "bg-border" : "bg-border-strong"
                 }`}
               />
             </div>

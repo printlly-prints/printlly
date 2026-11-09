@@ -1,6 +1,5 @@
 import {
   Linking,
-  Platform,
   Pressable,
   StyleSheet,
   Text,
@@ -11,6 +10,7 @@ import ShopPhoto from "./ShopPhoto";
 import Card from "./Card";
 import { DEMO_MODE } from "../config/runtime";
 import { shopImageSource } from "../utils/shopImages";
+import { shopMaps } from "../utils/shopMaps";
 import { formatDistance } from "../utils/distance";
 import { shopAvailability } from "../utils/shopAvailability";
 import { colors, typography, spacing, radius } from "../theme";
@@ -55,19 +55,7 @@ export default function ShopCard({
   };
 
   const openMap = () => {
-    // Prefer the pinned coordinates when the vendor has set them; fall
-    // back to searching the address, which is all we have otherwise.
-    const coords = shop.location?.coordinates;
-    const query =
-      Array.isArray(coords) && coords.length === 2
-        ? `${coords[1]},${coords[0]}`
-        : encodeURIComponent(`${shop.shop_name} ${shop.address || ""}`.trim());
-    const url = Platform.select({
-      ios: `maps://?q=${query}`,
-      android: `geo:0,0?q=${query}`,
-      default: `https://maps.google.com/?q=${query}`,
-    });
-    Linking.openURL(url).catch(() => {});
+    Linking.openURL(shopMaps(shop).url).catch(() => {});
   };
 
   return (

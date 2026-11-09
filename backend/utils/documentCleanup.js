@@ -2,6 +2,7 @@ const cloudinary = require("../config/cloudinary");
 const Upload = require("../models/Upload");
 const { captureError } = require("./sentry");
 const { alertP1, ALERT } = require("./alerts");
+const {removeLocalDocument} = require('./localDocuments');
 
 // Deleting customer documents - the Cloudinary asset and the Upload record
 // that points at it.
@@ -169,7 +170,9 @@ async function deleteUploadDocument(uploadId, context = "") {
   const label = `[documentCleanup]${context ? ` ${context},` : ""} upload ${uploadId}`;
 
   try {
-    const result = await cloudinary.uploader.destroy(claimed.public_id, {
+    const result = claimed.storage_provider === 'local'
+      ? await removeLocalDocument(claimed.file_url).then(()=>({result:'ok'}))
+      : await cloudinary.uploader.destroy(claimed.public_id, {
       resource_type: RESOURCE_TYPE,
     });
 

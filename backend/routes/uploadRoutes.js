@@ -7,8 +7,7 @@ const { verifyToken } = require("../middleware/auth");
 const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10 MB per file
 const MAX_FILES = 10;
 
-// Files are held in memory and streamed straight to Cloudinary, so
-// nothing is ever written to the server's disk.
+// Hold files in memory until they are validated and prepared for storage.
 //
 // No fileFilter here on purpose: PDF/extension validation happens per
 // file in uploadController.js instead, so one bad file in a batch of 10

@@ -34,6 +34,10 @@ export async function uploadDocuments(assets) {
   if (DEMO_MODE) throw new Error("Could not add this file. Please try again.");
   const form = new FormData();
   assets.forEach((asset) => {
+    if (asset.file) {
+      form.append("documents", asset.file, asset.name);
+      return;
+    }
     form.append("documents", {
       uri: asset.uri,
       name: asset.name || "document.pdf",
@@ -41,10 +45,21 @@ export async function uploadDocuments(assets) {
     });
   });
 
-  const { data } = await api.post("/upload", form, {
-    headers: { "Content-Type": "multipart/form-data" },
-  });
-  return data;
+  try {
+    const { data } = await api.post("/upload", form, {
+      headers: { "Content-Type": "multipart/form-data" },
+    });
+    return data;
+  } catch (error) {
+    const response = error.response;
+    if (
+      response?.status === 400 &&
+      Array.isArray(response.data?.failed) &&
+      Array.isArray(response.data?.succeeded)
+    )
+      return response.data;
+    throw error;
+  }
 }
 
 export default api;

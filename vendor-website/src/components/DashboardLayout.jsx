@@ -1,5 +1,4 @@
 import Sidebar from "./Sidebar";
-import DashboardBackdrop from "./dashboard/DashboardBackdrop";
 import DeactivatedBanner from "./DeactivatedBanner";
 
 // Shared shell for every authenticated vendor page once a shop exists:
@@ -15,10 +14,6 @@ import DeactivatedBanner from "./DeactivatedBanner";
 export default function DashboardLayout({ children }) {
   return (
     <div className="min-h-screen md:flex bg-background-page">
-      {/* Fixed, behind everything, pointer-events-none - see the
-          component for why a working surface gets decoration at all and
-          what it is not allowed to do. */}
-      <DashboardBackdrop />
       <Sidebar />
       <div className="flex-1 min-w-0 flex flex-col">
         <DeactivatedBanner />

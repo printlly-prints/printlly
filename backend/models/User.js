@@ -1,4 +1,5 @@
 const mongoose = require("mongoose");
+const PROFILE_GENDERS = ['male','female','non_binary','prefer_not_to_say'];
 
 // A User can either be a customer placing print orders, or a shop_owner
 // who manages a shop and fulfills orders. auth_provider distinguishes
@@ -11,6 +12,7 @@ const userSchema = new mongoose.Schema(
       required: true,
       trim: true,
     },
+    gender:{type:String,enum:PROFILE_GENDERS,default:'prefer_not_to_say'},
     phone: {
       type: String,
       // Only the local (email/password) signup flow collects a phone
@@ -84,4 +86,5 @@ const userSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
+userSchema.statics.PROFILE_GENDERS=PROFILE_GENDERS;
 module.exports = mongoose.model("User", userSchema);

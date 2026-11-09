@@ -2,74 +2,28 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Base defaults - see src/styles/tokens.md for the full token reference. */
-body {
-  @apply bg-background text-text-primary font-sans;
+:root { color-scheme: light; }
+body { @apply bg-background text-text-primary font-sans antialiased; margin: 0; }
+input, select, textarea { @apply bg-input text-text-primary; }
+:is(input, select, textarea).border-border { @apply border-border-strong; }
+input::placeholder, textarea::placeholder { @apply text-text-muted; }
+input:-webkit-autofill, input:-webkit-autofill:hover, input:-webkit-autofill:focus {
+  -webkit-box-shadow: 0 0 0 1000px #ffffff inset;
+  -webkit-text-fill-color: #242426;
+  caret-color: #007c9c;
 }
-/* ---------------------------------------------------------------------------
-   Dark theme base
-   ---------------------------------------------------------------------------
-   color-scheme is the single highest-leverage line in this file.
-
-   It tells the browser the page is dark, and the browser then renders every
-   piece of UI it owns and we cannot style to match: scrollbars, the dropdown
-   list a <select> opens, the native date picker, spinner buttons on a number
-   input, the autofill menu, and the default background of any form control
-   that was not given one.
-
-   That last case was a real bug rather than a hypothetical. Several inputs in
-   this app carry border and focus classes but no background class, so they
-   fell through to the browser default - which is white. Without this line they
-   would have been bright white boxes on a dark page. The explicit form-control
-   rules below fix those inputs directly; color-scheme is what covers the parts
-   of them the CSS cannot reach, and anything added later that forgets again.
-
-   It is also why there is NO custom scrollbar CSS here. With color-scheme set,
-   scrollbars are already dark and already native on every platform, so styling
-   them by hand would be replacing correct platform behaviour with a worse
-   imitation. */
-:root {
-  color-scheme: dark;
+::selection { background: #b9e9f2; color: #242426; }
+:focus-visible { outline: 2px solid #007c9c; outline-offset: 3px; }
+input:not([type="checkbox"]):not([type="radio"]):not([type="file"]), select { min-height: 44px; }
+select {
+  appearance: none;
+  padding-right: 36px !important;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' fill='none' stroke='%2300738f' stroke-width='1.7' viewBox='0 0 24 24'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 12px center;
 }
-
-/* Form controls.
-
-   Stated once here rather than per input, because the inputs that were missing
-   a background are exactly the ones nobody would think to revisit. An input is
-   a WELL on dark - recessed below the card it sits in - which is the opposite
-   of the light theme, where it was a white tile on a tinted card. Both read as
-   "type here"; the direction just flips with the ground. */
-input,
-select,
-textarea {
-  @apply bg-input text-text-primary border-border;
-}
-
-input::placeholder,
-textarea::placeholder {
-  @apply text-text-muted;
-}
-
-/* Chrome paints an autofilled field with its own near-white background and
-   ignores background-color outright. The inset box-shadow is the only thing
-   that overrides it, and -webkit-text-fill-color the only thing that
-   overrides the text. Without these, saving a password turns the login form
-   into two white boxes. */
-input:-webkit-autofill,
-input:-webkit-autofill:hover,
-input:-webkit-autofill:focus {
-  -webkit-box-shadow: 0 0 0 1000px #0c2824 inset;
-  -webkit-text-fill-color: #e6f2ec;
-  caret-color: #e6f2ec;
-}
-
-/* Text selection. The browser default is a blue that belongs to no part of
-   this palette; teal at low opacity keeps a selection legible and on-brand. */
-::selection {
-  background-color: rgba(14, 165, 168, 0.3);
-  color: #e6f2ec;
-}
-
+select:focus-visible { border-color: #007c9c; }
+button, a, input, select, textarea { -webkit-tap-highlight-color: transparent; }
 
 @layer utilities {
   /* ---- Scroll reveal -------------------------------------------------
@@ -99,24 +53,6 @@ input:-webkit-autofill:focus {
   }
   .draw-line[data-revealed="true"] {
     transform: scaleX(1);
-  }
-
-  /* ---- Dashboard -----------------------------------------------------
-     The new-order alert's attention pulse: a ring that breathes, not a
-     colour flash or a bounce. Applied with Tailwind's motion-safe:
-     variant, so a vendor who has asked for reduced motion gets the panel
-     without the animation. */
-  @keyframes printlly-pulse {
-    0%,
-    100% {
-      /* Brighter than the 0.22 it was, and on primary-accent rather than
-         primary: a ring tuned to be noticed against a white panel is far too
-         quiet against a dark one. Same teal, more of it. */
-      box-shadow: 0 0 0 0 rgba(14, 165, 168, 0.45);
-    }
-    50% {
-      box-shadow: 0 0 0 7px rgba(14, 165, 168, 0);
-    }
   }
 
   /* Sections fade up once as the dashboard mounts. Opacity + a 6px lift

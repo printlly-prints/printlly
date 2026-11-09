@@ -22,3 +22,6 @@ export function assertCustomerSession(data) {
   if (typeof data.token !== "string" || !data.token)
     throw new Error("We couldn’t complete sign-in. Please try again.");
 }
+export function normalizeCustomerUser(user) {
+  return { ...user, _id: user?._id || user?.id };
+}

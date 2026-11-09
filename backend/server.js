@@ -80,6 +80,7 @@ app.use(helmet(buildHelmetOptions()));
 // the Expo app, the e2e suite, curl - are unaffected; they are not browser
 // cross-origin requests and are guarded by the JWT on every route.
 app.use(cors(buildCorsOptions()));
+require('./utils/localShopPhotos').mountLocalShopPhotos(app);
 
 // Health and readiness probes, mounted HERE - after the security headers so
 // their responses are hardened like any other, but ahead of every rate

@@ -3,12 +3,9 @@ import { NavLink, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import Logo from "./Logo";
 import ShopOpenToggle from "./ShopOpenToggle";
+import { Bell } from "lucide-react";
 
-// Every section a shop owner can reach once they have a shop. All are
-// real pages except Settings, which is still a deliberate placeholder
-// (see pages/ComingSoon.jsx) - listed anyway so the nav is honest about
-// where the product is headed rather than only showing what happens to
-// be built today.
+// Every section a shop owner can reach once they have a shop.
 //
 // There is no separate "Recent Orders" item: it led to the same table as
 // Orders, just opened on a different tab, so two nav entries competed to
@@ -24,6 +21,7 @@ const NAV_ITEMS = [
   // stays on Profile with KYC - that is account setup, filled in once.
   { label: "Earnings", to: "/earnings", icon: IconWallet },
   { label: "Profile", to: "/shop-profile", icon: IconUser },
+  { label: "Notifications", to: "/notifications", icon: IconNotifications },
   { label: "Settings", to: "/settings", icon: IconSettings },
 ];
 
@@ -33,7 +31,7 @@ const NAV_ITEMS = [
 const linkClass = ({ isActive }) =>
   `relative flex items-center gap-3 px-3 py-2.5 rounded-control text-sm transition-[background-color,color] duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 ${
     isActive
-      ? "bg-primary-wash text-primary-bright font-semibold before:absolute before:left-0 before:top-2 before:bottom-2 before:w-1 before:rounded-full before:bg-primary"
+      ? "bg-primary-wash text-primary-deep font-semibold before:absolute before:left-0 before:top-2 before:bottom-2 before:w-1 before:rounded-full before:bg-primary"
       : "text-text-secondary font-medium hover:bg-background-soft hover:text-text-primary"
   }`;
 
@@ -111,9 +109,9 @@ export default function Sidebar() {
         )}
       </div>
 
-      <aside className="hidden md:flex md:flex-col md:w-60 md:shrink-0 md:h-screen md:sticky md:top-0 bg-surface border-r border-border">
+      <aside className="hidden md:flex md:flex-col md:w-64 md:shrink-0 md:h-screen md:sticky md:top-0 bg-surface border-r border-border">
         <div className="border-b border-border">
-          <div className="h-16 px-5 flex items-center gap-2.5">
+          <div className="h-24 px-5 flex items-center gap-2.5">
             <Logo size={28} />
             <div className="flex flex-col min-w-0">
               <span className="font-heading font-bold text-text-primary leading-tight truncate">
@@ -174,6 +172,8 @@ function IconShell({ children }) {
     </svg>
   );
 }
+
+function IconNotifications() { return <Bell size={18} strokeWidth={1.8} aria-hidden="true" />; }
 
 function IconDashboard() {
   return (

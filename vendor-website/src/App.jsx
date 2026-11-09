@@ -27,7 +27,8 @@ const OrdersDashboard = lazy(() => import("./pages/OrdersDashboard"));
 const Dashboard = lazy(() => import("./pages/Dashboard"));
 const PricingPage = lazy(() => import("./pages/PricingPage"));
 const Earnings = lazy(() => import("./pages/Earnings"));
-const ComingSoon = lazy(() => import("./pages/ComingSoon"));
+const Settings = lazy(() => import("./pages/Settings"));
+const Notifications = lazy(() => import("./pages/Notifications"));
 
 // Legal and information pages. Public, unauthenticated, and lazy like the
 // rest - a customer reading the refund policy should not be made to download
@@ -203,13 +204,12 @@ export default function App() {
           path="/settings"
           element={
             <ProtectedRoute requireShop>
-              <ComingSoon
-                title="Settings"
-                description="Account and shop preferences aren't built yet."
-              />
+              <Settings />
             </ProtectedRoute>
           }
         />
+
+        <Route path="/notifications" element={<ProtectedRoute requireShop><Notifications /></ProtectedRoute>} />
 
         {/* Legal and information pages. Flat, readable URLs rather than a
             /legal/* prefix, because these are the addresses that end up in

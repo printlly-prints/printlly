@@ -16,6 +16,7 @@ const uploadSchema = new mongoose.Schema(
       type: String,
       required: true,
     },
+    storage_provider: {type:String,enum:['cloudinary','local'],default:'cloudinary'},
     public_id: {
       type: String,
       required: true,

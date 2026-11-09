@@ -6,6 +6,13 @@
     "orientation": "portrait",
     "icon": "./assets/paprout-icon.png",
     "userInterfaceStyle": "light",
+    "backgroundColor": "#FAFAF7",
+    "androidStatusBar": {
+      "backgroundColor": "#FAFAF7",
+      "barStyle": "dark-content",
+      "translucent": true,
+      "hidden": false
+    },
     "ios": {
       "supportsTablet": true
     },
@@ -20,6 +27,7 @@
       "favicon": "./assets/paprout-favicon.png"
     },
     "plugins": [
+      "expo-system-ui",
       [
         "expo-splash-screen",
         {

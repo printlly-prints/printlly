@@ -71,6 +71,7 @@ const publicUser = (user) => ({
   email: user.email,
   phone: user.phone,
   role: user.role,
+  gender: user.gender,
 });
 
 // Names the field that actually clashed, rather than making someone
@@ -95,7 +96,8 @@ function duplicateMessage(existing, { email, phone }) {
 // Creates a new user (customer or shop_owner) with a hashed password.
 const register = async (req, res) => {
   try {
-    const { name, phone, email, password, role } = req.body;
+    const { name, phone, email, password, role, gender='prefer_not_to_say' } = req.body;
+    if(!User.PROFILE_GENDERS.includes(gender))return res.status(400).json({message:'Choose a valid gender preference or skip this field.'});
 
     if (!name || !phone || !email || !password) {
       return res.status(400).json({ message: "All fields are required" });
@@ -123,6 +125,7 @@ const register = async (req, res) => {
     const password_hash = await bcrypt.hash(password, salt);
 
     const user = await User.create({
+      gender,
       name,
       phone,
       email,

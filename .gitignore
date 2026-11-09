@@ -20,6 +20,7 @@ node_modules/
 # (.env.production, .env.staging, .env.local) so a new one is ignored by
 # default rather than needing someone to remember.
 .env
+.local-media/
 .env.*
 
 # ...except the templates, which are the documentation and contain no values.

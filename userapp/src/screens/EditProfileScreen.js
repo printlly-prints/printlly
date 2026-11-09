@@ -18,15 +18,24 @@ import DocumentSettingsCard from "../components/DocumentSettingsCard";
 import { defaultDocumentSettings } from "../utils/documentSettings";
 import { HUMAN_AVATARS } from "../utils/profileAvatars";
 import { colors, typography, spacing } from "../theme";
+import GenderOptions from "../components/GenderOptions";
+import { suggestedAvatar, profileAccent } from "../utils/profilePreferences";
 
 export default function EditProfileScreen({ navigation, route }) {
   const { user, appearance, saveAppearance } = useAuth();
   const defaultsOnly = route.name === "PrintDefaults";
+  const [gender, setGender] = useState(
+    appearance?.gender || user?.gender || "prefer_not_to_say",
+  );
+  const [colour, setColour] = useState(appearance?.colour || "auto");
+  const [avatarChosen, setAvatarChosen] = useState(
+    HUMAN_AVATARS.some((item) => item.id === appearance?.avatar),
+  );
   const [name, setName] = useState(appearance?.name || user?.name || "");
   const [avatar, setAvatar] = useState(
     HUMAN_AVATARS.some((item) => item.id === appearance?.avatar)
       ? appearance.avatar
-      : "avatar-01",
+      : suggestedAvatar(appearance?.gender || user?.gender),
   );
   const [printDefaults, setPrintDefaults] = useState(
     appearance?.printDefaults || defaultDocumentSettings(),
@@ -39,11 +48,16 @@ export default function EditProfileScreen({ navigation, route }) {
     setSaving(true);
     setError("");
     try {
-      await saveAppearance({
-        name,
-        avatar,
-        printDefaults: { ...printDefaults, services: [] },
-      });
+      await saveAppearance(
+        {
+          name,
+          avatar,
+          gender,
+          colour,
+          printDefaults: { ...printDefaults, services: [] },
+        },
+        { updateBasics: !defaultsOnly },
+      );
       navigation.goBack();
       toast.success(
         defaultsOnly ? "Print preferences saved" : "Profile updated",
@@ -81,7 +95,59 @@ export default function EditProfileScreen({ navigation, route }) {
         ) : (
           <>
             <View style={styles.avatar}>
-              <ProfileAvatar avatar={avatar} size={96} />
+              <ProfileAvatar
+                avatar={avatar}
+                colour={profileAccent({ gender, colour })}
+                size={96}
+              />
+            </View>
+            <Text style={styles.label}>Gender (optional)</Text>
+            <GenderOptions
+              value={gender}
+              disabled={saving}
+              onChange={(next) => {
+                setGender(next);
+                if (!avatarChosen) setAvatar(suggestedAvatar(next));
+              }}
+            />
+            <Text style={styles.label}>Profile accent</Text>
+            <View style={styles.colours}>
+              {[
+                ["auto", "Suggested"],
+                ["cyan", "Cyan"],
+                ["magenta", "Pink"],
+                ["yellow", "Yellow"],
+              ].map(([value, label]) => (
+                <Pressable
+                  key={value}
+                  disabled={saving}
+                  accessibilityRole="radio"
+                  accessibilityLabel={label + " profile accent"}
+                  accessibilityState={{ checked: colour === value }}
+                  onPress={() => setColour(value)}
+                  style={[
+                    styles.accentOption,
+                    colour === value && styles.selected,
+                  ]}
+                >
+                  <View
+                    style={{
+                      width: 12,
+                      height: 12,
+                      borderRadius: 6,
+                      backgroundColor:
+                        value === "auto"
+                          ? colors.primary
+                          : value === "cyan"
+                            ? colors.primary
+                            : value === "magenta"
+                              ? colors.magenta
+                              : colors.yellow,
+                    }}
+                  />
+                  <Text style={styles.note}>{label}</Text>
+                </Pressable>
+              ))}
             </View>
             <Text style={styles.label}>Choose an avatar</Text>
             <View
@@ -89,25 +155,40 @@ export default function EditProfileScreen({ navigation, route }) {
               accessibilityLabel="Profile avatars"
               style={styles.colours}
             >
-              {HUMAN_AVATARS.map((item) => (
-                <Pressable
-                  key={item.id}
-                  accessibilityRole="radio"
-                  accessibilityLabel={item.label}
-                  accessibilityState={{ checked: avatar === item.id }}
-                  aria-checked={avatar === item.id}
-                  onPress={() => setAvatar(item.id)}
-                  disabled={saving}
-                  style={[
-                    styles.swatchRing,
-                    avatar === item.id && styles.selected,
-                  ]}
-                >
-                  <ProfileAvatar avatar={item.id} size={46} />
-                </Pressable>
-              ))}
+              {[...HUMAN_AVATARS]
+                .sort(
+                  (a, b) =>
+                    Number(b.gender === gender) - Number(a.gender === gender),
+                )
+                .map((item) => (
+                  <Pressable
+                    key={item.id}
+                    accessibilityRole="radio"
+                    accessibilityLabel={item.label}
+                    accessibilityState={{ checked: avatar === item.id }}
+                    aria-checked={avatar === item.id}
+                    onPress={() => {
+                      setAvatar(item.id);
+                      setAvatarChosen(true);
+                    }}
+                    disabled={saving}
+                    style={[
+                      styles.swatchRing,
+                      avatar === item.id && styles.selected,
+                    ]}
+                  >
+                    <ProfileAvatar
+                      avatar={item.id}
+                      colour={profileAccent({ gender, colour })}
+                      size={60}
+                    />
+                  </Pressable>
+                ))}
             </View>
-            <Text style={styles.note}>Appearance is saved on this device.</Text>
+            <Text style={styles.note}>
+              Your gender is optional. All avatars and accents are available to
+              everyone. Avatar and accent choices are saved on this device.
+            </Text>
             <Text style={[styles.label, { marginTop: spacing.xl }]}>
               Display name
             </Text>
@@ -170,15 +251,25 @@ const styles = StyleSheet.create({
   note: { ...typography.caption, color: colors.textSecondary },
   colours: { flexDirection: "row", gap: spacing.sm, flexWrap: "wrap" },
   swatchRing: {
-    width: 54,
-    height: 54,
-    borderRadius: 27,
+    width: 68,
+    height: 68,
+    borderRadius: 34,
     borderWidth: 1.5,
     borderColor: "transparent",
     alignItems: "center",
     justifyContent: "center",
   },
   selected: { borderColor: colors.primary },
+  accentOption: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    minHeight: 44,
+    paddingHorizontal: 10,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: colors.border,
+  },
   swatch: { width: 38, height: 38, borderRadius: 19 },
   input: {
     ...typography.body,

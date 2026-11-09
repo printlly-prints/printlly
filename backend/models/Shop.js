@@ -71,6 +71,8 @@ const shopSchema = new mongoose.Schema(
       required: true,
       trim: true,
     },
+    google_maps_url: { type: String, default: null, maxlength: 12000, validate: { validator: require("../utils/googleMapsLink").validGoogleMapsUrl, message: "Invalid Google Maps link" } },
+    google_maps_embed_url: { type: String, default: null, maxlength: 12000, validate: { validator: require("../utils/googleMapsLink").validGoogleMapsEmbedUrl, message: "Invalid Google Maps embed link" } },
     contact: {
       type: String,
       required: true,

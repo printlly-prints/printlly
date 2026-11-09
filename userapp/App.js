@@ -2,7 +2,13 @@ import AppHeader from "./src/components/AppHeader";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import AppToaster from "./src/components/AppToaster";
 import { useEffect } from "react";
-import { Platform, Pressable, Text, View } from "react-native";
+import {
+  Platform,
+  Pressable,
+  Text,
+  View,
+  StatusBar as NativeStatusBar,
+} from "react-native";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { DEMO_MODE } from "./src/config/runtime";
 import DemoWelcomeScreen from "./src/screens/DemoWelcomeScreen";
@@ -11,7 +17,7 @@ import { DefaultTheme, NavigationContainer } from "@react-navigation/native";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import { SafeAreaProvider } from "react-native-safe-area-context";
-import { StatusBar } from "expo-status-bar";
+import * as SystemUI from "expo-system-ui";
 import { useFonts } from "expo-font";
 import * as SplashScreen from "expo-splash-screen";
 
@@ -48,6 +54,7 @@ import BottomTabBar from "./src/components/BottomTabBar";
 import ErrorBoundary from "./src/components/ErrorBoundary";
 import { initAnalytics, trackEvent, EVENTS } from "./src/lib/analytics";
 import { colors, typography } from "./src/theme";
+SystemUI.setBackgroundColorAsync(colors.background).catch(() => {});
 
 // Started at module scope, before any component mounts, so an event
 // emitted during the first render is not dropped. A no-op when
@@ -58,6 +65,10 @@ const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
 const Branch = createNativeStackNavigator();
 const nativeHeader = {
+  statusBarStyle: "dark",
+  statusBarBackgroundColor: colors.background,
+  statusBarHidden: false,
+  statusBarTranslucent: true,
   headerStyle: { backgroundColor: colors.background },
   headerTitleStyle: { ...typography.h3, color: colors.ink },
   headerTintColor: colors.primary,
@@ -324,7 +335,7 @@ function RootNavigator() {
   }
 
   return (
-    <View style={{ flex: 1 }}>
+    <View style={{ flex: 1, backgroundColor: colors.background }}>
       <Stack.Navigator id="Root" screenOptions={nativeHeader}>
         {!isAuthenticated ? (
           <Stack.Screen
@@ -406,7 +417,9 @@ export default function App() {
     // LocationProvider or any other context initialises would otherwise
     // unmount the root view and leave a blank screen with no way out but
     // force-quitting the app. See src/components/ErrorBoundary.js.
-    <GestureHandlerRootView style={{ flex: 1 }}>
+    <GestureHandlerRootView
+      style={{ flex: 1, backgroundColor: colors.background }}
+    >
       <ErrorBoundary>
         <SafeAreaProvider
           style={{
@@ -441,7 +454,12 @@ export default function App() {
                           },
                         }}
                       >
-                        <StatusBar style="dark" />
+                        <NativeStatusBar
+                          barStyle="dark-content"
+                          backgroundColor={colors.background}
+                          translucent
+                          hidden={false}
+                        />
                         <RootNavigator />
                         <AppToaster />
                       </NavigationContainer>

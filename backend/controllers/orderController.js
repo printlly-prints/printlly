@@ -504,10 +504,16 @@ const viewOrderDocument = async (req, res) => {
       return res.status(404).json({ message: "Document not found on this order" });
     }
 
-    const upstream = await fetch(doc.file_url);
-    if (!upstream.ok) {
-      console.error(`Document fetch failed for order ${id} doc ${docIndex}: ${upstream.status}`);
-      return res.status(502).json({ message: "Could not load this document from storage" });
+    let buffer;
+    if (isLocalDocument(doc.file_url)) {
+      buffer = await readLocalDocument(doc.file_url);
+    } else {
+      const upstream = await fetch(doc.file_url);
+      if (!upstream.ok) {
+        console.error(`Document fetch failed for order ${id} doc ${docIndex}: ${upstream.status}`);
+        return res.status(502).json({ message: "Could not load this document from storage" });
+      }
+      buffer = Buffer.from(await upstream.arrayBuffer());
     }
 
     res.setHeader("Content-Type", "application/pdf");
@@ -515,9 +521,9 @@ const viewOrderDocument = async (req, res) => {
     res.setHeader("Content-Disposition", "inline");
     res.setHeader("Cache-Control", "private, no-store");
 
-    const buffer = Buffer.from(await upstream.arrayBuffer());
     res.status(200).send(buffer);
   } catch (error) {
+    if (error.code === 'ENOENT') return res.status(410).json({message:'This print file was deleted.'});
     console.error(`Failed to view order document: ${error.message}`);
     res.status(500).json({ message: "Could not load this document" });
   }
@@ -532,3 +538,4 @@ module.exports = {
   readyOrder,
   completeOrder,
 };
+const {isLocalDocument,readLocalDocument} = require('../utils/localDocuments');

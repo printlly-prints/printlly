@@ -115,7 +115,7 @@ export default function UploadDocumentsScreen({
       setUploadedDocs((previous) => [...previous, sample]);
       setActiveDocId(sample.upload_id);
       rememberSettings([sample]);
-      toast.success("PDF added", {
+      toast.success("Document added", {
         description: sample.page_count + " pages ready to configure.",
       });
       return;
@@ -124,7 +124,7 @@ export default function UploadDocumentsScreen({
     let result;
     try {
       result = await DocumentPicker.getDocumentAsync({
-        type: "application/pdf",
+        type: ["application/pdf", "image/jpeg", "image/png"],
         multiple: true,
         copyToCacheDirectory: true,
       });
@@ -184,7 +184,7 @@ export default function UploadDocumentsScreen({
       rememberSettings(result.succeeded);
       setUploadedDocs((prev) => [...prev, ...result.succeeded]);
       if (result.succeeded.length)
-        toast.success("PDF added", {
+        toast.success("Documents added", {
           description:
             result.succeeded.length + " document(s) ready to configure.",
         });
@@ -289,16 +289,17 @@ export default function UploadDocumentsScreen({
               What are we{"\n"}printing today?
             </Text>
             <Text style={styles.subtitle}>
-              Add a PDF and set it up. You’ll compare nearby shops after.
+              Add documents or images and set them up. Compare nearby shops
+              after.
             </Text>
             <Button
-              title="Add PDF"
+              title="Add documents"
               icon="document-attach-outline"
               iconPosition="left"
               onPress={addFiles}
             />
             <Text style={styles.fileLimit}>
-              PDF only · up to 10 MB per file · 10 files per order
+              PDF, JPG, JPEG, PNG · up to 10 MB each · 10 files per order
             </Text>
             <View style={styles.defaults}>
               <Text style={styles.defaultTitle}>Your defaults</Text>
@@ -392,7 +393,7 @@ export default function UploadDocumentsScreen({
             style={styles.add}
           >
             <Ionicons name="add" size={23} color={colors.primary} />
-            <Text style={styles.link}>Add PDF</Text>
+            <Text style={styles.link}>Add documents</Text>
           </PressableScale>
         ) : null}
         {pendingFiles.length > 0 ? (
@@ -458,7 +459,8 @@ export default function UploadDocumentsScreen({
               color={colors.textMuted}
             />
             <Text style={styles.note}>
-              PDF files only. Up to {MAX_FILES} per order.
+              PDF, JPG, JPEG and PNG. Up to {MAX_FILES} files per order. Each
+              image prints as one page.
             </Text>
           </View>
         ) : null}
@@ -517,7 +519,7 @@ function DocumentRow({
         failed && { backgroundColor: colors.dangerBg },
       ]}
     >
-      <DocumentThumbnail colour={colour} />
+      <DocumentThumbnail colour={colour} name={name} />
       <Pressable
         disabled={!onSelect || disabled}
         onPress={onSelect}

@@ -11,9 +11,13 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 // OrderEventsContext imports useAuth from here, so a top-level import
 // would be a require cycle.
 import api from "../api/client";
-import { assertCustomerSession } from "../utils/authValidation";
+import {
+  assertCustomerSession,
+  normalizeCustomerUser,
+} from "../utils/authValidation";
 import { DEMO_MODE, SESSION_KEYS } from "../config/runtime";
 import { DEMO_SESSION } from "../demo/store";
+import { googleIdToken } from "../lib/googleSignIn";
 import { identifyUser, clearUser } from "../lib/analytics";
 import {
   profilePreferencesKey,
@@ -56,18 +60,33 @@ export function AuthProvider({ children }) {
 
   // Appearance is device-local; account identity and payment contact remain server-owned.
   const saveAppearance = useCallback(
-    async (value) => {
+    async (value, { updateBasics = false } = {}) => {
       const message = validateProfilePreferences(value);
       if (message) throw new Error(message);
       if (!user?._id) throw new Error("Sign in to customize your profile.");
       const next = { ...value, name: value.name.trim() };
+      const gender = next.gender || user.gender || "prefer_not_to_say";
+      if (
+        updateBasics &&
+        !DEMO_MODE &&
+        (next.name !== user.name ||
+          gender !== (user.gender || "prefer_not_to_say"))
+      ) {
+        const { data } = await api.patch("/auth/me", {
+          name: next.name,
+          gender,
+        });
+        const updated = normalizeCustomerUser(data.user);
+        await AsyncStorage.setItem(SESSION_KEYS.user, JSON.stringify(updated));
+        setUser(updated);
+      }
       await AsyncStorage.setItem(
         profilePreferencesKey(user._id),
         JSON.stringify(next),
       );
       setAppearanceRecord({ id: user._id, value: next });
     },
-    [user?._id],
+    [user?._id, user?.gender, user?.name],
   );
 
   // Restore a previous session on app start.
@@ -80,7 +99,7 @@ export function AuthProvider({ children }) {
         ]);
         if (storedToken) setToken(storedToken);
         if (storedUser) {
-          const parsed = JSON.parse(storedUser);
+          const parsed = normalizeCustomerUser(JSON.parse(storedUser));
           setUser(parsed);
           // A relaunch restores the session without going through
           // persistSession, so without this the identity would be missing on
@@ -99,6 +118,7 @@ export function AuthProvider({ children }) {
   // render anyway, which is no memoization at all.
   const persistSession = useCallback(async (data) => {
     assertCustomerSession(data);
+    data = { ...data, user: normalizeCustomerUser(data.user) };
     await AsyncStorage.setItem(SESSION_KEYS.token, data.token);
     await AsyncStorage.setItem(SESSION_KEYS.user, JSON.stringify(data.user));
     setToken(data.token);
@@ -122,7 +142,7 @@ export function AuthProvider({ children }) {
 
   // Always registers as "customer" - shop owners use the web dashboard.
   const register = useCallback(
-    async ({ name, phone, email, password }) => {
+    async ({ name, phone, email, password, gender }) => {
       const { data } = await api.post(
         "/auth/register",
         {
@@ -131,6 +151,7 @@ export function AuthProvider({ children }) {
           email,
           password,
           role: "customer",
+          gender,
         },
         { timeout: 20000 },
       );
@@ -142,6 +163,17 @@ export function AuthProvider({ children }) {
   const enterDemo = useCallback(async () => {
     if (!DEMO_MODE) throw new Error("Demo mode is not enabled.");
     await persistSession(DEMO_SESSION);
+  }, [persistSession]);
+
+  const loginWithGoogle = useCallback(async () => {
+    const idToken = await googleIdToken();
+    if (!idToken) return;
+    const { data } = await api.post(
+      "/auth/google/customer",
+      { id_token: idToken },
+      { timeout: 20000 },
+    );
+    await persistSession(data);
   }, [persistSession]);
 
   const logout = useCallback(async () => {
@@ -170,6 +202,7 @@ export function AuthProvider({ children }) {
       loading: loading || Boolean(user?._id && appearanceLoadedId !== user._id),
       isAuthenticated: !!token,
       login,
+      loginWithGoogle,
       enterDemo,
       register,
       logout,
@@ -181,6 +214,7 @@ export function AuthProvider({ children }) {
       token,
       loading,
       login,
+      loginWithGoogle,
       enterDemo,
       register,
       logout,

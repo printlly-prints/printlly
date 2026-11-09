@@ -23,6 +23,7 @@ const {
   comparePricing,
 } = require("../controllers/shopController");
 const { verifyToken, requireRole } = require("../middleware/auth");
+const { previewGoogleMaps } = require("../controllers/shopGoogleMapsController");
 
 const MAX_PHOTO_SIZE = 5 * 1024 * 1024; // 5MB per photo
 const MAX_KYC_FILE_SIZE = 5 * 1024 * 1024; // 5MB - not specified, matched to the photo limit
@@ -61,6 +62,7 @@ const kycUpload = multer({
 
 // Register a new shop - only authenticated shop owners can do this
 router.post("/", verifyToken, requireRole("shop_owner"), createShop);
+router.post("/google-maps-preview", verifyToken, requireRole("shop_owner"), previewGoogleMaps);
 
 // The logged-in shop owner's own shop, used to decide whether to show the
 // shop setup form. Must come before any "/:id"-style route if one is

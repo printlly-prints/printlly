@@ -17,11 +17,13 @@ import { useAuth } from "../context/AuthContext";
 import { trackEvent, EVENTS } from "../lib/analytics";
 import { validateCustomerAuth } from "../utils/authValidation";
 import { colors, fonts, typography, spacing, radius } from "../theme";
+import { GOOGLE_SIGN_IN_AVAILABLE } from "../lib/googleSignIn";
+import GenderOptions from "../components/GenderOptions";
 
 const API_CONFIGURED = Boolean(process.env.EXPO_PUBLIC_API_BASE_URL);
 
 export default function AuthScreen() {
-  const { login, register } = useAuth();
+  const { login, register, loginWithGoogle } = useAuth();
   const insets = useSafeAreaInsets();
   const [signingUp, setSigningUp] = useState(false);
   const [fields, setFields] = useState({
@@ -29,12 +31,27 @@ export default function AuthScreen() {
     phone: "",
     email: "",
     password: "",
+    gender: "prefer_not_to_say",
   });
   const [visible, setVisible] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const change = (key) => (value) =>
     setFields((previous) => ({ ...previous, [key]: value }));
+  const googleLogin = async () => {
+    setLoading(true);
+    setError("");
+    try {
+      await loginWithGoogle();
+    } catch (err) {
+      setError(
+        err.response?.data?.message ||
+          "Google sign-in could not be completed. Please try again.",
+      );
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const submit = async () => {
     if (loading || !API_CONFIGURED) return;
@@ -179,6 +196,20 @@ export default function AuthScreen() {
               At least 10 characters. Try a memorable passphrase.
             </Text>
           )}
+          {signingUp && (
+            <View style={{ gap: 8 }}>
+              <Text style={styles.label}>Gender (optional)</Text>
+              <GenderOptions
+                value={fields.gender}
+                onChange={change("gender")}
+                disabled={loading}
+              />
+              <Text style={styles.passwordHint}>
+                Suggests your profile accent and avatars. You can change both
+                later.
+              </Text>
+            </View>
+          )}
           {error ? (
             <Text
               style={styles.error}
@@ -201,6 +232,19 @@ export default function AuthScreen() {
             icon="arrow-forward"
             style={styles.submit}
           />
+          <Button
+            title="Continue with Google"
+            variant="secondary"
+            icon="logo-google"
+            onPress={googleLogin}
+            disabled={loading || !API_CONFIGURED || !GOOGLE_SIGN_IN_AVAILABLE}
+          />
+          {!GOOGLE_SIGN_IN_AVAILABLE && (
+            <Text style={styles.passwordHint}>
+              Google sign-in is not available in this build. You can use email
+              above.
+            </Text>
+          )}
           <View style={styles.switchRow}>
             <Text style={styles.switchText}>
               {signingUp ? "Already have an account?" : "New to Paprout?"}

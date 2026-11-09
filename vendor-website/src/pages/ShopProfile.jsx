@@ -320,7 +320,7 @@ export default function ShopProfile() {
           <Panel className="p-5 flex flex-col gap-4">
             <PanelHeader
               title="Shop information"
-              subtitle="Set when you registered. These can't be changed from the dashboard yet."
+              subtitle="Your registered details. Update your map pin and address in Shop location below."
             />
             <dl className="grid sm:grid-cols-2 gap-x-4 gap-y-3">
               <DetailField label="Shop name" value={shop.shop_name} />
@@ -334,7 +334,7 @@ export default function ShopProfile() {
               />
             </dl>
             <p className="text-xs text-text-muted">
-              Need one of these changed? Contact support and we'll update it for you.
+              For shop name or contact changes, contact support.
             </p>
           </Panel>
         </div>

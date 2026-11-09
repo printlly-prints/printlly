@@ -17,7 +17,7 @@ export default function NewOrderAlert({ order, onAccept, onView, onDismiss, busy
   return (
     <div
       role="status"
-      className="relative overflow-hidden rounded-panel border border-primary/30 bg-primary-wash px-4 py-3.5 flex flex-wrap items-center gap-3 shadow-card motion-safe:animate-[printlly-pulse_2.4s_ease-in-out_infinite]"
+      className="relative overflow-hidden rounded-panel border border-primary/30 bg-primary-wash px-4 py-3.5 flex flex-wrap items-center gap-3 shadow-card"
     >
       <span
         aria-hidden="true"

@@ -9,7 +9,9 @@ const {
   changePassword,
 } = require("../controllers/authController");
 const { passport, isGoogleConfigured } = require("../config/passport");
-const { verifyToken } = require("../middleware/auth");
+const { verifyToken,requireRole } = require("../middleware/auth");
+const {updateCustomerProfile}=require('../controllers/customerProfileController');
+const { customerGoogleLogin } = require("../controllers/customerGoogleController");
 
 // --- Existing customer/shop-owner email+password auth (unchanged) ---
 
@@ -18,6 +20,8 @@ router.post("/register", register);
 
 // Log in with email + password, receive a JWT
 router.post("/login", login);
+router.patch('/me',verifyToken,requireRole('customer'),updateCustomerProfile);
+router.post("/google/customer", customerGoogleLogin);
 
 // --- Google OAuth for shop owners only ---
 // Registered conditionally: passport-google-oauth20 throws if credentials

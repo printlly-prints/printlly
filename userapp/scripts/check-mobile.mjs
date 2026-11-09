@@ -13,6 +13,49 @@ async function sourceModule(relative) {
 const { validateCustomerAuth, assertCustomerSession } = await sourceModule(
   "src/utils/authValidation.js",
 );
+const { shopMaps, isGoogleMapsUrl, googleMapHtml } = await sourceModule(
+  "src/utils/shopMaps.js",
+);
+assert.equal(googleMapHtml("https://evil.test/"), "");
+assert(
+  googleMapHtml("https://www.google.com/maps?output=embed&q=0,0").includes(
+    "<iframe",
+  ),
+);
+assert(
+  googleMapHtml("https://www.google.com/maps?output=embed&q=0,0").includes(
+    "&amp;q=",
+  ),
+);
+assert.equal(isGoogleMapsUrl("https://maps.app.goo.gl/abc"), true);
+for (const url of [
+  "https://evil.test/maps",
+  "https://www.google.com.evil.test/maps",
+  "http://www.google.com/maps",
+  "https://user@www.google.com/maps",
+])
+  assert.equal(isGoogleMapsUrl(url), false);
+const googlePin = shopMaps({
+  location: { coordinates: [77.9346697, 30.3266703] },
+  google_maps_url: "https://www.google.com/maps?cid=3101541793969883219",
+});
+assert.equal(
+  googlePin.url,
+  "https://www.google.com/maps?cid=3101541793969883219",
+);
+assert(googlePin.embed.includes("30.3266703%2C77.9346697"));
+assert(shopMaps({ location: { coordinates: [0, 0] } }).embed.includes("0%2C0"));
+assert.equal(shopMaps({ location: { coordinates: [181, 0] } }).embed, null);
+assert.equal(
+  shopMaps({ google_maps_embed_url: "https://evil.test/" }).embed,
+  null,
+);
+assert.equal(
+  shopMaps({
+    google_maps_embed_url: "https://www.google.com/maps/embed?pb=pin",
+  }).embed,
+  "https://www.google.com/maps/embed?pb=pin",
+);
 const { validateProfilePreferences, profilePreferencesKey } =
   await sourceModule("src/utils/profilePreferences.js");
 const profile = {

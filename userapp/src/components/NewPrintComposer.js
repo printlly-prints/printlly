@@ -13,7 +13,7 @@ export default function NewPrintComposer({
   onPress,
   loading = false,
   title = "Start a print",
-  label = "Add PDF",
+  label = "Add documents",
 }) {
   const { fontScale } = useWindowDimensions();
   return (

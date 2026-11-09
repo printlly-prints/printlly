@@ -6,7 +6,7 @@ export default function Panel({ children, className = "", hoverable = false, as:
     <Tag
       className={`bg-surface border border-border rounded-panel shadow-card ${
         hoverable
-          ? "transition-[box-shadow,transform] duration-200 motion-safe:hover:-translate-y-1 hover:shadow-card-hover"
+          ? "transition-[border-color,box-shadow] duration-150 hover:border-border-strong hover:shadow-card-hover"
           : ""
       } ${className}`}
       {...rest}
@@ -33,15 +33,15 @@ export function PanelHeader({ title, subtitle, action, className = "" }) {
 
 // Compact empty state. Deliberately small: an empty section should take
 // up less room than a full one, not leave a large white hole in the page.
-export function EmptyNote({ icon, title, hint, action }) {
+export function EmptyNote({ icon, image, title, hint, action }) {
   return (
-    <div className="flex items-center gap-3 px-3 py-4 rounded-card bg-background-soft/60 border border-dashed border-border">
-      {icon && (
+    <div className="flex flex-wrap items-center gap-3 px-3 py-4 rounded-card bg-background-soft/60 border border-dashed border-border">
+      {image ? <img src={image} alt="" width="1536" height="1024" className="h-20 w-28 shrink-0 object-contain sm:h-24 sm:w-36" /> : icon && (
         <span className="shrink-0 w-9 h-9 rounded-full bg-primary-wash grid place-items-center text-primary-bright">
           {icon}
         </span>
       )}
-      <span className="min-w-0 flex-1">
+      <span className="min-w-40 flex-1">
         <span className="block text-sm font-semibold text-text-primary">{title}</span>
         {hint && <span className="block text-xs text-text-secondary">{hint}</span>}
       </span>

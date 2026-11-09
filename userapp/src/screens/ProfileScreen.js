@@ -13,6 +13,11 @@ import { useAuth } from "../context/AuthContext";
 import { useSupport } from "../context/SupportContext";
 import ProfileAvatar from "../components/ProfileAvatar";
 import { defaultDocumentSettings } from "../utils/documentSettings";
+import {
+  profileAccent,
+  suggestedAvatar,
+  PROFILE_WASH,
+} from "../utils/profilePreferences";
 import { colors, typography, spacing } from "../theme";
 
 export default function ProfileScreen({ navigation }) {
@@ -20,6 +25,11 @@ export default function ProfileScreen({ navigation }) {
   const { unreadCount } = useSupport() || {};
   const print = appearance?.printDefaults || defaultDocumentSettings();
   const name = appearance?.name || user?.name || "Customer";
+  const accent = profileAccent({
+    ...appearance,
+    gender: appearance?.gender || user?.gender,
+  });
+  const wash = colors[PROFILE_WASH[accent]];
   const leave = async () => {
     try {
       await logout();
@@ -43,11 +53,11 @@ export default function ProfileScreen({ navigation }) {
       contentContainerStyle={styles.content}
       showsVerticalScrollIndicator={false}
     >
-      <View style={styles.identity}>
+      <View style={[styles.identity, { backgroundColor: wash }]}>
         <ProfileAvatar
-          avatar={appearance?.avatar}
+          avatar={appearance?.avatar || suggestedAvatar(user?.gender)}
           name={name}
-          colour={appearance?.colour}
+          colour={accent}
           size={64}
         />
         <View style={styles.identityCopy}>

@@ -26,7 +26,7 @@ export default function Pipeline({ orders }) {
             <span className="block text-[11px] font-medium text-text-secondary group-hover:text-primary-deep">
               {step.label}
             </span>
-            <span className="block font-heading text-xl font-extrabold text-text-primary tabular-nums leading-tight">
+            <span className="block font-heading text-xl font-semibold text-text-primary tabular-nums leading-tight">
               {step.count}
             </span>
           </button>

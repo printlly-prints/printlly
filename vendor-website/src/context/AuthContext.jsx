@@ -64,6 +64,7 @@ export function AuthProvider({ children }) {
   // Shared by both login paths so a JWT always lands in localStorage and
   // state the same way, regardless of how it was obtained.
   const persistSession = useCallback((newToken, newUser) => {
+    setShopLoading(true);
     localStorage.setItem("token", newToken);
     localStorage.setItem("user", JSON.stringify(newUser));
     setToken(newToken);
@@ -121,11 +122,17 @@ export function AuthProvider({ children }) {
     clearUser();
   }, []);
 
-  const registerShop = useCallback(async ({ shop_name, address, contact }) => {
-    const { data } = await api.post("/shops", { shop_name, address, contact });
+  const registerShop = useCallback(async ({ shop_name, address, contact, latitude, longitude, locality, google_maps_url, google_maps_embed_url }) => {
+    const { data } = await api.post("/shops", { shop_name, address, contact, latitude, longitude, locality, google_maps_url, google_maps_embed_url });
     setShop(data);
     return data;
   }, []);
+
+  const changePassword = useCallback(async (current_password, new_password) => {
+    const { data } = await api.post("/auth/change-password", { current_password, new_password });
+    persistSession(data.token, user);
+    return data;
+  }, [persistSession, user]);
 
   // Memoized so every page reading useAuth() (the sidebar, the
   // deactivation banner, every protected route) doesn't re-render purely
@@ -142,6 +149,7 @@ export function AuthProvider({ children }) {
       completeGoogleLogin,
       logout,
       registerShop,
+      changePassword,
       refreshShop: loadMyShop,
     }),
     [
@@ -154,6 +162,7 @@ export function AuthProvider({ children }) {
       completeGoogleLogin,
       logout,
       registerShop,
+      changePassword,
       loadMyShop,
     ],
   );

@@ -18,7 +18,9 @@ const { SETTLEABLE, round2 } = require("../utils/settlement");
 const { buildSearchFilter, parseGeoPoint, findListedShops, distanceKmTo } = require("../utils/shopSearch");
 const { trackEvent, EVENTS } = require("../utils/analytics");
 
-const MAX_LOCALITY_LENGTH = 120;
+const { validateShopLocation } = require("../utils/shopLocation");
+const maps = require("../utils/googleMapsLink");
+const { localShopPhotosEnabled, saveLocalShopPhoto, removeLocalShopPhoto } = require('../utils/localShopPhotos');
 // Mirrors the cap enforced on the Shop schema itself - checked here too so
 // a vendor gets a clear message rather than a validation error.
 const MAX_SERVICES_PER_SHOP = 20;
@@ -132,9 +134,12 @@ const createShop = async (req, res) => {
   try {
     const { shop_name, address, contact } = req.body;
 
-    if (!shop_name || !address || !contact) {
+    if ([shop_name, address, contact].some((value) => typeof value !== "string" || !value.trim())) {
       return res.status(400).json({ message: "shop_name, address and contact are required" });
     }
+    const pin = validateShopLocation(req.body, false);
+    if ((!maps.validGoogleMapsUrl(req.body.google_maps_url) || !maps.validGoogleMapsEmbedUrl(req.body.google_maps_embed_url))) return res.status(400).json({ message: "Invalid Google Maps link" });
+    if (pin.error) return res.status(400).json({ message: pin.error });
 
     // One shop per owner. Checked explicitly here (rather than relying
     // on the schema's unique index on owner_id alone) so a second
@@ -151,9 +156,13 @@ const createShop = async (req, res) => {
 
     const shop = await Shop.create({
       owner_id: req.user.id,
-      shop_name,
-      address,
-      contact,
+      shop_name: shop_name.trim(),
+      address: address.trim(),
+      contact: contact.trim(),
+      location: pin.location,
+      google_maps_url: req.body.google_maps_url,
+      google_maps_embed_url: req.body.google_maps_embed_url,
+      locality: pin.locality,
       pricing: {
         rate_per_page_bw: settings.rate_per_page_bw,
         rate_per_page_color: settings.rate_per_page_color,
@@ -350,6 +359,9 @@ const getMyShop = async (req, res) => {
 // are meant to be shown on customer-facing shop cards, unlike the KYC
 // upload below.
 const uploadShopPhotos = async (req, res) => {
+  const local = localShopPhotosEnabled();
+  const origin = `${req.protocol}://${req.get('host')}`;
+  const savedLocalPhotos = [];
   try {
     const shop = await loadMyShop(req, res);
     if (!shop) return;
@@ -363,33 +375,50 @@ const uploadShopPhotos = async (req, res) => {
       });
     }
 
-    if (ownerPhotoFile) {
-      const result = await uploadToCloudinary(ownerPhotoFile.buffer, {
-        resource_type: "image",
-        folder: "shop_photos",
-        ...PHOTO_TRANSFORMATION,
-      });
-      shop.owner_photo_url = result.secure_url;
-    }
+    const previousOwnerPhoto = shop.owner_photo_url;
+    const previousShopPhoto = shop.shop_photo_url;
+    if (local) {
+      for (const [file, field] of [[ownerPhotoFile,'owner_photo_url'], [shopPhotoFile,'shop_photo_url']]) {
+        if (!file) continue;
+        shop[field] = await saveLocalShopPhoto(file, origin);
+        savedLocalPhotos.push(shop[field]);
+      }
+    } else {
+      if (!process.env.CLOUDINARY_CLOUD_NAME || !process.env.CLOUDINARY_API_KEY || !process.env.CLOUDINARY_API_SECRET)
+        return res.status(503).json({ message: 'Photo storage is unavailable. Please try again later.' });
+      if (ownerPhotoFile) {
+        const result = await uploadToCloudinary(ownerPhotoFile.buffer, {
+          resource_type: "image",
+          folder: "shop_photos",
+          ...PHOTO_TRANSFORMATION,
+        });
+        shop.owner_photo_url = result.secure_url;
+      }
 
-    if (shopPhotoFile) {
-      const result = await uploadToCloudinary(shopPhotoFile.buffer, {
-        resource_type: "image",
-        folder: "shop_photos",
-        ...PHOTO_TRANSFORMATION,
-      });
-      shop.shop_photo_url = result.secure_url;
+      if (shopPhotoFile) {
+        const result = await uploadToCloudinary(shopPhotoFile.buffer, {
+          resource_type: "image",
+          folder: "shop_photos",
+          ...PHOTO_TRANSFORMATION,
+        });
+        shop.shop_photo_url = result.secure_url;
+      }
     }
 
     await shop.save();
+    if (local) {
+      if (ownerPhotoFile) await removeLocalShopPhoto(previousOwnerPhoto, origin);
+      if (shopPhotoFile) await removeLocalShopPhoto(previousShopPhoto, origin);
+    }
 
     res.status(200).json({
       owner_photo_url: shop.owner_photo_url,
       shop_photo_url: shop.shop_photo_url,
     });
   } catch (error) {
+    await Promise.all(savedLocalPhotos.map(url=>removeLocalShopPhoto(url,origin)));
     console.error(`Failed to upload shop photos: ${error.message}`);
-    res.status(500).json({ message: "Failed to upload shop photos" });
+    res.status(error.status || 500).json({ message: error.status === 400 ? error.message : 'Failed to upload shop photos. Please try again.' });
   }
 };
 
@@ -899,27 +928,17 @@ const updateMyLocation = async (req, res) => {
     const shop = await loadMyShop(req, res);
     if (!shop) return;
 
-    const { latitude, longitude, locality } = req.body;
+    if ((!maps.validGoogleMapsUrl(req.body.google_maps_url) || !maps.validGoogleMapsEmbedUrl(req.body.google_maps_embed_url))) return res.status(400).json({ message: "Invalid Google Maps link" });
+    const pin = validateShopLocation(req.body, !req.body.google_maps_url);
+    if (pin.error) return res.status(400).json({ message: pin.error });
+    const { address } = req.body;
+    if (address !== undefined && (typeof address !== "string" || !address.trim())) return res.status(400).json({ message: "address must be non-empty text" });
+    shop.location = pin.location;
+    if (req.body.google_maps_url !== undefined) shop.google_maps_url = req.body.google_maps_url;
+    if (req.body.google_maps_embed_url !== undefined) shop.google_maps_embed_url = req.body.google_maps_embed_url;
+    if (pin.locality !== undefined) shop.locality = pin.locality;
+    if (address !== undefined) shop.address = address.trim();
 
-    if (typeof latitude !== "number" || !Number.isFinite(latitude) || latitude < -90 || latitude > 90) {
-      return res.status(400).json({ message: "latitude must be a number between -90 and 90" });
-    }
-    if (typeof longitude !== "number" || !Number.isFinite(longitude) || longitude < -180 || longitude > 180) {
-      return res.status(400).json({ message: "longitude must be a number between -180 and 180" });
-    }
-
-    if (locality !== undefined && locality !== null && typeof locality !== "string") {
-      return res.status(400).json({ message: "locality must be a string" });
-    }
-    const trimmedLocality = typeof locality === "string" ? locality.trim() : locality;
-    if (typeof trimmedLocality === "string" && trimmedLocality.length > MAX_LOCALITY_LENGTH) {
-      return res.status(400).json({ message: `locality must be at most ${MAX_LOCALITY_LENGTH} characters` });
-    }
-
-    shop.location = { type: "Point", coordinates: [longitude, latitude] };
-    if (locality !== undefined) {
-      shop.locality = trimmedLocality || null;
-    }
     await shop.save();
 
     res.status(200).json({ location: shop.location, locality: shop.locality });
@@ -1222,7 +1241,7 @@ const getShopById = async (req, res) => {
       is_active: true,
       verification_status: "approved",
     }).select(
-      `shop_name address contact locality location owner_photo_url shop_photo_url pricing ${AVAILABILITY_FIELDS}`
+      `shop_name address contact locality location google_maps_url google_maps_embed_url owner_photo_url shop_photo_url pricing ${AVAILABILITY_FIELDS}`
     );
 
     // Deliberately the same 404 whether the shop doesn't exist, isn't

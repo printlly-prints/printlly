@@ -1,7 +1,9 @@
 import { StyleSheet, Text, View } from "react-native";
 import { colors, fonts } from "../theme";
 
-export default function DocumentThumbnail({ colour = false }) {
+export default function DocumentThumbnail({ colour = false, name = "" }) {
+  const extension = name.split(".").pop().toUpperCase();
+  const label = ["JPG", "JPEG", "PNG"].includes(extension) ? extension : "PDF";
   return (
     <View
       style={[
@@ -16,7 +18,7 @@ export default function DocumentThumbnail({ colour = false }) {
           <View key={n} style={styles.line} />
         ))}
       </View>
-      <Text style={styles.badge}>PDF</Text>
+      <Text style={styles.badge}>{label}</Text>
     </View>
   );
 }

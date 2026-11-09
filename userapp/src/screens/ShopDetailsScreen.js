@@ -5,7 +5,6 @@ import {
   ActivityIndicator,
   Image,
   Linking,
-  Platform,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -21,6 +20,7 @@ import RushBadge from "../components/RushBadge";
 import SavedShopHeart from "../components/SavedShopHeart";
 import ShopPhoto from "../components/ShopPhoto";
 import { shopImageSource } from "../utils/shopImages";
+import { shopMaps, googleMapHtml } from "../utils/shopMaps";
 import api from "../api/client";
 import { geoParams, useLocation } from "../context/LocationContext";
 import { formatDistance } from "../utils/distance";
@@ -54,26 +54,6 @@ import {
 
 const HERO_HEIGHT = 240;
 
-// A small bounding box around the pin, rendered by OpenStreetMap's own
-// embed page - no API key and no map SDK. Same source the vendor
-// dashboard uses for its location preview, so both surfaces draw the same
-// map from the same coordinates.
-// The backing colour is the card surface token rather than a literal, so the
-// gap before the map tiles load matches the card the WebView sits in instead
-// of flashing a pale panel on a dark screen. The TILES themselves are
-// OpenStreetMap's own imagery and are left exactly as served - no filter, no
-// recolouring.
-function osmEmbedHtml(lat, lng) {
-  const d = 0.004;
-  const bbox = [lng - d, lat - d, lng + d, lat + d]
-    .map((n) => n.toFixed(6))
-    .join(",");
-  const src = `https://www.openstreetmap.org/export/embed.html?bbox=${bbox}&layer=mapnik&marker=${lat},${lng}`;
-  return `<!doctype html><html><head><meta name="viewport" content="width=device-width,initial-scale=1">
-<style>html,body{margin:0;padding:0;height:100%;background:${colors.surface}}iframe{border:0;width:100%;height:100%}</style>
-</head><body><iframe src="${src}" loading="lazy"></iframe></body></html>`;
-}
-
 export default function ShopDetailsScreen({ navigation, route }) {
   const { shop: initialShop } = route.params;
   const { coords } = useLocation();
@@ -82,6 +62,7 @@ export default function ShopDetailsScreen({ navigation, route }) {
   const [shop, setShop] = useState(initialShop);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [mapError, setMapError] = useState(false);
 
   const load = useCallback(async () => {
     try {
@@ -137,30 +118,19 @@ export default function ShopDetailsScreen({ navigation, route }) {
     (s) => s.enabled !== false,
   );
 
-  const [lng, lat] = shop.location?.coordinates || [];
-  const hasPin = Number.isFinite(lat) && Number.isFinite(lng);
+  const maps = shopMaps(shop);
+  useEffect(() => setMapError(false), [maps.embed]);
 
   const openInMaps = () => {
-    if (!hasPin) return;
-    const label = encodeURIComponent(shop.shop_name || "Print shop");
-    // Each platform's own handler, so this opens the real Maps app rather
-    // than a browser tab.
-    const url = Platform.select({
-      ios: `maps://?q=${label}&ll=${lat},${lng}`,
-      android: `geo:${lat},${lng}?q=${lat},${lng}(${label})`,
-      default: `https://www.openstreetmap.org/?mlat=${lat}&mlon=${lng}#map=17/${lat}/${lng}`,
-    });
-    Linking.openURL(url).catch(() =>
-      Linking.openURL(
-        `https://www.openstreetmap.org/?mlat=${lat}&mlon=${lng}#map=17/${lat}/${lng}`,
-      ),
+    Linking.openURL(maps.url).catch(() =>
+      setError("Couldn't open Google Maps. Please try again."),
     );
   };
 
   const call = () => shop.contact && Linking.openURL(`tel:${shop.contact}`);
 
   return (
-    <View style={styles.screen}>
+    <View style={[styles.screen, { paddingTop: insets.top }]}>
       <ScrollView
         style={styles.scroll}
         contentContainerStyle={[
@@ -227,10 +197,7 @@ export default function ShopDetailsScreen({ navigation, route }) {
 
         {/* Floating controls. The back button and the heart are the only
             things drawn over the photo - nothing else belongs there. */}
-        <View
-          style={[styles.heroControls, { top: insets.top + spacing.sm }]}
-          pointerEvents="box-none"
-        >
+        <View style={styles.heroControls} pointerEvents="box-none">
           <Pressable
             onPress={() => navigation.goBack()}
             accessibilityRole="button"
@@ -309,7 +276,7 @@ export default function ShopDetailsScreen({ navigation, route }) {
               icon="map-outline"
               label="View on map"
               onPress={openInMaps}
-              disabled={!hasPin}
+              disabled={DEMO_MODE}
             />
             <ActionButton
               icon="call-outline"
@@ -400,24 +367,31 @@ export default function ShopDetailsScreen({ navigation, route }) {
               <Text style={styles.addressText}>{shop.address}</Text>
             </View>
 
-            {hasPin ? (
+            {maps.embed ? (
               <>
-                {/* A real map of the real coordinates, drawn by
-                    OpenStreetMap's embed - no API key, no map SDK, and
-                    the same source the vendor dashboard uses. Not
-                    interactive on purpose: tapping opens the device's own
-                    Maps app, which is where someone actually navigates. */}
                 <View style={styles.mapBox} pointerEvents="none">
-                  <WebView
-                    source={{ html: osmEmbedHtml(lat, lng) }}
-                    style={styles.map}
-                    scrollEnabled={false}
-                    originWhitelist={["*"]}
-                    androidLayerType="software"
-                  />
+                  {mapError ? (
+                    <Text style={styles.emptyNote}>
+                      Map couldn't load. Open Google Maps below to see the
+                      location.
+                    </Text>
+                  ) : (
+                    <WebView
+                      source={{
+                        html: googleMapHtml(maps.embed),
+                        baseUrl: "https://www.google.com",
+                      }}
+                      style={styles.map}
+                      scrollEnabled={false}
+                      originWhitelist={["*"]}
+                      onError={() => setMapError(true)}
+                      onHttpError={() => setMapError(true)}
+                      accessibilityLabel={`${shop.shop_name} location on Google Maps`}
+                    />
+                  )}
                 </View>
                 <Button
-                  title="View in Maps"
+                  title="Open Google Maps"
                   disabled={DEMO_MODE}
                   variant="secondary"
                   icon="open-outline"
@@ -591,14 +565,18 @@ const styles = StyleSheet.create({
   content: { paddingBottom: spacing.xxl },
 
   // --- hero ---------------------------------------------------------
-  hero: { height: HERO_HEIGHT, width: "100%" },
-  // Square top, rounded bottom: the photo runs to the very top of the
-  // screen and curves into the content below it.
+  hero: {
+    height: HERO_HEIGHT,
+    width: "100%",
+    overflow: "hidden",
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.border,
+  },
   heroPhoto: {
     height: HERO_HEIGHT,
     borderRadius: 0,
-    borderBottomLeftRadius: 24,
-    borderBottomRightRadius: 24,
   },
   heroScrim: {
     position: "absolute",
@@ -606,8 +584,6 @@ const styles = StyleSheet.create({
     right: 0,
     bottom: 0,
     height: 110,
-    borderBottomLeftRadius: 24,
-    borderBottomRightRadius: 24,
   },
   heroChips: {
     position: "absolute",
@@ -619,6 +595,7 @@ const styles = StyleSheet.create({
   },
   heroControls: {
     position: "absolute",
+    top: spacing.md,
     left: spacing.lg,
     right: spacing.lg,
     flexDirection: "row",
@@ -626,15 +603,12 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   circleButton: {
-    width: 38,
-    height: 38,
+    width: 44,
+    height: 44,
     borderRadius: radius.pill,
-    // Dark rather than translucent white - see SavedShopHeart. The icon
-    // inside is colors.textPrimary, which is light now, so a white pill
-    // would have hidden it completely.
-    backgroundColor: "rgba(6,22,18,0.78)",
+    backgroundColor: colors.surface,
     borderWidth: 1,
-    borderColor: "rgba(230,242,236,0.22)",
+    borderColor: colors.border,
     alignItems: "center",
     justifyContent: "center",
     ...shadows.card,
@@ -781,7 +755,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   mapBox: {
-    height: 150,
+    height: 230,
     borderRadius: radius.md,
     overflow: "hidden",
     marginTop: spacing.md,
