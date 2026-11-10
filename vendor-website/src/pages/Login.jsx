@@ -238,12 +238,14 @@ export default function Login() {
               {signingUp ? "Sign in" : "Create a partner account"}
             </Link>
           </p>
-          <Link to="/print-partners" className="paper-text-link">
-            Explore Paprout for shops →
-          </Link>
-          <Link to="/" className="paper-text-link login-back-link">
-            ← Back to Paprout
-          </Link>
+          <nav className="login-links" aria-label="More ways to explore Paprout">
+            <Link to="/print-partners" className="paper-text-link">
+              Explore Paprout for shops →
+            </Link>
+            <Link to="/" className="paper-text-link login-back-link">
+              ← Back to Paprout
+            </Link>
+          </nav>
         </div>
       </main>
     </div>

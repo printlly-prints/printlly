@@ -307,7 +307,7 @@ export default function OrdersDashboard() {
             queue reads as a single surface rather than a pile of cards. */}
         <div className="mt-5 bg-surface border border-border rounded-panel shadow-card">
           <div className="px-4 py-3.5 border-b border-border flex flex-wrap items-center gap-2.5">
-            <label className="relative flex-1 min-w-[220px]">
+            <label className="relative basis-full sm:basis-auto sm:flex-1 sm:min-w-[220px]">
               <span className="sr-only">Search orders</span>
               <span
                 aria-hidden="true"
@@ -319,17 +319,17 @@ export default function OrdersDashboard() {
                 type="search"
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
-                placeholder="Search customer, order ID or phone"
+                placeholder="Name, order ID or phone"
                 className="w-full h-10 pl-8 pr-3 text-sm bg-background-soft border border-border rounded-control text-text-primary placeholder:text-text-muted focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
               />
             </label>
 
-            <label className="flex items-center gap-2">
+            <label className="min-w-0 flex-1 sm:flex-none">
               <span className="sr-only">Filter by date</span>
               <select
                 value={dateFilter}
                 onChange={(e) => setDateFilter(e.target.value)}
-                className="h-10 px-3 text-sm bg-background-soft border border-border rounded-control text-text-secondary focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
+                className="w-full h-10 px-3 text-sm bg-background-soft border border-border rounded-control text-text-secondary focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
               >
                 {DATE_FILTERS.map((f) => (
                   <option key={f.key} value={f.key}>
@@ -339,12 +339,12 @@ export default function OrdersDashboard() {
               </select>
             </label>
 
-            <label className="flex items-center gap-2">
+            <label className="min-w-0 flex-1 sm:flex-none">
               <span className="sr-only">Sort orders</span>
               <select
                 value={sort}
                 onChange={(e) => setSort(e.target.value)}
-                className="h-10 px-3 text-sm bg-background-soft border border-border rounded-control text-text-secondary focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
+                className="w-full h-10 px-3 text-sm bg-background-soft border border-border rounded-control text-text-secondary focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
               >
                 <option value="latest">Newest first</option>
                 <option value="oldest">Oldest first</option>
@@ -355,48 +355,48 @@ export default function OrdersDashboard() {
           {/* The columns are fixed-width by design, so narrow screens
               scroll the table sideways rather than crushing the amount
               and status columns into two characters each. */}
-          <div className="overflow-x-auto">
-            <div className="min-w-[1100px] px-3 py-3">
-              <div
-                role="row"
-                className={`${ORDER_GRID} px-4 pb-2 text-[11px] font-semibold uppercase tracking-wide text-text-muted`}
-              >
-                {COLUMNS.map((column) => (
-                  <span key={column} className={column === "Action" ? "text-right" : ""}>
-                    {column}
-                  </span>
-                ))}
-              </div>
+          {!loading && visibleOrders.length === 0 ? (
+            <EmptyQueue
+              label={activeTab === "all" ? null : TABS.find((t) => t.key === activeTab)?.label}
+              filtered={filtered.length === 0 && (query || dateFilter !== "all")}
+              onClear={() => {
+                setQuery("");
+                setDateFilter("all");
+              }}
+            />
+          ) : (
+            <div className="overflow-x-auto">
+              <div className="min-w-[1100px] px-3 py-3">
+                <div
+                  role="row"
+                  className={`${ORDER_GRID} px-4 pb-2 text-[11px] font-semibold uppercase tracking-wide text-text-muted`}
+                >
+                  {COLUMNS.map((column) => (
+                    <span key={column} className={column === "Action" ? "text-right" : ""}>
+                      {column}
+                    </span>
+                  ))}
+                </div>
 
-              <div className="flex flex-col gap-2">
-                {loading ? (
-                  Array.from({ length: 6 }, (_, i) => <RowSkeleton key={i} />)
-                ) : visibleOrders.length === 0 ? (
-                  <EmptyQueue
-                    label={activeTab === "all" ? null : TABS.find((t) => t.key === activeTab)?.label}
-                    filtered={filtered.length === 0 && (query || dateFilter !== "all")}
-                    onClear={() => {
-                      setQuery("");
-                      setDateFilter("all");
-                    }}
-                  />
-                ) : (
-                  visibleOrders.map((order, i) => (
-                    <OrderRow
-                      key={order._id}
-                      order={order}
-                      zebra={i % 2 === 1}
-                      busy={actionLoading === order._id}
-                      onView={(o, opts) => setDetail({ id: o._id, autoOtp: !!opts?.completing })}
-                      onViewPrint={(o) => setDetail({ id: o._id, viewIndex: 0 })}
-                      onAccept={handleAccept}
-                      onReady={handleReady}
-                    />
-                  ))
-                )}
+                <div className="flex flex-col gap-2">
+                  {loading
+                    ? Array.from({ length: 6 }, (_, i) => <RowSkeleton key={i} />)
+                    : visibleOrders.map((order, i) => (
+                        <OrderRow
+                          key={order._id}
+                          order={order}
+                          zebra={i % 2 === 1}
+                          busy={actionLoading === order._id}
+                          onView={(o, opts) => setDetail({ id: o._id, autoOtp: !!opts?.completing })}
+                          onViewPrint={(o) => setDetail({ id: o._id, viewIndex: 0 })}
+                          onAccept={handleAccept}
+                          onReady={handleReady}
+                        />
+                      ))}
+                </div>
               </div>
             </div>
-          </div>
+          )}
 
           {!loading && filtered.length > 0 && (
             <div className="px-4 py-3 border-t border-border flex items-center justify-between gap-3">

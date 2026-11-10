@@ -266,7 +266,7 @@ export default function ShopProfile() {
         <VerificationBanner shop={shop} />
 
         {/* --- photos + shop information ---------------------------- */}
-        <div className="grid gap-4 xl:grid-cols-[minmax(0,1.35fr)_minmax(0,1fr)]">
+        <div className="grid items-start gap-4 xl:grid-cols-[minmax(0,1.35fr)_minmax(0,1fr)]">
           <Panel as="form" id={PHOTOS_FORM_ID} onSubmit={handlePhotosSubmit} className="p-5 flex flex-col gap-4">
             <PanelHeader
               title="Shop photos"
@@ -292,37 +292,37 @@ export default function ShopProfile() {
               }}
             />
 
-            <PhotoDropzone
-              inputId="shop_logo"
-              label="Shop logo"
-              hint="Shown on your shop activity page"
-              aspect="aspect-[4/3]"
-              compact
-              currentUrl={shop.shop_logo_url}
-              previewUrl={logoPreview}
-              pendingFile={logoFile}
-              onPick={pickLogo}
-              onClear={() => {
-                setLogoFile(null);
-                setLogoPreview(null);
-              }}
-            />
+            <div className="grid gap-4 sm:grid-cols-2">
+              <PhotoDropzone
+                inputId="shop_logo"
+                label="Shop logo"
+                hint="Shown on your shop activity page"
+                aspect="aspect-[4/3]"
+                currentUrl={shop.shop_logo_url}
+                previewUrl={logoPreview}
+                pendingFile={logoFile}
+                onPick={pickLogo}
+                onClear={() => {
+                  setLogoFile(null);
+                  setLogoPreview(null);
+                }}
+              />
 
-            <PhotoDropzone
-              inputId="owner_photo"
-              label="Owner photo"
-              hint="Used for verification — never shown to customers"
-              aspect="aspect-[4/3]"
-              compact
-              currentUrl={shop.owner_photo_url}
-              previewUrl={ownerPreview}
-              pendingFile={ownerPhotoFile}
-              onPick={pickOwnerPhoto}
-              onClear={() => {
-                setOwnerPhotoFile(null);
-                setOwnerPreview(null);
-              }}
-            />
+              <PhotoDropzone
+                inputId="owner_photo"
+                label="Owner photo"
+                hint="Used for verification — never shown to customers"
+                aspect="aspect-[4/3]"
+                currentUrl={shop.owner_photo_url}
+                previewUrl={ownerPreview}
+                pendingFile={ownerPhotoFile}
+                onPick={pickOwnerPhoto}
+                onClear={() => {
+                  setOwnerPhotoFile(null);
+                  setOwnerPreview(null);
+                }}
+              />
+            </div>
 
             {photosError && (
               <p className="text-sm text-error-text bg-error-bg rounded-control p-3">{photosError}</p>
@@ -350,30 +350,30 @@ export default function ShopProfile() {
               controllers/shopController.js). Rendering them as editable
               inputs would produce a form whose Save button could only
               ever throw away what was typed. */}
-          <Panel className="p-5 flex flex-col gap-4">
-            <PanelHeader
-              title="Shop information"
-              subtitle="Your registered details. Update your map pin and address in Shop location below."
-            />
-            <dl className="grid sm:grid-cols-2 gap-x-4 gap-y-3">
-              <DetailField label="Shop name" value={shop.shop_name} />
-              <DetailField label="Phone" value={shop.contact} />
-              <DetailField label="Address" value={shop.address} className="sm:col-span-2" />
-              <DetailField
-                label="Locality / landmark"
-                value={shop.locality}
-                empty="Not set — add it in Location below"
-                className="sm:col-span-2"
+          <div className="grid gap-4">
+            <Panel className="p-5 flex flex-col gap-4">
+              <PanelHeader
+                title="Shop information"
+                subtitle="Your registered details. Update your map pin and address in Shop location below."
               />
-            </dl>
-            <p className="text-xs text-text-muted">
-              For shop name or contact changes, contact support.
-            </p>
-          </Panel>
+              <dl className="grid sm:grid-cols-2 gap-x-4 gap-y-3">
+                <DetailField label="Shop name" value={shop.shop_name} />
+                <DetailField label="Phone" value={shop.contact} />
+                <DetailField label="Address" value={shop.address} className="sm:col-span-2" />
+                <DetailField
+                  label="Locality / landmark"
+                  value={shop.locality}
+                  empty="Not set — add it in Location below"
+                  className="sm:col-span-2"
+                />
+              </dl>
+              <p className="text-xs text-text-muted">
+                For shop name or contact changes, contact support.
+              </p>
+            </Panel>
+            <ShopLocationForm />
+          </div>
         </div>
-
-        {/* --- location + map ---------------------------------------- */}
-        <ShopLocationForm />
 
         {/* --- hours ------------------------------------------------- */}
         <ShopHoursPanel shop={shop} />
@@ -695,7 +695,6 @@ function PhotoDropzone({
   label,
   hint,
   aspect,
-  compact = false,
   currentUrl,
   previewUrl,
   pendingFile,
@@ -711,7 +710,7 @@ function PhotoDropzone({
   };
 
   return (
-    <div className={compact ? "sm:max-w-xs" : ""}>
+    <div className="min-w-0">
       <div className="flex items-baseline justify-between gap-3 mb-1.5">
         <span className="text-sm font-medium text-text-primary">{label}</span>
         {pendingFile && (
@@ -730,7 +729,7 @@ function PhotoDropzone({
           setDragging(false);
           takeFile(e.dataTransfer.files?.[0]);
         }}
-        className={`group relative ${aspect} w-full rounded-card border border-dashed overflow-hidden transition-[border-color,background-color] duration-200 ${
+        className={`group relative ${aspect} min-h-28 w-full rounded-card border border-dashed overflow-hidden transition-[border-color,background-color] duration-200 ${
           dragging ? "border-primary bg-primary-wash" : "border-border bg-background-soft/60"
         }`}
       >
@@ -746,7 +745,7 @@ function PhotoDropzone({
             it keyboard-reachable and needs no click handler. */}
         <label
           htmlFor={inputId}
-          className={`absolute inset-0 flex flex-col items-center justify-center gap-1.5 cursor-pointer transition-opacity duration-200 ${
+          className={`absolute inset-0 flex flex-col items-center justify-center gap-1.5 px-2 text-center cursor-pointer transition-opacity duration-200 ${
             displayUrl
               ? "opacity-0 hover:opacity-100 focus-within:opacity-100 bg-surface-deep/45 text-white"
               : "text-text-secondary"

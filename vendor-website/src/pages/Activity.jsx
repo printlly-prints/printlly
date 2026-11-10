@@ -83,7 +83,7 @@ export default function Activity() {
                 {shop?.shop_name?.charAt(0).toUpperCase()}
               </span>
             )}
-            <div className="min-w-0 flex-1">
+            <div className="min-w-0 flex-1 break-words">
               <h1 className="font-heading text-2xl font-bold text-text-primary">{shop?.shop_name}</h1>
               <p className="text-sm text-text-secondary">
                 {[user?.name, shop?.address].filter(Boolean).join(" · ")}
@@ -96,12 +96,12 @@ export default function Activity() {
         </Panel>
 
         {summary && (
-          <div className="grid grid-cols-2 lg:grid-cols-5 gap-3">
+          <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-5 gap-3">
             <Stat label="Print requests" value={summary.total_requests} />
             <Stat label="Pages printed" value={summary.printouts} />
             <Stat label="In progress" value={summary.in_progress} />
             <Stat label="Completed" value={summary.completed} />
-            <Stat label="Earned" value={formatRupees(summary.earned)} />
+            <Stat label="Earned" value={formatRupees(summary.earned)} className="col-span-2 xl:col-span-1" />
           </div>
         )}
 
@@ -112,7 +112,7 @@ export default function Activity() {
         ) : orders.length === 0 ? (
           !error && <EmptyNote title="No print requests yet" hint="Paid orders sent to your shop appear here." />
         ) : (
-          <Panel as="ul" className="divide-y divide-border">
+          <Panel as="ul" className="divide-y divide-border overflow-hidden">
             {orders.map((order) => (
               <LogRow key={order._id} order={order} />
             ))}
@@ -139,13 +139,13 @@ function LogRow({ order }) {
   return (
     <li>
       <details className="group">
-        <summary className="flex flex-wrap items-center gap-x-4 gap-y-1 px-5 py-3.5 cursor-pointer list-none hover:bg-background-soft focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-primary/40">
+        <summary className="grid grid-cols-[auto_minmax(0,1fr)_auto] lg:grid-cols-[5rem_minmax(0,1fr)_7.5rem_6.5rem] items-center gap-x-3 gap-y-1 px-5 py-3.5 cursor-pointer list-none hover:bg-background-soft focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-primary/40">
           <span className="font-semibold text-text-primary tabular-nums">{orderRef(order)}</span>
-          <span className="text-sm text-text-secondary min-w-0 w-full order-last sm:order-none sm:w-auto sm:flex-1">
+          <span className="order-last col-span-full break-words text-sm text-text-secondary lg:order-none lg:col-span-1">
             {order.customer.name || "Customer"} · {pages} page{pages === 1 ? "" : "s"} · {formatTime(order.created_at)}
           </span>
-          <span className="ml-auto text-sm font-medium text-text-secondary sm:ml-0">{STATUS_LABELS[order.status] || order.status}</span>
-          <span className="font-semibold text-text-primary tabular-nums">{formatRupees(order.vendor_amount)}</span>
+          <span className="text-right text-sm font-medium text-text-secondary lg:text-left">{STATUS_LABELS[order.status] || order.status}</span>
+          <span className="text-right font-semibold text-text-primary tabular-nums">{formatRupees(order.vendor_amount)}</span>
         </summary>
 
         <div className="grid gap-5 md:grid-cols-2 px-5 pb-5 pt-1">
@@ -192,9 +192,9 @@ function LogRow({ order }) {
   );
 }
 
-function Stat({ label, value }) {
+function Stat({ label, value, className = "" }) {
   return (
-    <Panel className="px-4 py-3">
+    <Panel className={`px-4 py-3 break-words ${className}`}>
       <p className="text-xs text-text-secondary">{label}</p>
       <p className="font-heading text-lg font-bold text-text-primary tabular-nums mt-0.5">{value}</p>
     </Panel>
