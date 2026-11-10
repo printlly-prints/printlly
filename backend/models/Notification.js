@@ -4,6 +4,7 @@ const mongoose = require("mongoose");
 // cares about changes - see utils/notifications.js for where these get
 // created. Two families today:
 //   - order_* / payment_success: for a CUSTOMER, about one of their orders.
+//   - vendor_new_order: for a SHOP OWNER, when payment makes an order actionable.
 //   - shop_approved / shop_rejected: for a SHOP OWNER, about their shop's
 //     verification (see notifyShopVerification, triggered by the admin
 //     panel's PATCH /admin/shops/:id/verify).
@@ -37,6 +38,7 @@ const notificationSchema = new mongoose.Schema(
         "order_ready",
         "order_completed",
         "order_expired",
+        "vendor_new_order",
         "shop_approved",
         "shop_rejected",
       ],

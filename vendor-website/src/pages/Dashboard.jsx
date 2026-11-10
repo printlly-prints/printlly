@@ -20,6 +20,7 @@ import {
 } from "../components/dashboard/OrderLines";
 import api from "../api/axios";
 import { useAuth } from "../context/AuthContext";
+import useOrderEvents from "../hooks/useOrderEvents";
 import { orderRef } from "../utils/orderRef";
 import {
   earningsBreakdown,
@@ -106,6 +107,7 @@ export default function Dashboard() {
   useEffect(() => {
     fetchOrders();
   }, [fetchOrders]);
+  useOrderEvents(fetchOrders);
 
   useEffect(() => {
     if (!shop) return undefined;
@@ -188,9 +190,7 @@ export default function Dashboard() {
           </div>
 
           <div className="flex items-center gap-2">
-            {/* The bell is derived from real orders - there is no
-                notification store in this backend, so it lists what is
-                actually waiting rather than inventing a feed. */}
+            {/* The bell shows the current order queue, separate from the notification history. */}
             <div className="relative">
               <button
                 type="button"
@@ -239,7 +239,7 @@ export default function Dashboard() {
                       </button>
                     ))
                   )}
-                  <Link to="/notifications" className="mt-2 block border-t border-border px-2 py-3 text-sm font-medium text-primary">Shop & account notifications →</Link>
+                  <Link to="/notifications" className="mt-2 block border-t border-border px-2 py-3 text-sm font-medium text-primary">All notifications →</Link>
                 </div>
               )}
             </div>

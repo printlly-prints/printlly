@@ -328,6 +328,17 @@ async function emitOrderEvent(order, event) {
     const payload = socketPayload(order, event);
     const result = { emitted: true, notified: false, pushed: null, sockets: [] };
 
+    // Save the vendor's inbox entry before signalling live clients to refresh it.
+    if (event === ORDER_EVENTS.PAYMENT_CONFIRMED && shop.ownerId) {
+      await createNotificationOnce({
+        userId: shop.ownerId,
+        type: "vendor_new_order",
+        orderId: order._id,
+        title: "New print order",
+        body: "A paid print order is waiting for you to accept it in Orders.",
+      });
+    }
+
     // ---- Socket.io: live sessions only ----
     //
     // Wrapped because getIo() returns null when the socket server was never

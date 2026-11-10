@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
+import { unlockOrderChime } from "../lib/orderChime";
 import { Link } from "react-router-dom";
 import LandingHeader, {
   PaperWordmark,
@@ -47,6 +48,7 @@ export default function Login() {
     }
     setError("");
     setLoading(true);
+    void unlockOrderChime();
     try {
       if (signingUp) {
         await registerPartner({

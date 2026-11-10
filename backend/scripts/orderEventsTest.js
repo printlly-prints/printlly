@@ -183,9 +183,11 @@ async function main() {
   const revokedToken = await tokenFor(revokeMe);
   const beforeRevoke = await connect(revokedToken);
   check(beforeRevoke.ok === true, "a live session connects before revocation");
-  beforeRevoke.socket.close();
-  await Session.updateOne({ _id: jwt.decode(revokedToken).jti }, { $set: { revoked_at: new Date(), revoked_reason: "logout" } });
+  const loggedOut = await api("POST", "/auth/logout", { token: revokedToken });
+  await settle();
+  check(loggedOut.status === 200 && !beforeRevoke.socket.connected, "logout closes the live socket for that session");
   check((await connect(revokedToken)).ok === false, "a REVOKED session can no longer connect");
+  check(connA.socket.connected, "logout leaves other sessions connected");
 
   // =========================================================================
   section("Customer isolation");
@@ -235,6 +237,16 @@ async function main() {
   check(
     (await Notification.countDocuments({ order_id: orderForA._id, type: "payment_success" })) === 1,
     "...and created exactly one payment_success notification"
+  );
+  const paidOrderNotice = (await api("GET", "/notifications", { token: tokOwnA })).data
+    .filter((item) => item.type === "vendor_new_order" && item.order_id === String(orderForA._id));
+  check(paidOrderNotice.length === 1 && !paidOrderNotice[0].read, "the receiving vendor can recover one unread new order alert");
+  const otherVendorInbox = (await api("GET", "/notifications", { token: tokOwnB })).data;
+  check(!otherVendorInbox.some((item) => item.order_id === String(orderForA._id)), "other vendors cannot read that order alert");
+  await require("../utils/orderEvents").emitOrderEvent(freshOrder, ORDER_EVENTS.PAYMENT_CONFIRMED);
+  check(
+    (await Notification.countDocuments({ order_id: orderForA._id, type: "vendor_new_order" })) === 1,
+    "replaying a payment event does not create another vendor alert"
   );
 
   // Vendor isolation over the real HTTP path: ready + complete on shop A's

@@ -2,9 +2,13 @@ import { useState } from "react";
 import DashboardLayout from "../components/DashboardLayout";
 import Panel, { PanelHeader } from "../components/dashboard/Panel";
 import { useAuth } from "../context/AuthContext";
+import { useVendorOrderEvents } from "../context/OrderEventsContext";
+import { playOrderChime, unlockOrderChime } from "../lib/orderChime";
 
 export default function Settings() {
   const { user, changePassword } = useAuth();
+  const { enabled, setEnabled } = useVendorOrderEvents();
+  const [soundFeedback, setSoundFeedback] = useState("");
   const [form, setForm] = useState({ current: "", next: "", confirm: "" });
   const [saving, setSaving] = useState(false),
     [error, setError] = useState(""),
@@ -31,13 +35,19 @@ export default function Settings() {
       setSaving(false);
     }
   }
+  async function testSound() {
+    const ready = await unlockOrderChime();
+    setSoundFeedback(ready && playOrderChime()
+      ? "Test sound played."
+      : "This browser couldn't play the sound. Check its site audio settings.");
+  }
   return (
     <DashboardLayout>
       <div className="mx-auto max-w-4xl space-y-6">
         <header>
           <h1 className="text-2xl font-semibold tracking-tight">Settings</h1>
           <p className="mt-2 text-sm text-text-secondary">
-            Your account and sign-in security.
+            Your account, notifications and sign-in security.
           </p>
         </header>
         <Panel className="p-5">
@@ -59,6 +69,29 @@ export default function Settings() {
               </div>
             ))}
           </dl>
+        </Panel>
+        <Panel className="space-y-4 p-5">
+          <PanelHeader title="Notifications" subtitle="Play a chime when a paid order reaches your shop." />
+          <label className="flex min-h-11 items-center gap-3 text-sm font-medium">
+            <input
+              type="checkbox"
+              checked={enabled}
+              onChange={(event) => setEnabled(event.target.checked)}
+              className="h-5 w-5 accent-primary"
+            />
+            New order sound
+          </label>
+          <p className="text-xs leading-5 text-text-secondary">
+            This setting is saved in this browser. Keep the vendor website open and interact with the tab to allow sound.
+          </p>
+          <button
+            type="button"
+            onClick={testSound}
+            className="min-h-11 rounded-control border border-border px-4 text-sm font-medium hover:border-primary"
+          >
+            Play test sound
+          </button>
+          {soundFeedback && <p role="status" className="text-sm text-text-secondary">{soundFeedback}</p>}
         </Panel>
         <Panel as="form" onSubmit={submit} className="space-y-5 p-5">
           <PanelHeader

@@ -8,6 +8,7 @@ import {
 } from "react";
 import api from "../api/axios";
 import { identifyUser, clearUser, trackEvent } from "../lib/observability";
+import { readVendorSession, SESSION_KEY, writeVendorSession } from "../lib/vendorSession";
 
 const AuthContext = createContext(null);
 
@@ -15,40 +16,77 @@ const AuthContext = createContext(null);
 // Both the JWT and the logged-in user are persisted to localStorage so a
 // page refresh doesn't force a re-login.
 export function AuthProvider({ children }) {
-  const [token, setToken] = useState(() => localStorage.getItem("token"));
-  const [user, setUser] = useState(() => {
-    const stored = localStorage.getItem("user");
-    return stored ? JSON.parse(stored) : null;
-  });
+  const [session, setSession] = useState(readVendorSession);
+  const { token, user } = session ?? {};
   const [shop, setShop] = useState(null);
   const [shopLoading, setShopLoading] = useState(true);
+  const [shopError, setShopError] = useState(false);
 
-  // GET /shops/me returns this owner's shop, or 404 if they haven't
-  // registered one yet - a 404 here just means "no shop", not an error.
-  // useCallback so the memoized context value below has a stable
-  // `refreshShop` identity - without it the value would be rebuilt on
-  // every render and the memoization would do nothing.
-  const loadMyShop = useCallback(async () => {
+  const applySession = useCallback((next) => {
+    setSession(next);
+    setShop(null);
+    setShopLoading(Boolean(next));
+    setShopError(false);
+    if (next) identifyUser(next.user);
+    else clearUser();
+  }, []);
+
+  const clearSession = useCallback(() => {
+    writeVendorSession(null);
+    applySession(null);
+  }, [applySession]);
+
+  useEffect(() => {
+    const sync = (event) => {
+      if (event.key !== SESSION_KEY && event.key !== "token" && event.key !== null) return;
+      const next = readVendorSession();
+      if (next?.token !== token) applySession(next);
+    };
+    const interceptor = api.interceptors.response.use(undefined, (error) => {
+      const currentToken = readVendorSession()?.token;
+      if (
+        error.response?.status === 401 &&
+        error.response.data?.message === "Invalid or expired token" &&
+        currentToken &&
+        error.config?.headers?.Authorization === `Bearer ${currentToken}`
+      ) {
+        clearSession();
+      }
+      return Promise.reject(error);
+    });
+    window.addEventListener("storage", sync);
+    return () => {
+      window.removeEventListener("storage", sync);
+      api.interceptors.response.eject(interceptor);
+    };
+  }, [applySession, clearSession, token]);
+
+  const loadMyShop = useCallback(async (signal) => {
     if (!token || !user) {
-      setShop(null);
       setShopLoading(false);
       return;
     }
+    const isCurrent = () => !signal?.aborted && readVendorSession()?.token === token;
     setShopLoading(true);
+    setShopError(false);
     try {
-      const { data } = await api.get("/shops/me");
-      setShop(data);
+      const { data } = await api.get("/shops/me", { signal });
+      if (isCurrent()) setShop(data);
     } catch (err) {
-      setShop(null);
+      if (isCurrent()) {
+        if (err.response?.status === 404) setShop(null);
+        else setShopError(true);
+      }
     } finally {
-      setShopLoading(false);
+      if (isCurrent()) setShopLoading(false);
     }
   }, [token, user]);
 
   useEffect(() => {
-    loadMyShop();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [token]);
+    const controller = new AbortController();
+    loadMyShop(controller.signal);
+    return () => controller.abort();
+  }, [loadMyShop]);
 
   // A page reload restores the session from localStorage without going
   // through persistSession, so without this the identity would be missing for
@@ -61,20 +99,11 @@ export function AuthProvider({ children }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Shared by both login paths so a JWT always lands in localStorage and
-  // state the same way, regardless of how it was obtained.
   const persistSession = useCallback((newToken, newUser) => {
-    setShopLoading(true);
-    localStorage.setItem("token", newToken);
-    localStorage.setItem("user", JSON.stringify(newUser));
-    setToken(newToken);
-    setUser(newUser);
-    // Attaches the vendor's id and role to subsequent error reports, so an
-    // issue in Sentry can be traced to an account without the dashboard
-    // having sent a name, email or phone number anywhere. No-op when the
-    // keys are unset. See lib/observability.js.
-    identifyUser(newUser);
-  }, []);
+    const next = { token: newToken, user: newUser };
+    writeVendorSession(next);
+    applySession(next);
+  }, [applySession]);
 
   const login = useCallback(
     async (email, password) => {
@@ -111,16 +140,16 @@ export function AuthProvider({ children }) {
   );
 
   const logout = useCallback(() => {
-    localStorage.removeItem("token");
-    localStorage.removeItem("user");
-    setToken(null);
-    setUser(null);
-    setShop(null);
-    // Detaches the identity, so an error on the login page after signing out
-    // is not attributed to the vendor who just left - which matters most on a
-    // shared machine in a shop.
-    clearUser();
-  }, []);
+    const currentToken = readVendorSession()?.token;
+    clearSession();
+    if (currentToken) {
+      // Clear the browser even offline. The saved token authorizes only this revoke request.
+      void api.post("/auth/logout", null, {
+        headers: { Authorization: `Bearer ${currentToken}` },
+        timeout: 5000,
+      }).catch(() => {});
+    }
+  }, [clearSession]);
 
   const registerShop = useCallback(async ({ shop_name, address, contact, latitude, longitude, locality, google_maps_url, google_maps_embed_url }) => {
     const { data } = await api.post("/shops", { shop_name, address, contact, latitude, longitude, locality, google_maps_url, google_maps_embed_url });
@@ -144,6 +173,7 @@ export function AuthProvider({ children }) {
       isAuthenticated: !!token,
       shop,
       shopLoading,
+      shopError,
       login,
       registerPartner,
       completeGoogleLogin,
@@ -157,6 +187,7 @@ export function AuthProvider({ children }) {
       user,
       shop,
       shopLoading,
+      shopError,
       login,
       registerPartner,
       completeGoogleLogin,

@@ -1,6 +1,6 @@
 import { Suspense, lazy, useEffect } from "react";
 import { Navigate, Route, Routes, useLocation } from "react-router-dom";
-import ProtectedRoute from "./components/ProtectedRoute";
+import ProtectedRoute, { ShopSessionCheck } from "./components/ProtectedRoute";
 import { useAuth } from "./context/AuthContext";
 import "./styles/paper.css";
 
@@ -54,13 +54,8 @@ const VendorTerms = lazy(() => import("./pages/legal/VendorTerms"));
 // needs accepting, what is printing, what is waiting and what today has
 // earned.
 function AppEntry() {
-  const { shop, shopLoading } = useAuth();
-
-  if (shopLoading) {
-    return (
-      <div className="p-8 text-center text-text-secondary">Loading...</div>
-    );
-  }
+  const { shop, shopLoading, shopError } = useAuth();
+  if (shopLoading || shopError) return <ShopSessionCheck />;
   return <Navigate to={shop ? "/dashboard" : "/register-shop"} replace />;
 }
 

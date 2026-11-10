@@ -35,6 +35,7 @@ const customerRoom = (customerId) => `support:${customerId}`;
 //               sockets/orderSocket.js.
 const userRoom = (userId) => `user:${userId}`;
 const shopRoom = (shopId) => `shop:${shopId}`;
+const sessionRoom = (jti) => `session:${jti}`;
 const orderRoom = (orderId) => `order:${orderId}`;
 // Every connected admin sits here for the whole session. It is the only
 // way an unread badge can update for a conversation the admin does not
@@ -89,6 +90,7 @@ function initSocket(httpServer) {
         return next(new Error("Unauthorized: missing or invalid token"));
       }
       socket.user = { id: identity.id, role: identity.role };
+      socket.data.session = { jti: identity.jti, exp: identity.exp };
       next();
     } catch (error) {
       // Fail closed, for the same reason the REST path does: an unknown
@@ -99,6 +101,14 @@ function initSocket(httpServer) {
   });
 
   io.on("connection", async (socket) => {
+    const { jti, exp } = socket.data.session;
+    if (jti) socket.join(sessionRoom(jti));
+    if (Number.isFinite(exp)) {
+      const expiry = setTimeout(() => socket.disconnect(true), Math.max(0, exp * 1000 - Date.now()));
+      expiry.unref();
+      socket.once("disconnect", () => clearTimeout(expiry));
+    }
+
     // Every authenticated socket joins its own user room. Named from the id
     // in the verified token (socket.user, set during the handshake above),
     // never from anything the client sends, so this cannot be used to listen
@@ -154,4 +164,4 @@ function initSocket(httpServer) {
 // because nobody was listening is not.
 const getIo = () => io;
 
-module.exports = { initSocket, getIo, customerRoom, userRoom, shopRoom, orderRoom, ADMIN_ROOM };
+module.exports = { initSocket, getIo, customerRoom, userRoom, shopRoom, sessionRoom, orderRoom, ADMIN_ROOM };

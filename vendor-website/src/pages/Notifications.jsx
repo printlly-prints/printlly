@@ -1,7 +1,9 @@
 import { useEffect, useState } from "react";
 import { Check, RefreshCw } from "lucide-react";
+import { Link } from "react-router-dom";
 import DashboardLayout from "../components/DashboardLayout";
 import api from "../api/axios";
+import useOrderEvents from "../hooks/useOrderEvents";
 
 export default function Notifications() {
   const [items, setItems] = useState([]),
@@ -9,6 +11,9 @@ export default function Notifications() {
     [error, setError] = useState(""),
     [working, setWorking] = useState(false),
     [revision, setRevision] = useState(0);
+  useOrderEvents((event) => {
+    if (!event || event.event === "PAYMENT_CONFIRMED") setRevision((value) => value + 1);
+  });
   useEffect(() => {
     const controller = new AbortController();
     setLoading(true);
@@ -59,7 +64,7 @@ export default function Notifications() {
               Notifications
             </h1>
             <p className="mt-2 text-sm text-text-secondary">
-              Shop verification and account updates. Showing your latest 50
+              New orders, shop verification and account updates. Showing your latest 50
               notifications.
             </p>
           </div>
@@ -135,6 +140,11 @@ export default function Notifications() {
                         <p className="mt-1 text-sm leading-6 text-text-secondary">
                           {item.body}
                         </p>
+                        {item.type === "vendor_new_order" && (
+                          <Link to="/orders?status=pending" className="mt-2 inline-block text-sm font-semibold text-primary">
+                            View pending orders
+                          </Link>
+                        )}
                         <time
                           className="mt-2 block text-xs text-text-muted"
                           dateTime={item.created_at}

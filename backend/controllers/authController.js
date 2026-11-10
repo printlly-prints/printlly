@@ -7,6 +7,7 @@ const { createCode, consumeCode } = require("../utils/oauthCodeStore");
 const { validatePassword } = require("../utils/passwordPolicy");
 const { sendTransactionalEmail } = require("../utils/email");
 const { trackEvent, EVENTS } = require("../utils/analytics");
+const { getIo, sessionRoom, userRoom } = require("../config/socket");
 
 const TOKEN_TTL_DAYS = 7;
 // Unchanged from what every existing hash in the database was created with
@@ -287,6 +288,7 @@ const logout = async (req, res) => {
         { _id: req.user.jti, revoked_at: null },
         { $set: { revoked_at: new Date(), revoked_reason: "logout" } }
       );
+      getIo()?.in(sessionRoom(req.user.jti)).disconnectSockets(true);
     }
 
     // Always 200, whether or not a record was modified. A caller learns only
@@ -360,6 +362,7 @@ const changePassword = async (req, res) => {
 
     // Everything first, including this request's own session...
     const revoked = await revokeAllSessionsForUser(user._id, "password_change");
+    getIo()?.in(userRoom(user._id)).disconnectSockets(true);
     // ...then a new session, so the device that just changed the password is
     // not the one locked out by it.
     const token = await issueToken(user);

@@ -36,7 +36,7 @@ const decodeAuthToken = (token) => {
 //                                     timestamp for a pre-jti token)
 //   5. return the identity
 //
-// Returns { id, role, jti } or null. The caller turns null into whatever
+// Returns the identity and expiry, or null. The caller turns null into whatever
 // rejection suits it; this function does not distinguish "revoked" from
 // "never existed" from "signature failed", because a client has no business
 // learning which.
@@ -68,7 +68,7 @@ async function authenticateToken(token) {
     // lookup is right here.
     if (String(session.user_id) !== String(decoded.id)) return null;
 
-    return { id: String(decoded.id), role: decoded.role, jti: decoded.jti };
+    return { id: String(decoded.id), role: decoded.role, jti: decoded.jti, exp: decoded.exp };
   }
 
   // ---- Tokens issued before revocation existed ----
@@ -94,7 +94,7 @@ async function authenticateToken(token) {
     if (issuedAtMs < new Date(user.password_changed_at).getTime()) return null;
   }
 
-  return { id: String(decoded.id), role: decoded.role, jti: null };
+  return { id: String(decoded.id), role: decoded.role, jti: null, exp: decoded.exp };
 }
 
 // Verifies the JWT sent in the Authorization header ("Bearer <token>") and
