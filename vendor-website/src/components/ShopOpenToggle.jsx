@@ -17,8 +17,7 @@ import useMinuteTick from "../hooks/useMinuteTick";
 // This used to be a two-state Switch. It is a button opening the shared
 // ShopStatusMenu now because the states are Open / Busy / Closed, and a
 // switch cannot express three - nor the preparation time Busy carries
-// with it. Same menu the dashboard's Shop status card opens, so the two
-// can never drift apart.
+// with it.
 //
 // The displayed status is the EFFECTIVE one: a schedule can override the
 // vendor's choice, and a timed Busy expires on its own (see the backend's
@@ -47,7 +46,7 @@ export default function ShopOpenToggle() {
         aria-expanded={menuOpen}
         aria-haspopup="dialog"
         aria-label={`Shop status: ${meta.label}. Change it.`}
-        className={`flex w-full items-center gap-2 rounded-full border border-transparent px-2 py-1 text-left transition-colors duration-200 hover:border-border ${meta.chip}`}
+        className={`flex min-h-11 w-full items-center gap-2 rounded-control border border-transparent px-3 py-1 text-left transition-colors duration-200 hover:border-border focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 ${meta.chip}`}
       >
         <span aria-hidden="true" className={`h-2 w-2 shrink-0 rounded-full ${meta.dot}`} />
         <span className="truncate text-sm font-semibold">
@@ -59,6 +58,7 @@ export default function ShopOpenToggle() {
             <span className="font-normal"> · ~{busyPrepMinutes(shop)} min</span>
           )}
         </span>
+        <span aria-hidden="true" className="ml-auto shrink-0 text-xs font-semibold">Change status</span>
       </button>
 
       {menuOpen && <ShopStatusMenu onClose={() => setMenuOpen(false)} />}

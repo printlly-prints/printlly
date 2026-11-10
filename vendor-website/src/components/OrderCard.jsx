@@ -79,6 +79,7 @@ export default function OrderCard({
   onReady,
   onComplete,
   actionLoading,
+  error,
   autoOtp = false,
   initialViewingIndex = null,
 }) {
@@ -288,7 +289,7 @@ export default function OrderCard({
             disabled={isBusy}
             className="w-full sm:w-auto px-6 min-h-11 rounded-control bg-primary text-white font-heading text-sm font-bold hover:bg-primary-deep disabled:opacity-50 disabled:hover:bg-primary focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
           >
-            {isBusy ? "Accepting..." : "Accept"}
+            {isBusy ? "Accepting…" : "Accept order"}
           </button>
         )}
 
@@ -298,7 +299,7 @@ export default function OrderCard({
             disabled={isBusy}
             className="w-full sm:w-auto px-6 min-h-11 rounded-control bg-success text-white font-heading text-sm font-bold hover:brightness-95 disabled:opacity-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-success/40"
           >
-            {isBusy ? "Updating..." : "Mark Ready"}
+            {isBusy ? "Updating…" : "Mark ready"}
           </button>
         )}
 
@@ -307,14 +308,14 @@ export default function OrderCard({
             onClick={() => setShowOtpInput(true)}
             className="w-full sm:w-auto px-6 min-h-11 rounded-control bg-primary text-white font-heading text-sm font-bold hover:bg-primary-deep focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
           >
-            Verify OTP &amp; Complete
+            Enter pickup code
           </button>
         )}
 
         {order.status === "ready_for_pickup" && showOtpInput && (
           <div className="flex flex-wrap items-center gap-2">
             <label htmlFor={`otp-${order._id}`} className="sr-only">
-              Pickup OTP
+              Pickup code
             </label>
             <input
               id={`otp-${order._id}`}
@@ -323,7 +324,7 @@ export default function OrderCard({
               maxLength={6}
               value={otp}
               onChange={(e) => setOtp(e.target.value.replace(/\D/g, ""))}
-              placeholder="6-digit OTP"
+              placeholder="6-digit code"
               className="w-36 px-3.5 min-h-11 border border-border rounded-control text-sm tracking-[0.25em] text-text-primary bg-surface placeholder:text-text-muted placeholder:tracking-normal focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
             />
             <button
@@ -331,7 +332,7 @@ export default function OrderCard({
               disabled={isBusy || otp.trim().length !== 6}
               className="px-6 min-h-11 rounded-control bg-primary text-white font-heading text-sm font-bold hover:bg-primary-deep disabled:opacity-50 disabled:hover:bg-primary focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
             >
-              {isBusy ? "Verifying..." : "Confirm"}
+              {isBusy ? "Verifying…" : "Confirm pickup"}
             </button>
             <button
               onClick={() => {
@@ -344,6 +345,7 @@ export default function OrderCard({
             </button>
           </div>
         )}
+        {error && <p role="alert" className="mt-3 rounded-control bg-error-bg p-3 text-sm text-error-text">{error}</p>}
       </div>
     </div>
   );

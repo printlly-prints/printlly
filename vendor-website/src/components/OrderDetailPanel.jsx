@@ -44,7 +44,6 @@ export default function OrderDetailPanel({ order, autoOtp, initialViewingIndex, 
         <header className="sticky top-0 z-10 bg-surface/95 backdrop-blur border-b border-border px-5 py-3.5 flex items-center justify-between gap-3">
           <div className="min-w-0">
             <h2 className="font-heading font-bold text-text-primary">Order {orderRef(order)}</h2>
-            <p className="text-xs text-text-muted truncate">{String(order._id)}</p>
           </div>
           <button
             type="button"
